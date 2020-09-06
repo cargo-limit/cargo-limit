@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -e
+shift
+RUSTFLAGS="${RUSTFLAGS} -A warnings" cargo test --no-run "$@"
+cargo test "$@"
