@@ -1,9 +1,9 @@
 # cargo-fatal
-Ignore all warnings if there are errors
+Cargo wrapper that ignores all warnings if there is any error
 
 ## Installation
 ```
-cp cargo-* ~/.cargo/bin
+cargo install cargo-fatal
 ```
 
 ## Usage

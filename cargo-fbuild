@@ -1,6 +1,0 @@
-#!/bin/sh
-
-set -e
-shift
-RUSTFLAGS="${RUSTFLAGS} -A warnings" cargo build "$@"
-cargo build "$@"
