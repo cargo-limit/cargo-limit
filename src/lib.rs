@@ -2,13 +2,29 @@ use std::env;
 use std::ffi::OsString;
 use std::io::{self, Write};
 use std::iter;
-use std::process::{Command, ExitStatus};
+use std::process::{exit, Command, ExitStatus};
 
 const CARGO: &str = "cargo";
 const RUSTFLAGS: &str = "RUSTFLAGS";
 const IGNORE_WARNINGS: &str = "-A warnings";
+const NO_STATUS_CODE: i32 = 127;
 
-pub fn execute_cargo(
+pub fn execute_cargo_twice_and_exit(
+    first_arguments: impl Iterator<Item = String>,
+    second_arguments: impl Iterator<Item = String>,
+) {
+    let status = execute_cargo_without_warnings(first_arguments);
+    let mut status_code = status.code().unwrap_or(NO_STATUS_CODE);
+
+    if status.success() {
+        let status = execute_cargo(second_arguments, iter::empty());
+        status_code = status.code().unwrap_or(NO_STATUS_CODE);
+    }
+
+    exit(status_code);
+}
+
+fn execute_cargo(
     arguments: impl Iterator<Item = String>,
     environment_variables: impl Iterator<Item = (String, String)>,
 ) -> ExitStatus {
@@ -23,7 +39,7 @@ pub fn execute_cargo(
     output.status
 }
 
-pub fn execute_cargo_without_warnings(arguments: impl Iterator<Item = String>) -> ExitStatus {
+fn execute_cargo_without_warnings(arguments: impl Iterator<Item = String>) -> ExitStatus {
     let flags = env::var_os(RUSTFLAGS)
         .unwrap_or_else(OsString::new)
         .into_string()
