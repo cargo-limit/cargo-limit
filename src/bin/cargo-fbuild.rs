@@ -1,8 +1,11 @@
+use anyhow::{Context, Result};
 use cargo_metadata::diagnostic::DiagnosticLevel;
 use cargo_metadata::Message;
 use std::iter;
-use std::process::{Command, Stdio};
+use std::process::{exit, Command, Stdio};
 use terminal_size::{terminal_size, Width};
+
+const NO_STATUS_CODE: i32 = 127;
 
 fn clear_current_line() {
     if let Some((Width(width), _)) = terminal_size() {
@@ -11,7 +14,7 @@ fn clear_current_line() {
     }
 }
 
-fn main() {
+fn main() -> Result<()> {
     let mut command = Command::new("cargo")
         /*.args(&[
             "test",
@@ -20,15 +23,14 @@ fn main() {
         ])*/
         .args(&["build", "--message-format=json-diagnostic-rendered-ansi"])
         .stdout(Stdio::piped())
-        .spawn()
-        .unwrap();
+        .spawn()?;
 
     let mut important_messages = Vec::new();
     let mut boring_messages = Vec::new();
 
-    let reader = std::io::BufReader::new(command.stdout.take().unwrap());
+    let reader = std::io::BufReader::new(command.stdout.take().context("cannot read stdout")?);
     for message in cargo_metadata::Message::parse_stream(reader) {
-        match message.unwrap() {
+        match message? {
             Message::CompilerMessage(msg) => {
                 if let Some(rendered) = msg.message.rendered {
                     match msg.message.level {
@@ -58,5 +60,6 @@ fn main() {
         }
     }
 
-    let _output = command.wait().expect("Couldn't get cargo's exit status");
+    let status_code = command.wait()?.code().unwrap_or(NO_STATUS_CODE);
+    exit(status_code);
 }
