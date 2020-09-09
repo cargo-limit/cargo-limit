@@ -1,14 +1,16 @@
 use anyhow::Result;
 use cargo_fatal::{run_cargo, run_cargo_filtered, MESSAGE_FORMAT};
-use std::process::exit;
+use std::{env, iter::once, process::exit};
 
 fn main() -> Result<()> {
-    // TODO: additioanl build args
-    // TODO: additional app args
-    let mut exit_code = run_cargo_filtered(&["build", MESSAGE_FORMAT], 1, false)?;
+    let args = &["build", MESSAGE_FORMAT];
+    let mut exit_code = run_cargo_filtered(args, 1, false)?;
+
     let success = exit_code == 0;
     if success {
-        exit_code = run_cargo(&["run"])?;
+        let args = once("run".to_owned()).chain(env::args().skip(1));
+        exit_code = run_cargo(args)?;
     }
+
     exit(exit_code)
 }
