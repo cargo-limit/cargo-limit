@@ -1,16 +1,14 @@
 use anyhow::{Context, Result};
-use cargo_metadata::diagnostic::DiagnosticLevel;
-use cargo_metadata::Message;
-use std::ffi::OsStr;
-use std::iter;
-use std::process::{exit, Command, Stdio};
+use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
+use std::process::{Command, Stdio};
+use std::{ffi::OsStr, io::BufReader, iter};
 use terminal_size::{terminal_size, Width};
 
 pub const MESSAGE_FORMAT: &str = "--message-format=json-diagnostic-rendered-ansi";
 pub const NO_RUN: &str = "--no-run";
 
 const CARGO: &str = "cargo";
-const NO_STATUS_CODE: i32 = 127;
+const NO_EXIT_CODE: i32 = 127;
 
 fn clear_current_line() {
     if let Some((Width(width), _)) = terminal_size() {
@@ -19,7 +17,17 @@ fn clear_current_line() {
     }
 }
 
-pub fn run_cargo<I, S>(args: I, limit: usize) -> Result<()>
+pub fn run_cargo<I, S>(args: I) -> Result<i32>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let mut command = Command::new(CARGO).args(args).spawn()?;
+    let exit_code = command.wait()?.code().unwrap_or(NO_EXIT_CODE);
+    Ok(exit_code)
+}
+
+pub fn run_cargo_filtered<I, S>(args: I, limit: usize, allow_boring_messages: bool) -> Result<i32>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
@@ -33,7 +41,7 @@ where
     let mut important_messages = Vec::new();
     let mut boring_messages = Vec::new();
 
-    let reader = std::io::BufReader::new(command.stdout.take().context("cannot read stdout")?);
+    let reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
     for message in cargo_metadata::Message::parse_stream(reader) {
         match message? {
             Message::CompilerMessage(msg) => {
@@ -52,7 +60,7 @@ where
         }
     }
 
-    if important_messages.is_empty() {
+    if important_messages.is_empty() && allow_boring_messages {
         for message in boring_messages.into_iter().take(limit) {
             clear_current_line();
             print!("{}", message);
@@ -64,6 +72,6 @@ where
         }
     }
 
-    let status_code = command.wait()?.code().unwrap_or(NO_STATUS_CODE);
-    exit(status_code);
+    let exit_code = command.wait()?.code().unwrap_or(NO_EXIT_CODE);
+    Ok(exit_code)
 }

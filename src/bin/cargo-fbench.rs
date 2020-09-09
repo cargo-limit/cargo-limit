@@ -4,7 +4,7 @@ use std::process::exit;
 
 fn main() -> Result<()> {
     exit(run_cargo_filtered(
-        &["test", NO_RUN, MESSAGE_FORMAT],
+        &["bench", NO_RUN, MESSAGE_FORMAT],
         1,
         true,
     )?)

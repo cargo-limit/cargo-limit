@@ -1,6 +1,7 @@
 use anyhow::Result;
-use cargo_fatal::{run_cargo, MESSAGE_FORMAT};
+use cargo_fatal::{run_cargo_filtered, MESSAGE_FORMAT};
+use std::process::exit;
 
 fn main() -> Result<()> {
-    run_cargo(&["build", MESSAGE_FORMAT], 1)
+    exit(run_cargo_filtered(&["build", MESSAGE_FORMAT], 1, true)?)
 }
