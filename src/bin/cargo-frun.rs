@@ -1,15 +1,9 @@
-use cargo_fatal::execute_cargo_twice_and_exit;
-use std::env;
-use std::iter;
+use anyhow::Result;
+use cargo_fatal::{run_cargo, MESSAGE_FORMAT, NO_RUN};
 
-const BUILD: &str = "build";
-const RUN: &str = "run";
-const ENABLE_COLORS: &str = "--color=always";
+fn main() -> Result<()> {
+    run_cargo(&["build", MESSAGE_FORMAT], 1)
 
-fn main() {
-    let first_arguments = iter::once(BUILD.to_owned()).chain(iter::once(ENABLE_COLORS.to_owned()));
-    let second_arguments = iter::once(RUN.to_owned())
-        .chain(iter::once(ENABLE_COLORS.to_owned()))
-        .chain(env::args().skip(1));
-    execute_cargo_twice_and_exit(first_arguments, second_arguments);
+    // TODO: run the build
+    // TODO: ensure there are no double warnings
 }

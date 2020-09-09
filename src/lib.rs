@@ -1,55 +1,69 @@
-use std::env;
-use std::ffi::OsString;
-use std::io::{self, Write};
+use anyhow::{Context, Result};
+use cargo_metadata::diagnostic::DiagnosticLevel;
+use cargo_metadata::Message;
+use std::ffi::OsStr;
 use std::iter;
-use std::process::{exit, Command, ExitStatus};
+use std::process::{exit, Command, Stdio};
+use terminal_size::{terminal_size, Width};
+
+pub const MESSAGE_FORMAT: &str = "--message-format=json-diagnostic-rendered-ansi";
+pub const NO_RUN: &str = "--no-run";
 
 const CARGO: &str = "cargo";
-const RUSTFLAGS: &str = "RUSTFLAGS";
-const IGNORE_WARNINGS: &str = "-A warnings";
 const NO_STATUS_CODE: i32 = 127;
 
-pub fn execute_cargo_twice_and_exit(
-    first_arguments: impl Iterator<Item = String>,
-    second_arguments: impl Iterator<Item = String>,
-) {
-    let status = execute_cargo_without_warnings(first_arguments);
-    let mut status_code = status.code().unwrap_or(NO_STATUS_CODE);
+fn clear_current_line() {
+    if let Some((Width(width), _)) = terminal_size() {
+        let spaces = iter::repeat(' ').take(width as usize).collect::<String>();
+        print!("{}\r", spaces);
+    }
+}
 
-    if status.success() {
-        let status = execute_cargo(second_arguments, iter::empty());
-        status_code = status.code().unwrap_or(NO_STATUS_CODE);
+pub fn run_cargo<I, S>(args: I, limit: usize) -> Result<()>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    // TODO: env
+    let mut command = Command::new(CARGO)
+        .args(args)
+        .stdout(Stdio::piped())
+        .spawn()?;
+
+    let mut important_messages = Vec::new();
+    let mut boring_messages = Vec::new();
+
+    let reader = std::io::BufReader::new(command.stdout.take().context("cannot read stdout")?);
+    for message in cargo_metadata::Message::parse_stream(reader) {
+        match message? {
+            Message::CompilerMessage(msg) => {
+                if let Some(rendered) = msg.message.rendered {
+                    match msg.message.level {
+                        DiagnosticLevel::Error | DiagnosticLevel::Ice => {
+                            important_messages.push(rendered);
+                        }
+                        _ => {
+                            boring_messages.push(rendered);
+                        }
+                    }
+                }
+            }
+            _ => (),
+        }
     }
 
-    exit(status_code);
-}
-
-fn execute_cargo(
-    arguments: impl Iterator<Item = String>,
-    environment_variables: impl Iterator<Item = (String, String)>,
-) -> ExitStatus {
-    let output = Command::new(CARGO)
-        .args(arguments)
-        .envs(environment_variables)
-        .output()
-        .unwrap();
-    io::stderr().write_all(&output.stderr).unwrap();
-    io::stdout().write_all(&output.stdout).unwrap();
-
-    output.status
-}
-
-fn execute_cargo_without_warnings(arguments: impl Iterator<Item = String>) -> ExitStatus {
-    let flags = env::var_os(RUSTFLAGS)
-        .unwrap_or_else(OsString::new)
-        .into_string()
-        .unwrap();
-    let flags = if flags.is_empty() {
-        IGNORE_WARNINGS.to_owned()
+    if important_messages.is_empty() {
+        for message in boring_messages.into_iter().take(limit) {
+            clear_current_line();
+            print!("{}", message);
+        }
     } else {
-        format!("{} {}", flags, IGNORE_WARNINGS)
-    };
+        for message in important_messages.into_iter().take(limit) {
+            clear_current_line();
+            print!("{}", message);
+        }
+    }
 
-    let environment_variables = iter::once((RUSTFLAGS.to_owned(), flags));
-    execute_cargo(arguments, environment_variables)
+    let status_code = command.wait()?.code().unwrap_or(NO_STATUS_CODE);
+    exit(status_code);
 }
