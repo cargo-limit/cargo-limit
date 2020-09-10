@@ -37,7 +37,7 @@ where
     Ok(exit_code)
 }
 
-pub fn run_cargo_filtered<I, S>(args: I, limit: usize, allow_non_errors: bool) -> Result<i32>
+pub fn run_cargo_filtered<I, S>(args: I, limit_errors: usize, allow_non_errors: bool) -> Result<i32>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
@@ -75,7 +75,7 @@ where
             print!("{}", message);
         }
     } else {
-        for message in errors.into_iter().take(limit) {
+        for message in errors.into_iter().take(limit_errors) {
             clear_current_line();
             print!("{}", message);
         }
