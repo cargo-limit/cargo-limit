@@ -12,6 +12,11 @@ use terminal_size::{terminal_size, Width};
 pub const MESSAGE_FORMAT: &str = "--message-format=json-diagnostic-rendered-ansi";
 pub const NO_RUN: &str = "--no-run";
 
+pub const BENCH: &str = "bench";
+pub const BUILD: &str = "build";
+pub const RUN: &str = "run";
+pub const TEST: &str = "test";
+
 const CARGO: &str = "cargo";
 const NO_EXIT_CODE: i32 = 127;
 
