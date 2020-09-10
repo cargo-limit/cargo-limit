@@ -1,7 +1,11 @@
 use anyhow::{Context, Result};
 use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
-use std::process::{Command, Stdio};
-use std::{ffi::OsStr, io::BufReader, iter};
+use std::{
+    ffi::OsStr,
+    io::BufReader,
+    iter,
+    process::{Command, Stdio},
+};
 use terminal_size::{terminal_size, Width};
 
 pub const MESSAGE_FORMAT: &str = "--message-format=json-diagnostic-rendered-ansi";
@@ -27,7 +31,7 @@ where
     Ok(exit_code)
 }
 
-pub fn run_cargo_filtered<I, S>(args: I, limit: usize, allow_boring_messages: bool) -> Result<i32>
+pub fn run_cargo_filtered<I, S>(args: I, limit: usize, allow_non_errors: bool) -> Result<i32>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
@@ -38,20 +42,20 @@ where
         .stdout(Stdio::piped())
         .spawn()?;
 
-    let mut important_messages = Vec::new();
-    let mut boring_messages = Vec::new();
+    let mut errors = Vec::new();
+    let mut non_errors = Vec::new();
 
     let reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
     for message in cargo_metadata::Message::parse_stream(reader) {
         match message? {
-            Message::CompilerMessage(msg) => {
-                if let Some(rendered) = msg.message.rendered {
-                    match msg.message.level {
+            Message::CompilerMessage(compiler_message) => {
+                if let Some(rendered) = compiler_message.message.rendered {
+                    match compiler_message.message.level {
                         DiagnosticLevel::Error | DiagnosticLevel::Ice => {
-                            important_messages.push(rendered);
+                            errors.push(rendered);
                         }
                         _ => {
-                            boring_messages.push(rendered);
+                            non_errors.push(rendered);
                         }
                     }
                 }
@@ -60,13 +64,13 @@ where
         }
     }
 
-    if important_messages.is_empty() && allow_boring_messages {
-        for message in boring_messages.into_iter().take(limit) {
+    if errors.is_empty() && allow_non_errors {
+        for message in non_errors.into_iter().take(limit) {
             clear_current_line();
             print!("{}", message);
         }
     } else {
-        for message in important_messages.into_iter().take(limit) {
+        for message in errors.into_iter().take(limit) {
             clear_current_line();
             print!("{}", message);
         }
