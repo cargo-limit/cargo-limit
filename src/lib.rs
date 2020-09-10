@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
 use std::{
+    env,
     ffi::OsStr,
     io::BufReader,
     iter,
@@ -36,7 +37,6 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    // TODO: env
     let mut command = Command::new(CARGO)
         .args(args)
         .stdout(Stdio::piped())
@@ -78,4 +78,11 @@ where
 
     let exit_code = command.wait()?.code().unwrap_or(NO_EXIT_CODE);
     Ok(exit_code)
+}
+
+pub fn prepare_args<'a>(args: &'a [&str]) -> impl Iterator<Item = String> + 'a {
+    let passed_cargo_args = env::args().skip(2);
+    args.iter()
+        .map(|i| (*i).to_owned())
+        .chain(passed_cargo_args)
 }
