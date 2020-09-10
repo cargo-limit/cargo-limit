@@ -65,7 +65,7 @@ where
     }
 
     if errors.is_empty() && allow_non_errors {
-        for message in non_errors.into_iter().take(limit) {
+        for message in non_errors.into_iter() {
             clear_current_line();
             print!("{}", message);
         }
