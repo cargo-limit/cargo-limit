@@ -3,7 +3,7 @@ Cargo wrapper which limits compiler messages number. Error messages come first.
 
 ## Installation
 ```
-cargo install cargo-limit
+cargo install --git https://github.com/alopatindev/cargo-limit
 ```
 
 ## Usage
@@ -31,7 +31,7 @@ fn main() {
 }
 ```
 
-It's counterproductive to read this kind of compiler noise in attempt to run it:
+It's counterproductive to read this kind of compiler noise in attempt to run the program:
 ```
 $ cargo run
    Compiling hello v0.1.0 (/tmp/hello)
@@ -94,21 +94,5 @@ error: could not compile `hello`.
 To learn more, run the command again with --verbose.
 ```
 
-So let's show a warning only when we fixed all errors:
-```
-$ sed -i '/.*i -= 1;/d' src/main.rs
-$ cargo lrun
-    Finished dev [unoptimized + debuginfo] target(s) in 0.00s
-warning: unused variable: `i`
- --> src/main.rs:6:9
-  |
-6 |     let mut i: u32 = 0;
-  |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_i`
-  |
-  = note: `#[warn(unused_variables)]` on by default
-
-     Running `target/debug/hello`
-Hello world
-```
-
-Or show several warnings, with argument `--limit-messages=10`.
+## License
+MIT/Apache-2.0
