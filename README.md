@@ -9,10 +9,11 @@ cargo install cargo-limit
 ## Usage
 Run any of these in your project:
 ```
-cargo ftest [--limit-messages=N]
 cargo fbench [--limit-messages=N]
 cargo fbuild [--limit-messages=N]
+cargo fclippy [--limit-messages=N]
 cargo frun [--limit-messages=N]
+cargo ftest [--limit-messages=N]
 ```
 
 ## Why?
