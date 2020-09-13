@@ -1,20 +1,22 @@
-# cargo-fatal
-Cargo wrapper that ignores all warnings if there is any error
+# cargo-limit
+Cargo wrapper which limits compiler messages number. Error messages come first.
 
 ## Installation
 ```
-cargo install cargo-fatal
+cargo install cargo-limit
 ```
 
 ## Usage
+Run any of these in your project:
 ```
-cargo ftest
-cargo fbuild
-cargo frun
+cargo ftest [--limit-messages=N]
+cargo fbench [--limit-messages=N]
+cargo fbuild [--limit-messages=N]
+cargo frun [--limit-messages=N]
 ```
 
 ## Why?
-It's a partial workaround for [this issue](https://github.com/rust-lang/rust/issues/27189). Consider a program:
+It's a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189). Consider a program:
 ```rust
 fn f() -> Result<(), ()> {
     Ok(())
@@ -28,7 +30,7 @@ fn main() {
 }
 ```
 
-It's counterproductive to read this kind of noise after compiling it:
+It's counterproductive to read this kind of compiler noise in attempt to run it:
 ```
 $ cargo run
    Compiling hello v0.1.0 (/tmp/hello)
@@ -86,20 +88,16 @@ error: this arithmetic operation will overflow
   |
   = note: `#[deny(arithmetic_overflow)]` on by default
 
-error: aborting due to previous error
-
 error: could not compile `hello`.
 
 To learn more, run the command again with --verbose.
 ```
 
-So let's show warnings only when we fixed all errors:
+So let's show a warning only when we fixed all errors:
 ```
 $ sed -i '/.*i -= 1;/d' src/main.rs
 $ cargo frun
-   Compiling hello v0.1.0 (/tmp/hello)
-    Finished dev [unoptimized + debuginfo] target(s) in 0.16s
-   Compiling hello v0.1.0 (/tmp/hello)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.00s
 warning: unused variable: `i`
  --> src/main.rs:6:9
   |
@@ -108,28 +106,8 @@ warning: unused variable: `i`
   |
   = note: `#[warn(unused_variables)]` on by default
 
-warning: variable does not need to be mutable
- --> src/main.rs:6:9
-  |
-6 |     let mut i: u32 = 0;
-  |         ----^
-  |         |
-  |         help: remove this `mut`
-  |
-  = note: `#[warn(unused_mut)]` on by default
-
-warning: unused `std::result::Result` that must be used
- --> src/main.rs:7:5
-  |
-7 |     f();
-  |     ^^^^
-  |
-  = note: `#[warn(unused_must_use)]` on by default
-  = note: this `Result` may be an `Err` variant, which should be handled
-
-warning: 3 warnings emitted
-
-    Finished dev [unoptimized + debuginfo] target(s) in 0.15s
      Running `target/debug/hello`
 Hello world
 ```
+
+Or show several warnings, with argument `--limit-messages=10`.
