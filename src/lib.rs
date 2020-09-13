@@ -22,7 +22,7 @@ const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
 
-pub fn run_cargo_filtered<I, S>(args: I, limit_errors: usize, allow_non_errors: bool) -> Result<i32>
+pub fn run_cargo_filtered<I, S>(args: I, limit_messages: usize) -> Result<i32>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
@@ -41,7 +41,7 @@ where
     let mut non_errors = Vec::new();
 
     let mut reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
-    let raw_messages = read_raw_cargo_messages(&mut reader)?;
+    let raw_messages = read_raw_messages(&mut reader)?;
 
     for message in cargo_metadata::Message::parse_stream(Cursor::new(raw_messages)) {
         match message? {
@@ -61,14 +61,12 @@ where
         }
     }
 
-    if errors.is_empty() && allow_non_errors {
-        for message in non_errors.into_iter() {
-            print!("{}", message);
-        }
-    } else {
-        for message in errors.into_iter().take(limit_errors) {
-            print!("{}", message);
-        }
+    for message in errors
+        .into_iter()
+        .chain(non_errors.into_iter())
+        .take(limit_messages)
+    {
+        print!("{}", message);
     }
 
     io::copy(&mut reader, &mut FlushingWriter::new(std::io::stdout()))?;
@@ -84,7 +82,7 @@ pub fn prepare_args<'a>(args: &'a [&str]) -> impl Iterator<Item = String> + 'a {
         .chain(passed_cargo_args)
 }
 
-fn read_raw_cargo_messages<R: io::Read>(reader: &mut BufReader<R>) -> Result<Vec<u8>> {
+fn read_raw_messages<R: io::Read>(reader: &mut BufReader<R>) -> Result<Vec<u8>> {
     let mut line = String::new();
     let mut raw_messages = Vec::new();
 

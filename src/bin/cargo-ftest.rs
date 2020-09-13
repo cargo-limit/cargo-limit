@@ -4,5 +4,5 @@ use std::process::exit;
 
 fn main() -> Result<()> {
     let args = prepare_args(&[TEST, MESSAGE_FORMAT]);
-    exit(run_cargo_filtered(args, 1, true)?);
+    exit(run_cargo_filtered(args, 1)?);
 }
