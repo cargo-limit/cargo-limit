@@ -3,6 +3,11 @@ name = "cargo-limit"
 version = "0.0.1"
 authors = ["Alexander Lopatin <alopatindev@gmail.com>"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
+description = "Cargo wrapper which limits compiler messages number. Error messages come first."
+repository = "https://github.com/alopatindev/cargo-limit"
+keywords = ["cargo", "limit", "filter", "wrapper"]
+readme = "README.md"
 
 [dependencies]
 anyhow = "1"
