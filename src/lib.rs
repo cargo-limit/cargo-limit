@@ -5,7 +5,6 @@ use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
 use flushing_writer::FlushingWriter;
 use std::{
     env,
-    ffi::OsStr,
     io::{self, BufRead, BufReader, Cursor},
     path::PathBuf,
     process::{Command, Stdio},
@@ -22,11 +21,9 @@ const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
 
-pub fn run_cargo_filtered<I, S>(args: I, limit_messages: usize) -> Result<i32>
-where
-    I: IntoIterator<Item = S>,
-    S: AsRef<OsStr>,
-{
+pub fn run_cargo_filtered<'a>(args: &'a [&str], limit_messages: usize) -> Result<i32> {
+    let args = prepare_args(args);
+
     let cargo = env::var(CARGO_ENV_VAR)
         .map(PathBuf::from)
         .ok()
@@ -75,7 +72,7 @@ where
     Ok(exit_code)
 }
 
-pub fn prepare_args<'a>(args: &'a [&str]) -> impl Iterator<Item = String> + 'a {
+fn prepare_args<'a>(args: &'a [&str]) -> impl Iterator<Item = String> + 'a {
     let passed_cargo_args = env::args().skip(2);
     args.iter()
         .map(|i| (*i).to_owned())
