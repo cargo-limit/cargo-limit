@@ -63,20 +63,18 @@ fn parse_and_process_messages(raw_messages: Vec<u8>, limit_messages: usize) -> R
     let mut non_errors = Vec::new();
 
     for message in cargo_metadata::Message::parse_stream(Cursor::new(raw_messages)) {
-        match message? {
-            Message::CompilerMessage(compiler_message) => {
-                if let Some(rendered) = compiler_message.message.rendered {
-                    match compiler_message.message.level {
-                        DiagnosticLevel::Error | DiagnosticLevel::Ice => {
-                            errors.push(rendered);
-                        }
-                        _ => {
-                            non_errors.push(rendered);
-                        }
+        if let Message::CompilerMessage(compiler_message) = message? {
+            if let Some(rendered) = compiler_message.message.rendered {
+                match compiler_message.message.level {
+                    // TODO: add internal_errors
+                    DiagnosticLevel::Error | DiagnosticLevel::Ice => {
+                        errors.push(rendered);
+                    }
+                    _ => {
+                        non_errors.push(rendered);
                     }
                 }
             }
-            _ => (),
         }
     }
 
