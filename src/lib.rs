@@ -59,6 +59,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 }
 
 fn parse_and_process_messages(raw_messages: Vec<u8>, limit_messages: usize) -> Result<()> {
+    let mut internal_compiler_errors = Vec::new();
     let mut errors = Vec::new();
     let mut non_errors = Vec::new();
 
@@ -66,8 +67,10 @@ fn parse_and_process_messages(raw_messages: Vec<u8>, limit_messages: usize) -> R
         if let Message::CompilerMessage(compiler_message) = message? {
             if let Some(rendered) = compiler_message.message.rendered {
                 match compiler_message.message.level {
-                    // TODO: add internal_errors
-                    DiagnosticLevel::Error | DiagnosticLevel::Ice => {
+                    DiagnosticLevel::Ice => {
+                        internal_compiler_errors.push(rendered);
+                    }
+                    DiagnosticLevel::Error => {
                         errors.push(rendered);
                     }
                     _ => {
@@ -78,8 +81,9 @@ fn parse_and_process_messages(raw_messages: Vec<u8>, limit_messages: usize) -> R
         }
     }
 
-    for message in errors
+    for message in internal_compiler_errors
         .into_iter()
+        .chain(errors.into_iter())
         .chain(non_errors.into_iter())
         .take(limit_messages)
     {
