@@ -8,32 +8,27 @@ use parsed_args::ParsedArgs;
 use std::{
     env,
     io::{self, BufRead, BufReader, Cursor},
+    iter,
     path::PathBuf,
     process::{Command, Stdio},
 };
 
-pub const MESSAGE_FORMAT: &str = "--message-format=json-diagnostic-rendered-ansi";
-pub const BENCH: &str = "bench";
-pub const BUILD: &str = "build";
-pub const RUN: &str = "run";
-pub const TEST: &str = "test";
-
+const MESSAGE_FORMAT: &str = "--message-format=json-diagnostic-rendered-ansi";
 const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
 const ADDITIONAL_OPTIONS: &str = "\nADDITIONAL OPTIONS:\n        --limit-messages <NUM>                       Limit number of compiler messages";
 
-pub fn run_cargo_filtered(first_cargo_args: &[&str]) -> Result<i32> {
+pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     let ParsedArgs {
         cargo_args,
         limit_messages,
         help,
     } = ParsedArgs::parse(env::args().skip(2))?;
 
-    let cargo_args = first_cargo_args
-        .iter()
-        .map(|i| (*i).to_owned())
+    let cargo_args = iter::once(cargo_command.to_owned())
+        .chain(iter::once(MESSAGE_FORMAT.to_owned()))
         .chain(cargo_args);
 
     let cargo = env::var(CARGO_ENV_VAR)
