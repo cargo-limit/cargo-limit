@@ -3,7 +3,7 @@ Cargo wrapper which limits compiler messages number. Error messages come first.
 
 ## Installation
 ```
-cargo install --git https://github.com/alopatindev/cargo-limit
+cargo install cargo-limit
 ```
 
 ## Usage
