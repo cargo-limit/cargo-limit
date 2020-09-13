@@ -7,11 +7,9 @@ use std::{
     env,
     ffi::OsStr,
     io::{self, BufRead, BufReader, Cursor},
-    iter,
     path::PathBuf,
     process::{Command, Stdio},
 };
-use terminal_size::{terminal_size, Width};
 
 pub const MESSAGE_FORMAT: &str = "--message-format=json-diagnostic-rendered-ansi";
 pub const BENCH: &str = "bench";
@@ -23,13 +21,6 @@ const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
-
-fn clear_current_line() {
-    if let Some((Width(width), _)) = terminal_size() {
-        let spaces = iter::repeat(' ').take(width as usize).collect::<String>();
-        print!("{}\r", spaces);
-    }
-}
 
 pub fn run_cargo_filtered<I, S>(args: I, limit_errors: usize, allow_non_errors: bool) -> Result<i32>
 where
@@ -72,12 +63,10 @@ where
 
     if errors.is_empty() && allow_non_errors {
         for message in non_errors.into_iter() {
-            clear_current_line();
             print!("{}", message);
         }
     } else {
         for message in errors.into_iter().take(limit_errors) {
-            clear_current_line();
             print!("{}", message);
         }
     }
