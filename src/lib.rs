@@ -1,24 +1,28 @@
+mod flushing_writer;
+
 use anyhow::{Context, Result};
 use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
+use flushing_writer::FlushingWriter;
 use std::{
     env,
     ffi::OsStr,
-    io::BufReader,
+    io::{self, BufRead, BufReader, Cursor},
     iter,
+    path::PathBuf,
     process::{Command, Stdio},
 };
 use terminal_size::{terminal_size, Width};
 
 pub const MESSAGE_FORMAT: &str = "--message-format=json-diagnostic-rendered-ansi";
-pub const NO_RUN: &str = "--no-run";
-
 pub const BENCH: &str = "bench";
 pub const BUILD: &str = "build";
 pub const RUN: &str = "run";
 pub const TEST: &str = "test";
 
-const CARGO: &str = "cargo";
+const CARGO_EXECUTABLE: &str = "cargo";
+const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
+const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
 
 fn clear_current_line() {
     if let Some((Width(width), _)) = terminal_size() {
@@ -27,22 +31,17 @@ fn clear_current_line() {
     }
 }
 
-pub fn run_cargo<I, S>(args: I) -> Result<i32>
-where
-    I: IntoIterator<Item = S>,
-    S: AsRef<OsStr>,
-{
-    let mut command = Command::new(CARGO).args(args).spawn()?;
-    let exit_code = command.wait()?.code().unwrap_or(NO_EXIT_CODE);
-    Ok(exit_code)
-}
-
 pub fn run_cargo_filtered<I, S>(args: I, limit_errors: usize, allow_non_errors: bool) -> Result<i32>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    let mut command = Command::new(CARGO)
+    let cargo = env::var(CARGO_ENV_VAR)
+        .map(PathBuf::from)
+        .ok()
+        .unwrap_or_else(|| PathBuf::from(CARGO_EXECUTABLE));
+
+    let mut command = Command::new(cargo)
         .args(args)
         .stdout(Stdio::piped())
         .spawn()?;
@@ -50,8 +49,10 @@ where
     let mut errors = Vec::new();
     let mut non_errors = Vec::new();
 
-    let reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
-    for message in cargo_metadata::Message::parse_stream(reader) {
+    let mut reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
+    let raw_messages = read_raw_cargo_messages(&mut reader)?;
+
+    for message in cargo_metadata::Message::parse_stream(Cursor::new(raw_messages)) {
         match message? {
             Message::CompilerMessage(compiler_message) => {
                 if let Some(rendered) = compiler_message.message.rendered {
@@ -81,6 +82,8 @@ where
         }
     }
 
+    io::copy(&mut reader, &mut FlushingWriter::new(std::io::stdout()))?;
+
     let exit_code = command.wait()?.code().unwrap_or(NO_EXIT_CODE);
     Ok(exit_code)
 }
@@ -90,4 +93,20 @@ pub fn prepare_args<'a>(args: &'a [&str]) -> impl Iterator<Item = String> + 'a {
     args.iter()
         .map(|i| (*i).to_owned())
         .chain(passed_cargo_args)
+}
+
+fn read_raw_cargo_messages<R: io::Read>(reader: &mut BufReader<R>) -> Result<Vec<u8>> {
+    let mut line = String::new();
+    let mut raw_messages = Vec::new();
+
+    loop {
+        let len = reader.read_line(&mut line)?;
+        raw_messages.extend(line.as_bytes());
+        if len == 0 || line.contains(BUILD_FINISHED_MESSAGE) {
+            break;
+        }
+        line.clear();
+    }
+
+    Ok(raw_messages)
 }
