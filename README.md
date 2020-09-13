@@ -9,11 +9,11 @@ cargo install cargo-limit
 ## Usage
 Run any of these in your project:
 ```
-cargo fbench [--limit-messages=N]
-cargo fbuild [--limit-messages=N]
-cargo fclippy [--limit-messages=N]
-cargo frun [--limit-messages=N]
-cargo ftest [--limit-messages=N]
+cargo lbench [--limit-messages=N]
+cargo lbuild [--limit-messages=N]
+cargo lclippy [--limit-messages=N]
+cargo lrun [--limit-messages=N]
+cargo ltest [--limit-messages=N]
 ```
 
 ## Why?
@@ -79,7 +79,7 @@ To learn more, run the command again with --verbose.
 
 All we want on this development iteration is to focus on this error:
 ```
-$ cargo frun
+$ cargo lrun
    Compiling hello v0.1.0 (/tmp/hello)
 error: this arithmetic operation will overflow
  --> src/main.rs:7:5
@@ -97,7 +97,7 @@ To learn more, run the command again with --verbose.
 So let's show a warning only when we fixed all errors:
 ```
 $ sed -i '/.*i -= 1;/d' src/main.rs
-$ cargo frun
+$ cargo lrun
     Finished dev [unoptimized + debuginfo] target(s) in 0.00s
 warning: unused variable: `i`
  --> src/main.rs:6:9

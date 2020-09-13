@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-pub(crate) struct FlushingWriter<W> {
+pub struct FlushingWriter<W> {
     writer: W,
 }
 

@@ -1,5 +1,5 @@
 [package]
-name = "cargo-fatal"
+name = "cargo-limit"
 version = "0.0.1"
 authors = ["Alexander Lopatin <alopatindev@gmail.com>"]
 edition = "2018"

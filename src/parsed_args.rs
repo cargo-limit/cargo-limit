@@ -16,6 +16,7 @@ impl ParsedArgs {
             help: false,
         };
         let mut program_args_started = false;
+
         while let Some(arg) = passed_args.next() {
             if program_args_started {
                 result.cargo_args.push(arg);
