@@ -1,4 +1,6 @@
 # cargo-limit
+[![Crates.io](https://img.shields.io/crates/v/cargo-limit.svg)](https://crates.io/crates/cargo-limit)
+
 Cargo wrapper which limits compiler messages number. Error messages come first.
 
 ## Installation
