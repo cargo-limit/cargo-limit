@@ -97,5 +97,22 @@ error: could not compile `hello`.
 To learn more, run the command again with --verbose.
 ```
 
+After fixing it we probably want to see the first warning(s):
+```
+$ sed -i '/.*i -= 1;/d' src/main.rs
+$ cargo lrun
+    Finished dev [unoptimized + debuginfo] target(s) in 0.00s
+warning: unused variable: `i`
+ --> src/main.rs:6:9
+  |
+6 |     let mut i: u32 = 0;
+  |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_i`
+  |
+  = note: `#[warn(unused_variables)]` on by default
+
+     Running `target/debug/hello`
+Hello world
+```
+
 ## License
 MIT/Apache-2.0
