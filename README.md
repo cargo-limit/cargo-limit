@@ -13,6 +13,7 @@ Run any of these in your project:
 ```
 cargo lbench [--limit-messages=N]
 cargo lbuild [--limit-messages=N]
+cargo lcheck [--limit-messages=N]
 cargo lclippy [--limit-messages=N]
 cargo lrun [--limit-messages=N]
 cargo ltest [--limit-messages=N]
