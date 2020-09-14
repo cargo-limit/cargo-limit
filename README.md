@@ -3,6 +3,8 @@
 
 Cargo wrapper which limits compiler messages number. Error messages come first.
 
+[Discussion](https://www.reddit.com/r/rust/comments/is9o7x/cargo_with_less_noise/) on reddit.
+
 ## Installation
 ```
 cargo install cargo-limit
