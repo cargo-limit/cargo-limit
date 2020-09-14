@@ -48,7 +48,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         parse_and_process_messages(raw_messages, limit_messages)?;
     }
 
-    io::copy(&mut reader, &mut FlushingWriter::new(std::io::stdout()))?;
+    io::copy(&mut reader, &mut FlushingWriter::new(io::stdout()))?;
 
     if help {
         println!("{}", ADDITIONAL_OPTIONS);
