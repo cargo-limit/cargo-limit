@@ -5,6 +5,7 @@ const LIMIT_MESSAGES: &str = "--limit-messages=";
 pub struct ParsedArgs {
     pub cargo_args: Vec<String>,
     pub limit_messages: usize,
+    pub reverse_messages: bool,
     pub help: bool,
 }
 
@@ -13,6 +14,7 @@ impl ParsedArgs {
         let mut result = Self {
             cargo_args: Vec::new(),
             limit_messages: 1,
+            reverse_messages: false,
             help: false,
         };
         let mut program_args_started = false;
@@ -30,6 +32,8 @@ impl ParsedArgs {
                     .parse()?;
             } else if arg.starts_with(LIMIT_MESSAGES) {
                 result.limit_messages = arg[LIMIT_MESSAGES.len()..].parse()?;
+            } else if arg == "--reverse-messages" {
+                result.reverse_messages = true;
             } else if arg == "--" {
                 program_args_started = true;
                 result.cargo_args.push(arg);
