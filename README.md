@@ -6,19 +6,26 @@ Cargo wrapper which limits compiler messages number. Error messages come first.
 [Discussion](https://www.reddit.com/r/rust/comments/is9o7x/cargo_with_less_noise/) on reddit.
 
 ## Installation
+
+### From crates.io
 ```
 cargo install cargo-limit
+```
+
+### From git
+```
+cargo install --git https://github.com/alopatindev/cargo-limit
 ```
 
 ## Usage
 Run any of these in your project:
 ```
-cargo lbench [--limit-messages=N]
-cargo lbuild [--limit-messages=N]
-cargo lcheck [--limit-messages=N]
-cargo lclippy [--limit-messages=N]
-cargo lrun [--limit-messages=N]
-cargo ltest [--limit-messages=N]
+cargo lbench [--limit-messages=N] [--reverse-messages]
+cargo lbuild [--limit-messages=N] [--reverse-messages]
+cargo lcheck [--limit-messages=N] [--reverse-messages]
+cargo lclippy [--limit-messages=N] [--reverse-messages]
+cargo lrun [--limit-messages=N] [--reverse-messages]
+cargo ltest [--limit-messages=N] [--reverse-messages]
 ```
 
 ## Why?
