@@ -12,3 +12,4 @@ readme = "README.md"
 [dependencies]
 anyhow = "1"
 cargo_metadata = "0.11"
+either = "1"

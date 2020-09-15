@@ -3,6 +3,7 @@ mod parsed_args;
 
 use anyhow::{Context, Result};
 use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
+use either::Either;
 use flushing_writer::FlushingWriter;
 use parsed_args::ParsedArgs;
 use std::{
@@ -18,7 +19,7 @@ const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
-const ADDITIONAL_OPTIONS: &str = "\nADDITIONAL OPTIONS:\n        --limit-messages <NUM>                       Limit number of compiler messages";
+const ADDITIONAL_OPTIONS: &str = "\nADDITIONAL OPTIONS:\n        --limit-messages <NUM>                       Limit number of compiler messages (default is 1, 0 means no limit)";
 
 pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     let ParsedArgs {
@@ -81,12 +82,25 @@ fn parse_and_process_messages(raw_messages: Vec<u8>, limit_messages: usize) -> R
         }
     }
 
-    for message in internal_compiler_errors
-        .into_iter()
-        .chain(errors.into_iter())
-        .chain(non_errors.into_iter())
-        .take(limit_messages)
-    {
+    let has_any_errors = !internal_compiler_errors.is_empty() || !errors.is_empty();
+    let messages = if has_any_errors {
+        Either::Left(
+            internal_compiler_errors
+                .into_iter()
+                .chain(errors.into_iter()),
+        )
+    } else {
+        Either::Right(non_errors.into_iter())
+    };
+
+    let no_limit = limit_messages == 0;
+    let messages = if no_limit {
+        Either::Left(messages)
+    } else {
+        Either::Right(messages.take(limit_messages))
+    };
+
+    for message in messages {
         print!("{}", message);
     }
 
