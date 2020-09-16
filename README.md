@@ -1,7 +1,11 @@
 # cargo-limit
 [![Crates.io](https://img.shields.io/crates/v/cargo-limit.svg)](https://crates.io/crates/cargo-limit)
 
-Cargo wrapper which limits compiler messages number. Error messages come first.
+Cargo wrapper which makes compiler messages more human-readable:
+- number of messages can be limited
+- errors are shown with highest priority
+    - they never appear in the middle of warnings
+- all messages are shown in reversed order by default
 
 [Discussion](https://www.reddit.com/r/rust/comments/is9o7x/cargo_with_less_noise/) on reddit.
 
@@ -20,12 +24,12 @@ cargo install --git https://github.com/alopatindev/cargo-limit
 ## Usage
 Run any of these in your project:
 ```
-cargo lbench [--limit-messages=N] [--reverse-messages]
-cargo lbuild [--limit-messages=N] [--reverse-messages]
-cargo lcheck [--limit-messages=N] [--reverse-messages]
-cargo lclippy [--limit-messages=N] [--reverse-messages]
-cargo lrun [--limit-messages=N] [--reverse-messages]
-cargo ltest [--limit-messages=N] [--reverse-messages]
+cargo lbench [--limit=N] [--asc]
+cargo lbuild [--limit=N] [--asc]
+cargo lcheck [--limit=N] [--asc]
+cargo lclippy [--limit=N] [--asc]
+cargo lrun [--limit=N] [--asc]
+cargo ltest [--limit=N] [--asc]
 ```
 
 ## Why?
@@ -91,7 +95,7 @@ To learn more, run the command again with --verbose.
 
 All we want on this development iteration is to focus on this error:
 ```
-$ cargo lrun
+$ cargo lrun --limit=1
    Compiling hello v0.1.0 (/tmp/hello)
 error: this arithmetic operation will overflow
  --> src/main.rs:7:5
@@ -109,7 +113,7 @@ To learn more, run the command again with --verbose.
 After fixing it we probably want to see the first warning(s):
 ```
 $ sed -i '/.*i -= 1;/d' src/main.rs
-$ cargo lrun
+$ cargo lrun --limit=1
     Finished dev [unoptimized + debuginfo] target(s) in 0.00s
 warning: unused variable: `i`
  --> src/main.rs:6:9

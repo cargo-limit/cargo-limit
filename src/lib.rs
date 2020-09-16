@@ -19,13 +19,13 @@ const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
-const ADDITIONAL_OPTIONS: &str = "\nADDITIONAL OPTIONS:\n        --limit-messages <NUM>                       Limit compiler messages number (default is 1, 0 means no limit)\n        --reverse-messages                           Show compiler messages in reversed order";
+const ADDITIONAL_OPTIONS: &str = "\nADDITIONAL OPTIONS:\n        --limit <NUM>                                Limit compiler messages number (0 means no limit, which is default)\n        --asc                                        Show compiler messages in ascending order";
 
 pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     let ParsedArgs {
         cargo_args,
         limit_messages,
-        reverse_messages,
+        ascending_messages_order,
         help,
     } = ParsedArgs::parse(env::args().skip(2))?;
 
@@ -47,7 +47,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     if !help {
         let raw_messages = read_raw_messages(&mut reader)?;
-        parse_and_process_messages(raw_messages, limit_messages, reverse_messages)?;
+        parse_and_process_messages(raw_messages, limit_messages, ascending_messages_order)?;
     }
 
     io::copy(&mut reader, &mut FlushingWriter::new(io::stdout()))?;
@@ -63,7 +63,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 fn parse_and_process_messages(
     raw_messages: Vec<u8>,
     limit_messages: usize,
-    reverse_messages: bool,
+    ascending_messages_order: bool,
 ) -> Result<()> {
     let mut internal_compiler_errors = Vec::new();
     let mut errors = Vec::new();
@@ -87,16 +87,10 @@ fn parse_and_process_messages(
         }
     }
 
-    let has_any_errors = !internal_compiler_errors.is_empty() || !errors.is_empty();
-    let messages = if has_any_errors {
-        Either::Left(
-            internal_compiler_errors
-                .into_iter()
-                .chain(errors.into_iter()),
-        )
-    } else {
-        Either::Right(non_errors.into_iter())
-    };
+    let messages = internal_compiler_errors
+        .into_iter()
+        .chain(errors.into_iter())
+        .chain(non_errors.into_iter());
 
     let no_limit = limit_messages == 0;
     let messages = if no_limit {
@@ -106,7 +100,7 @@ fn parse_and_process_messages(
     };
 
     let mut messages = messages.collect::<Vec<_>>();
-    if reverse_messages {
+    if !ascending_messages_order {
         messages.reverse();
     }
 
