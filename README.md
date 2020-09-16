@@ -3,9 +3,10 @@
 
 Cargo wrapper which makes compiler messages more human-readable:
 - number of messages can be limited
-- errors are shown with highest priority
+- errors have highest priority
     - they never appear in the middle of warnings
-- all messages are shown in reversed order by default
+- all messages come in reversed order by default
+    - to avoid extra scrolling
 
 [Discussion](https://www.reddit.com/r/rust/comments/is9o7x/cargo_with_less_noise/) on reddit.
 
