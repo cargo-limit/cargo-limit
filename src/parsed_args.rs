@@ -6,6 +6,7 @@ pub struct ParsedArgs {
     pub cargo_args: Vec<String>,
     pub limit_messages: usize,
     pub ascending_messages_order: bool,
+    pub show_warnings_if_errors_exist: bool,
     pub help: bool,
 }
 
@@ -15,6 +16,7 @@ impl ParsedArgs {
             cargo_args: Vec::new(),
             limit_messages: 0,
             ascending_messages_order: false,
+            show_warnings_if_errors_exist: false,
             help: false,
         };
         let mut program_args_started = false;
@@ -34,6 +36,8 @@ impl ParsedArgs {
                 result.limit_messages = arg[LIMIT_MESSAGES.len()..].parse()?;
             } else if arg == "--asc" {
                 result.ascending_messages_order = true;
+            } else if arg == "--always-show-warnings" {
+                result.show_warnings_if_errors_exist = true;
             } else if arg == "--" {
                 program_args_started = true;
                 result.cargo_args.push(arg);

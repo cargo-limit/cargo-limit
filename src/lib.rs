@@ -20,19 +20,14 @@ const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
-const ADDITIONAL_OPTIONS: &str = "\nADDITIONAL OPTIONS:\n        --limit <NUM>                                Limit compiler messages number (0 means no limit, which is default)\n        --asc                                        Show compiler messages in ascending order";
+const ADDITIONAL_OPTIONS: &str = "\nADDITIONAL OPTIONS:\n        --limit <NUM>                                Limit compiler messages number (0 means no limit, which is default)\n        --asc                                        Show compiler messages in ascending order\n        --always-show-warnings                       Show warnings even if errors still exist";
 
 pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
-    let ParsedArgs {
-        cargo_args,
-        limit_messages,
-        ascending_messages_order,
-        help,
-    } = ParsedArgs::parse(env::args().skip(2))?;
+    let parsed_args = ParsedArgs::parse(env::args().skip(2))?;
 
     let cargo_args = iter::once(cargo_command.to_owned())
         .chain(iter::once(MESSAGE_FORMAT.to_owned()))
-        .chain(cargo_args);
+        .chain(parsed_args.cargo_args.clone());
 
     let cargo = env::var(CARGO_ENV_VAR)
         .map(PathBuf::from)
@@ -46,9 +41,11 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     let mut reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
 
+    let help = parsed_args.help;
+
     if !help {
         let raw_messages = read_raw_messages(&mut reader)?;
-        parse_and_process_messages(raw_messages, limit_messages, ascending_messages_order)?;
+        parse_and_process_messages(raw_messages, parsed_args)?;
     }
 
     io::copy(&mut reader, &mut FlushingWriter::new(io::stdout()))?;
@@ -61,11 +58,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     Ok(exit_code)
 }
 
-fn parse_and_process_messages(
-    raw_messages: Vec<u8>,
-    limit_messages: usize,
-    ascending_messages_order: bool,
-) -> Result<()> {
+fn parse_and_process_messages(raw_messages: Vec<u8>, parsed_args: ParsedArgs) -> Result<()> {
     let mut internal_compiler_errors = Vec::new();
     let mut errors = Vec::new();
     let mut non_errors = Vec::new();
@@ -88,12 +81,43 @@ fn parse_and_process_messages(
         }
     }
 
-    let messages = internal_compiler_errors
-        .into_iter()
-        .chain(errors.into_iter())
-        .chain(non_errors.into_iter())
-        .unique();
+    for message in process_messages(internal_compiler_errors, errors, non_errors, parsed_args) {
+        print!("{}", message);
+    }
 
+    Ok(())
+}
+
+fn process_messages(
+    internal_compiler_errors: Vec<String>,
+    errors: Vec<String>,
+    non_errors: Vec<String>,
+    parsed_args: ParsedArgs,
+) -> Vec<String> {
+    let messages = if parsed_args.show_warnings_if_errors_exist {
+        Either::Left(
+            internal_compiler_errors
+                .into_iter()
+                .chain(errors.into_iter())
+                .chain(non_errors.into_iter()),
+        )
+    } else {
+        let has_any_errors = !internal_compiler_errors.is_empty() || !errors.is_empty();
+        let messages = if has_any_errors {
+            Either::Left(
+                internal_compiler_errors
+                    .into_iter()
+                    .chain(errors.into_iter()),
+            )
+        } else {
+            Either::Right(non_errors.into_iter())
+        };
+        Either::Right(messages)
+    };
+
+    let messages = messages.unique();
+
+    let limit_messages = parsed_args.limit_messages;
     let no_limit = limit_messages == 0;
     let messages = if no_limit {
         Either::Left(messages)
@@ -102,15 +126,11 @@ fn parse_and_process_messages(
     };
 
     let mut messages = messages.collect::<Vec<_>>();
-    if !ascending_messages_order {
+    if !parsed_args.ascending_messages_order {
         messages.reverse();
     }
 
-    for message in messages {
-        print!("{}", message);
-    }
-
-    Ok(())
+    messages
 }
 
 fn read_raw_messages<R: io::Read>(reader: &mut BufReader<R>) -> Result<Vec<u8>> {
