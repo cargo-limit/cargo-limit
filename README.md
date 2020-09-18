@@ -5,6 +5,7 @@ Cargo wrapper which makes compiler messages more human-readable:
 - number of messages can be limited
 - errors have highest priority
     - they never appear in the middle of warnings
+    - warnings are skipped by default until errors are fixed
 - all messages come in reversed order by default
     - to avoid extra scrolling
 - [duplicated messages](https://github.com/rust-lang/cargo/issues/3531#issuecomment-272043238) are skipped
