@@ -27,12 +27,12 @@ cargo install --git https://github.com/alopatindev/cargo-limit
 ## Usage
 Run any of these in your project:
 ```
-cargo lbench [--limit=N] [--asc]
-cargo lbuild [--limit=N] [--asc]
-cargo lcheck [--limit=N] [--asc]
-cargo lclippy [--limit=N] [--asc]
-cargo lrun [--limit=N] [--asc]
-cargo ltest [--limit=N] [--asc]
+cargo lbench [--limit=N] [--asc] [--always-show-warnings]
+cargo lbuild [--limit=N] [--asc] [--always-show-warnings]
+cargo lcheck [--limit=N] [--asc] [--always-show-warnings]
+cargo lclippy [--limit=N] [--asc] [--always-show-warnings]
+cargo lrun [--limit=N] [--asc] [--always-show-warnings]
+cargo ltest [--limit=N] [--asc] [--always-show-warnings]
 ```
 
 ## Why?
