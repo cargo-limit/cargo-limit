@@ -72,15 +72,9 @@ fn parse_and_process_messages(raw_messages: Vec<u8>, parsed_args: ParsedArgs) ->
         if let Message::CompilerMessage(compiler_message) = message? {
             if let Some(rendered) = compiler_message.message.rendered {
                 match compiler_message.message.level {
-                    DiagnosticLevel::Ice => {
-                        parsed_messages.internal_compiler_errors.push(rendered);
-                    }
-                    DiagnosticLevel::Error => {
-                        parsed_messages.errors.push(rendered);
-                    }
-                    _ => {
-                        parsed_messages.non_errors.push(rendered);
-                    }
+                    DiagnosticLevel::Ice => parsed_messages.internal_compiler_errors.push(rendered),
+                    DiagnosticLevel::Error => parsed_messages.errors.push(rendered),
+                    _ => parsed_messages.non_errors.push(rendered),
                 }
             }
         }
