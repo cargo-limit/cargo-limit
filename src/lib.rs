@@ -22,6 +22,13 @@ const NO_EXIT_CODE: i32 = 127;
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
 const ADDITIONAL_OPTIONS: &str = "\nADDITIONAL OPTIONS:\n        --limit <NUM>                                Limit compiler messages number (0 means no limit, which is default)\n        --asc                                        Show compiler messages in ascending order\n        --always-show-warnings                       Show warnings even if errors still exist";
 
+#[derive(Default)]
+struct ParsedMessages {
+    internal_compiler_errors: Vec<String>,
+    errors: Vec<String>,
+    non_errors: Vec<String>,
+}
+
 pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     let parsed_args = ParsedArgs::parse(env::args().skip(2))?;
 
@@ -59,58 +66,54 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 }
 
 fn parse_and_process_messages(raw_messages: Vec<u8>, parsed_args: ParsedArgs) -> Result<()> {
-    let mut internal_compiler_errors = Vec::new();
-    let mut errors = Vec::new();
-    let mut non_errors = Vec::new();
+    let mut parsed_messages = ParsedMessages::default();
 
     for message in cargo_metadata::Message::parse_stream(Cursor::new(raw_messages)) {
         if let Message::CompilerMessage(compiler_message) = message? {
             if let Some(rendered) = compiler_message.message.rendered {
                 match compiler_message.message.level {
                     DiagnosticLevel::Ice => {
-                        internal_compiler_errors.push(rendered);
+                        parsed_messages.internal_compiler_errors.push(rendered);
                     }
                     DiagnosticLevel::Error => {
-                        errors.push(rendered);
+                        parsed_messages.errors.push(rendered);
                     }
                     _ => {
-                        non_errors.push(rendered);
+                        parsed_messages.non_errors.push(rendered);
                     }
                 }
             }
         }
     }
 
-    for message in process_messages(internal_compiler_errors, errors, non_errors, parsed_args) {
+    for message in process_messages(parsed_messages, parsed_args) {
         print!("{}", message);
     }
 
     Ok(())
 }
 
-fn process_messages(
-    internal_compiler_errors: Vec<String>,
-    errors: Vec<String>,
-    non_errors: Vec<String>,
-    parsed_args: ParsedArgs,
-) -> Vec<String> {
+fn process_messages(parsed_messages: ParsedMessages, parsed_args: ParsedArgs) -> Vec<String> {
     let messages = if parsed_args.show_warnings_if_errors_exist {
         Either::Left(
-            internal_compiler_errors
+            parsed_messages
+                .internal_compiler_errors
                 .into_iter()
-                .chain(errors.into_iter())
-                .chain(non_errors.into_iter()),
+                .chain(parsed_messages.errors.into_iter())
+                .chain(parsed_messages.non_errors.into_iter()),
         )
     } else {
-        let has_any_errors = !internal_compiler_errors.is_empty() || !errors.is_empty();
+        let has_any_errors = !parsed_messages.internal_compiler_errors.is_empty()
+            || !parsed_messages.errors.is_empty();
         let messages = if has_any_errors {
             Either::Left(
-                internal_compiler_errors
+                parsed_messages
+                    .internal_compiler_errors
                     .into_iter()
-                    .chain(errors.into_iter()),
+                    .chain(parsed_messages.errors.into_iter()),
             )
         } else {
-            Either::Right(non_errors.into_iter())
+            Either::Right(parsed_messages.non_errors.into_iter())
         };
         Either::Right(messages)
     };
