@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
 use either::Either;
 use flushing_writer::FlushingWriter;
+use itertools::Itertools;
 use parsed_args::ParsedArgs;
 use std::{
     env,
@@ -90,7 +91,8 @@ fn parse_and_process_messages(
     let messages = internal_compiler_errors
         .into_iter()
         .chain(errors.into_iter())
-        .chain(non_errors.into_iter());
+        .chain(non_errors.into_iter())
+        .unique();
 
     let no_limit = limit_messages == 0;
     let messages = if no_limit {

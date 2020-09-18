@@ -7,6 +7,7 @@ Cargo wrapper which makes compiler messages more human-readable:
     - they never appear in the middle of warnings
 - all messages come in reversed order by default
     - to avoid extra scrolling
+- [duplicated messages](https://github.com/rust-lang/cargo/issues/3531#issuecomment-272043238) are skipped
 
 [Discussion](https://www.reddit.com/r/rust/comments/is9o7x/cargo_with_less_noise/) on reddit.
 
