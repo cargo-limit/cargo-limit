@@ -97,7 +97,7 @@ To learn more, run the command again with --verbose.
 
 All we want on this development iteration is to focus on this error:
 ```
-$ cargo lrun --limit=1
+$ cargo lrun
    Compiling hello v0.1.0 (/tmp/hello)
 error: this arithmetic operation will overflow
  --> src/main.rs:7:5
