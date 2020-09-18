@@ -1,7 +1,7 @@
 # cargo-limit
 [![Crates.io](https://img.shields.io/crates/v/cargo-limit.svg)](https://crates.io/crates/cargo-limit)
 
-Cargo wrapper which makes compiler messages more human-readable:
+Cargo wrapper which makes compiler messages more human:
 - number of messages can be limited
 - errors have highest priority
     - they never appear in the middle of warnings
