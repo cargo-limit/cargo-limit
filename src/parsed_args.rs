@@ -84,7 +84,9 @@ impl ParsedArgs {
 
         let command_supports_color_arg = cargo_command == "test";
         if command_supports_color_arg && !program_color_is_set {
-            result.add_color_arg("always");
+            if atty::is(atty::Stream::Stdout) {
+                result.add_color_arg("always");
+            }
         }
 
         Ok(result)
