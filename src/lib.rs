@@ -20,7 +20,7 @@ const NO_EXIT_CODE: i32 = 127;
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
 
 #[derive(Default)]
-struct ParsedMessages {
+struct RenderedMessages {
     internal_compiler_errors: Vec<String>,
     errors: Vec<String>,
     non_errors: Vec<String>,
@@ -43,8 +43,8 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     if !parsed_args.help {
         let raw_messages = read_raw_messages(&mut reader)?;
-        let parsed_messages = ParsedMessages::parse(raw_messages)?;
-        for message in process_messages(parsed_messages, parsed_args) {
+        let rendered_messages = RenderedMessages::parse(raw_messages)?;
+        for message in process_messages(rendered_messages, parsed_args) {
             print!("{}", message);
         }
     }
@@ -55,9 +55,9 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     Ok(exit_code)
 }
 
-impl ParsedMessages {
+impl RenderedMessages {
     fn parse(raw_messages: Vec<u8>) -> Result<Self> {
-        let mut result = ParsedMessages::default();
+        let mut result = RenderedMessages::default();
 
         for message in cargo_metadata::Message::parse_stream(Cursor::new(raw_messages)) {
             if let Message::CompilerMessage(compiler_message) = message? {
@@ -76,29 +76,29 @@ impl ParsedMessages {
 }
 
 fn process_messages(
-    parsed_messages: ParsedMessages,
+    rendered_messages: RenderedMessages,
     parsed_args: Options,
 ) -> impl Iterator<Item = String> {
     let messages = if parsed_args.show_warnings_if_errors_exist {
         Either::Left(
-            parsed_messages
+            rendered_messages
                 .internal_compiler_errors
                 .into_iter()
-                .chain(parsed_messages.errors.into_iter())
-                .chain(parsed_messages.non_errors.into_iter()),
+                .chain(rendered_messages.errors.into_iter())
+                .chain(rendered_messages.non_errors.into_iter()),
         )
     } else {
-        let has_any_errors = !parsed_messages.internal_compiler_errors.is_empty()
-            || !parsed_messages.errors.is_empty();
+        let has_any_errors = !rendered_messages.internal_compiler_errors.is_empty()
+            || !rendered_messages.errors.is_empty();
         let messages = if has_any_errors {
             Either::Left(
-                parsed_messages
+                rendered_messages
                     .internal_compiler_errors
                     .into_iter()
-                    .chain(parsed_messages.errors.into_iter()),
+                    .chain(rendered_messages.errors.into_iter()),
             )
         } else {
-            Either::Right(parsed_messages.non_errors.into_iter())
+            Either::Right(rendered_messages.non_errors.into_iter())
         };
         Either::Right(messages)
     };
