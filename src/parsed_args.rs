@@ -55,6 +55,8 @@ impl ParsedArgs {
             } else if arg == PROGRAM_ARGS_DELIMITER {
                 program_args_started = true;
                 break;
+            } else {
+                result.cargo_args.push(arg);
             }
         }
 
