@@ -63,7 +63,7 @@ impl Options {
         let mut program_color_is_set = false;
         if program_args_started {
             result.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
-            while let Some(arg) = passed_args.next() {
+            for arg in passed_args {
                 if arg == COLOR[0..COLOR.len() - 1] || arg.starts_with(COLOR) {
                     program_color_is_set = true;
                 }
@@ -76,10 +76,8 @@ impl Options {
         }
 
         let command_supports_color_arg = cargo_command == "test";
-        if command_supports_color_arg && !program_color_is_set {
-            if terminal_supports_colors {
-                result.add_color_arg("always");
-            }
+        if command_supports_color_arg && !program_color_is_set && terminal_supports_colors {
+            result.add_color_arg("always");
         }
 
         Ok(result)
