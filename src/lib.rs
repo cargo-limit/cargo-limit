@@ -87,7 +87,10 @@ fn parse_and_process_messages(raw_messages: Vec<u8>, parsed_args: ParsedArgs) ->
     Ok(())
 }
 
-fn process_messages(parsed_messages: ParsedMessages, parsed_args: ParsedArgs) -> Vec<String> {
+fn process_messages(
+    parsed_messages: ParsedMessages,
+    parsed_args: ParsedArgs,
+) -> impl Iterator<Item = String> {
     let messages = if parsed_args.show_warnings_if_errors_exist {
         Either::Left(
             parsed_messages
@@ -122,12 +125,12 @@ fn process_messages(parsed_messages: ParsedMessages, parsed_args: ParsedArgs) ->
         Either::Right(messages.take(limit_messages))
     };
 
-    let mut messages = messages.collect::<Vec<_>>();
-    if !parsed_args.ascending_messages_order {
-        messages.reverse();
+    let messages = messages.collect::<Vec<_>>().into_iter();
+    if parsed_args.ascending_messages_order {
+        Either::Left(messages)
+    } else {
+        Either::Right(messages.rev())
     }
-
-    messages
 }
 
 fn read_raw_messages<R: io::Read>(reader: &mut BufReader<R>) -> Result<Vec<u8>> {
