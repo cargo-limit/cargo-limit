@@ -43,7 +43,10 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     if !parsed_args.help {
         let raw_messages = read_raw_messages(&mut reader)?;
-        parse_and_process_messages(raw_messages, parsed_args)?;
+        let parsed_messages = ParsedMessages::parse(raw_messages)?;
+        for message in process_messages(parsed_messages, parsed_args) {
+            print!("{}", message);
+        }
     }
 
     io::copy(&mut reader, &mut FlushingWriter::new(io::stdout()))?;
@@ -52,26 +55,24 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     Ok(exit_code)
 }
 
-fn parse_and_process_messages(raw_messages: Vec<u8>, parsed_args: Options) -> Result<()> {
-    let mut parsed_messages = ParsedMessages::default();
+impl ParsedMessages {
+    fn parse(raw_messages: Vec<u8>) -> Result<Self> {
+        let mut result = ParsedMessages::default();
 
-    for message in cargo_metadata::Message::parse_stream(Cursor::new(raw_messages)) {
-        if let Message::CompilerMessage(compiler_message) = message? {
-            if let Some(rendered) = compiler_message.message.rendered {
-                match compiler_message.message.level {
-                    DiagnosticLevel::Ice => parsed_messages.internal_compiler_errors.push(rendered),
-                    DiagnosticLevel::Error => parsed_messages.errors.push(rendered),
-                    _ => parsed_messages.non_errors.push(rendered),
+        for message in cargo_metadata::Message::parse_stream(Cursor::new(raw_messages)) {
+            if let Message::CompilerMessage(compiler_message) = message? {
+                if let Some(rendered) = compiler_message.message.rendered {
+                    match compiler_message.message.level {
+                        DiagnosticLevel::Ice => result.internal_compiler_errors.push(rendered),
+                        DiagnosticLevel::Error => result.errors.push(rendered),
+                        _ => result.non_errors.push(rendered),
+                    }
                 }
             }
         }
-    }
 
-    for message in process_messages(parsed_messages, parsed_args) {
-        print!("{}", message);
+        Ok(result)
     }
-
-    Ok(())
 }
 
 fn process_messages(
