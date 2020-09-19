@@ -10,12 +10,10 @@ use parsed_args::ParsedArgs;
 use std::{
     env,
     io::{self, BufRead, BufReader, Cursor},
-    iter,
     path::PathBuf,
     process::{Command, Stdio},
 };
 
-const MESSAGE_FORMAT: &str = "--message-format=json-diagnostic-rendered-ansi";
 const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
@@ -30,11 +28,7 @@ struct ParsedMessages {
 }
 
 pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
-    let parsed_args = ParsedArgs::parse(env::args().skip(2))?;
-
-    let cargo_args = iter::once(cargo_command.to_owned())
-        .chain(iter::once(MESSAGE_FORMAT.to_owned()))
-        .chain(parsed_args.cargo_args.clone());
+    let parsed_args = ParsedArgs::parse(env::args().skip(2), cargo_command)?;
 
     let cargo = env::var(CARGO_ENV_VAR)
         .map(PathBuf::from)
@@ -42,7 +36,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         .unwrap_or_else(|| PathBuf::from(CARGO_EXECUTABLE));
 
     let mut command = Command::new(cargo)
-        .args(cargo_args)
+        .args(parsed_args.cargo_args.clone())
         .stdout(Stdio::piped())
         .spawn()?;
 
