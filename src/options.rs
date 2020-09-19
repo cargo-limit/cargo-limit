@@ -1,10 +1,15 @@
-use anyhow::{Context, Error, Result};
+use anyhow::{anyhow, Context, Error, Result};
 use std::{env, str::FromStr};
 
-const COLOR: &str = "--color=";
 const PROGRAM_ARGS_DELIMITER: &str = "--";
 const JSON_MESSAGE_FORMAT: &str = "--message-format=json";
 const JSON_MESSAGE_FORMAT_WITH_COLORS: &str = "--message-format=json-diagnostic-rendered-ansi";
+
+const COLOR: &str = "--color=";
+const COLOR_AUTO: &str = "auto";
+const COLOR_ALWAYS: &str = "always";
+const COLOR_NEVER: &str = "never";
+const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 
 pub struct Options {
     pub cargo_args: Vec<String>,
@@ -25,7 +30,7 @@ impl Options {
             help: false,
         };
         let mut program_args_started = false;
-        let mut color = "auto".to_owned();
+        let mut color = COLOR_AUTO.to_owned();
 
         result.cargo_args.push(cargo_command.to_owned());
 
@@ -51,12 +56,18 @@ impl Options {
 
         let terminal_supports_colors = atty::is(atty::Stream::Stdout);
         result.add_color_arg(&color);
-        let message_format_arg = match color.as_str() {
-            "auto" if terminal_supports_colors => JSON_MESSAGE_FORMAT_WITH_COLORS,
-            "auto" if !terminal_supports_colors => JSON_MESSAGE_FORMAT,
-            "always" => JSON_MESSAGE_FORMAT_WITH_COLORS,
-            "never" => JSON_MESSAGE_FORMAT,
-            _ => unreachable!(),
+        let message_format_arg = if color == COLOR_AUTO {
+            if terminal_supports_colors {
+                JSON_MESSAGE_FORMAT_WITH_COLORS
+            } else {
+                JSON_MESSAGE_FORMAT
+            }
+        } else if color == COLOR_ALWAYS {
+            JSON_MESSAGE_FORMAT_WITH_COLORS
+        } else if color == COLOR_NEVER {
+            JSON_MESSAGE_FORMAT
+        } else {
+            unreachable!()
         };
         result.cargo_args.push(message_format_arg.to_owned());
 
@@ -94,9 +105,11 @@ impl Options {
     }
 
     fn validate_color(color: &str) -> Result<()> {
-        if !["auto", "always", "never"].contains(&color) {
-            return Err(Error::msg(
-                "argument for --color must be auto, always, or never",
+        if !VALID_COLORS.contains(&color) {
+            return Err(anyhow!(
+                "argument for --color must be {} (was {})",
+                VALID_COLORS.join(", "),
+                color,
             ));
         }
         Ok(())
