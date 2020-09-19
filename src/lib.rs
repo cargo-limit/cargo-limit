@@ -41,9 +41,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     let mut reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
 
-    let help = parsed_args.help;
-
-    if !help {
+    if !parsed_args.help {
         let raw_messages = read_raw_messages(&mut reader)?;
         parse_and_process_messages(raw_messages, parsed_args)?;
     }
