@@ -1,12 +1,12 @@
 use anyhow::{Context, Error, Result};
+use std::{env, str::FromStr};
 
 const COLOR: &str = "--color=";
-const LIMIT_MESSAGES: &str = "--limit=";
 const PROGRAM_ARGS_DELIMITER: &str = "--";
 const JSON_MESSAGE_FORMAT: &str = "--message-format=json";
 const JSON_MESSAGE_FORMAT_WITH_COLORS: &str = "--message-format=json-diagnostic-rendered-ansi";
 
-pub struct ParsedArgs {
+pub struct Options {
     pub cargo_args: Vec<String>,
     pub limit_messages: usize,
     pub ascending_messages_order: bool,
@@ -14,16 +14,14 @@ pub struct ParsedArgs {
     pub help: bool,
 }
 
-impl ParsedArgs {
-    pub fn parse(
-        mut passed_args: impl Iterator<Item = String>,
-        cargo_command: &str,
-    ) -> Result<Self> {
+impl Options {
+    pub fn from_args_and_vars(cargo_command: &str) -> Result<Self> {
+        let mut passed_args = env::args().skip(2);
         let mut result = Self {
             cargo_args: Vec::new(),
-            limit_messages: 0,
-            ascending_messages_order: false,
-            show_warnings_if_errors_exist: false,
+            limit_messages: Self::parse_var("CARGO_LIMIT", "0")?,
+            ascending_messages_order: Self::parse_var("CARGO_ASC", "false")?,
+            show_warnings_if_errors_exist: Self::parse_var("CARGO_ALWAYS_SHOW_WARNINGS", "false")?,
             help: false,
         };
         let mut program_args_started = false;
@@ -43,17 +41,6 @@ impl ParsedArgs {
             } else if arg.starts_with(COLOR) {
                 color = arg[COLOR.len()..].to_owned();
                 Self::validate_color(&color)?;
-            } else if arg == LIMIT_MESSAGES[0..LIMIT_MESSAGES.len() - 1] {
-                result.limit_messages = passed_args
-                    .next()
-                    .context("expected number of messages")?
-                    .parse()?;
-            } else if arg.starts_with(LIMIT_MESSAGES) {
-                result.limit_messages = arg[LIMIT_MESSAGES.len()..].parse()?;
-            } else if arg == "--asc" {
-                result.ascending_messages_order = true;
-            } else if arg == "--always-show-warnings" {
-                result.show_warnings_if_errors_exist = true;
             } else if arg == PROGRAM_ARGS_DELIMITER {
                 program_args_started = true;
                 break;
@@ -96,6 +83,16 @@ impl ParsedArgs {
         }
 
         Ok(result)
+    }
+
+    fn parse_var<T: FromStr>(key: &str, default: &str) -> Result<T>
+    where
+        <T as FromStr>::Err: std::error::Error + Sync + Send + 'static,
+    {
+        Ok(env::var(key)
+            .or_else(|_| Ok::<_, Error>(default.to_owned()))?
+            .parse()
+            .context(format!("invalid {} value", key))?)
     }
 
     fn validate_color(color: &str) -> Result<()> {

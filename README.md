@@ -27,13 +27,24 @@ cargo install --git https://github.com/alopatindev/cargo-limit
 ## Usage
 Run any of these in your project:
 ```
-cargo lbench [--limit=N] [--asc] [--always-show-warnings]
-cargo lbuild [--limit=N] [--asc] [--always-show-warnings]
-cargo lcheck [--limit=N] [--asc] [--always-show-warnings]
-cargo lclippy [--limit=N] [--asc] [--always-show-warnings]
-cargo lrun [--limit=N] [--asc] [--always-show-warnings]
-cargo ltest [--limit=N] [--asc] [--always-show-warnings]
+cargo lbench
+cargo lbuild
+cargo lcheck
+cargo lclippy
+cargo lrun
+cargo ltest
 ```
+
+### Environment variables
+- `CARGO_LIMIT`
+    - limit compiler messages number
+    - `0` means no limit, which is default
+- `CARGO_ASC`
+    - show compiler messages in ascending order
+    - `false` is default
+- `CARGO_ALWAYS_SHOW_WARNINGS`
+    - show warnings even if errors still exist
+    - `false` is default
 
 ## Why?
 It's a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189). Consider a program:
@@ -116,7 +127,7 @@ To learn more, run the command again with --verbose.
 After fixing it we probably want to see the first warning(s):
 ```
 $ sed -i '/.*i -= 1;/d' src/main.rs
-$ cargo lrun --limit=1
+$ CARGO_LIMIT=1 cargo lrun
     Finished dev [unoptimized + debuginfo] target(s) in 0.00s
 warning: unused variable: `i`
  --> src/main.rs:6:9

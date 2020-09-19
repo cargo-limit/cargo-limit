@@ -1,12 +1,12 @@
 mod flushing_writer;
-mod parsed_args;
+mod options;
 
 use anyhow::{Context, Result};
 use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
 use either::Either;
 use flushing_writer::FlushingWriter;
 use itertools::Itertools;
-use parsed_args::ParsedArgs;
+use options::Options;
 use std::{
     env,
     io::{self, BufRead, BufReader, Cursor},
@@ -18,7 +18,6 @@ const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
-const ADDITIONAL_OPTIONS: &str = "\nADDITIONAL OPTIONS:\n        --limit <NUM>                                Limit compiler messages number (0 means no limit, which is default)\n        --asc                                        Show compiler messages in ascending order\n        --always-show-warnings                       Show warnings even if errors still exist";
 
 #[derive(Default)]
 struct ParsedMessages {
@@ -28,14 +27,14 @@ struct ParsedMessages {
 }
 
 pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
-    let parsed_args = ParsedArgs::parse(env::args().skip(2), cargo_command)?;
+    let parsed_args = Options::from_args_and_vars(cargo_command)?;
 
-    let cargo = env::var(CARGO_ENV_VAR)
+    let cargo_path = env::var(CARGO_ENV_VAR)
         .map(PathBuf::from)
         .ok()
         .unwrap_or_else(|| PathBuf::from(CARGO_EXECUTABLE));
 
-    let mut command = Command::new(cargo)
+    let mut command = Command::new(cargo_path)
         .args(parsed_args.cargo_args.clone())
         .stdout(Stdio::piped())
         .spawn()?;
@@ -51,15 +50,11 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     io::copy(&mut reader, &mut FlushingWriter::new(io::stdout()))?;
 
-    if help {
-        println!("{}", ADDITIONAL_OPTIONS);
-    }
-
     let exit_code = command.wait()?.code().unwrap_or(NO_EXIT_CODE);
     Ok(exit_code)
 }
 
-fn parse_and_process_messages(raw_messages: Vec<u8>, parsed_args: ParsedArgs) -> Result<()> {
+fn parse_and_process_messages(raw_messages: Vec<u8>, parsed_args: Options) -> Result<()> {
     let mut parsed_messages = ParsedMessages::default();
 
     for message in cargo_metadata::Message::parse_stream(Cursor::new(raw_messages)) {
@@ -83,7 +78,7 @@ fn parse_and_process_messages(raw_messages: Vec<u8>, parsed_args: ParsedArgs) ->
 
 fn process_messages(
     parsed_messages: ParsedMessages,
-    parsed_args: ParsedArgs,
+    parsed_args: Options,
 ) -> impl Iterator<Item = String> {
     let messages = if parsed_args.show_warnings_if_errors_exist {
         Either::Left(
