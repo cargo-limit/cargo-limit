@@ -3,6 +3,8 @@ use anyhow::{Context, Error, Result};
 const COLOR: &str = "--color=";
 const LIMIT_MESSAGES: &str = "--limit=";
 const PROGRAM_ARGS_DELIMITER: &str = "--";
+const JSON_MESSAGE_FORMAT: &str = "--message-format=json";
+const JSON_MESSAGE_FORMAT_WITH_COLORS: &str = "--message-format=json-diagnostic-rendered-ansi";
 
 pub struct ParsedArgs {
     pub cargo_args: Vec<String>,
@@ -60,14 +62,16 @@ impl ParsedArgs {
             }
         }
 
+        let terminal_supports_colors = atty::is(atty::Stream::Stdout);
         result.add_color_arg(&color);
-        if color == "never" {
-            result.cargo_args.push("--message-format=json".to_owned());
-        } else {
-            result
-                .cargo_args
-                .push("--message-format=json-diagnostic-rendered-ansi".to_owned());
-        }
+        let message_format_arg = match color.as_str() {
+            "auto" if terminal_supports_colors => JSON_MESSAGE_FORMAT_WITH_COLORS,
+            "auto" if !terminal_supports_colors => JSON_MESSAGE_FORMAT,
+            "always" => JSON_MESSAGE_FORMAT_WITH_COLORS,
+            "never" => JSON_MESSAGE_FORMAT,
+            _ => unreachable!(),
+        };
+        result.cargo_args.push(message_format_arg.to_owned());
 
         let mut program_color_is_set = false;
         if program_args_started {
@@ -86,7 +90,7 @@ impl ParsedArgs {
 
         let command_supports_color_arg = cargo_command == "test";
         if command_supports_color_arg && !program_color_is_set {
-            if atty::is(atty::Stream::Stdout) {
+            if terminal_supports_colors {
                 result.add_color_arg("always");
             }
         }
