@@ -1,9 +1,26 @@
-use anyhow::{anyhow, Context, Error, Result};
+use anyhow::{format_err, Context, Error, Result};
 use std::{env, str::FromStr};
 
 const PROGRAM_ARGS_DELIMITER: &str = "--";
-const JSON_MESSAGE_FORMAT: &str = "--message-format=json";
-const JSON_MESSAGE_FORMAT_WITH_COLORS: &str = "--message-format=json-diagnostic-rendered-ansi";
+
+const MESSAGE_FORMAT: &str = "--message-format=";
+const MESSAGE_FORMAT_JSON: &str = "--message-format=json";
+const MESSAGE_FORMAT_JSON_WITH_COLORS: &str = "--message-format=json-diagnostic-rendered-ansi";
+const MESSAGE_FORMAT_JSON_SHORT: &str = "--message-format=json-diagnostic-short";
+
+const JSON_FORMAT: &str = "json";
+const JSON_FORMAT_WITH_COLORS: &str = "json-diagnostic-rendered-ansi";
+const JSON_FORMAT_SHORT: &str = "json-diagnostic-short";
+const SHORT_FORMAT: &str = "short";
+const HUMAN_FORMAT: &str = "human";
+const VALID_MESSAGE_FORMATS: &[&str] = &[
+    HUMAN_FORMAT,
+    SHORT_FORMAT,
+    JSON_FORMAT,
+    JSON_FORMAT_SHORT,
+    JSON_FORMAT_WITH_COLORS,
+    JSON_FORMAT_SHORT,
+];
 
 const COLOR: &str = "--color=";
 const COLOR_AUTO: &str = "auto";
@@ -17,6 +34,8 @@ pub struct Options {
     pub ascending_messages_order: bool,
     pub show_warnings_if_errors_exist: bool,
     pub help: bool,
+    pub json_message_format: bool,
+    pub short_message_format: bool,
 }
 
 impl Options {
@@ -28,6 +47,8 @@ impl Options {
             ascending_messages_order: Self::parse_var("CARGO_ASC", "false")?,
             show_warnings_if_errors_exist: Self::parse_var("CARGO_ALWAYS_SHOW_WARNINGS", "false")?,
             help: false,
+            json_message_format: false,
+            short_message_format: false,
         };
         let mut program_args_started = false;
         let mut color = COLOR_AUTO.to_owned();
@@ -46,6 +67,27 @@ impl Options {
             } else if arg.starts_with(COLOR) {
                 color = arg[COLOR.len()..].to_owned();
                 Self::validate_color(&color)?;
+            } else if arg == MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1] {
+                let format = passed_args.next().context(
+                    "the argument '--message-format <FMT>' requires a value but none was supplied",
+                )?;
+                Self::validate_message_format(&format)?;
+                if format.starts_with(JSON_FORMAT) {
+                    result.json_message_format = true;
+                    result.cargo_args.push(arg);
+                    result.cargo_args.push(format);
+                } else if format == SHORT_FORMAT {
+                    result.short_message_format = true;
+                }
+            } else if arg.starts_with(MESSAGE_FORMAT) {
+                let format = &arg[MESSAGE_FORMAT.len()..];
+                Self::validate_message_format(&format)?;
+                if format.starts_with(JSON_FORMAT) {
+                    result.json_message_format = true;
+                    result.cargo_args.push(arg);
+                } else if format == SHORT_FORMAT {
+                    result.short_message_format = true;
+                }
             } else if arg == PROGRAM_ARGS_DELIMITER {
                 program_args_started = true;
                 break;
@@ -56,20 +98,25 @@ impl Options {
 
         let terminal_supports_colors = atty::is(atty::Stream::Stdout);
         result.add_color_arg(&color);
-        let message_format_arg = if color == COLOR_AUTO {
-            if terminal_supports_colors {
-                JSON_MESSAGE_FORMAT_WITH_COLORS
+
+        if result.short_message_format {
+            result.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
+        } else if !result.json_message_format {
+            let message_format_arg = if color == COLOR_AUTO {
+                if terminal_supports_colors {
+                    MESSAGE_FORMAT_JSON_WITH_COLORS
+                } else {
+                    MESSAGE_FORMAT_JSON
+                }
+            } else if color == COLOR_ALWAYS {
+                MESSAGE_FORMAT_JSON_WITH_COLORS
+            } else if color == COLOR_NEVER {
+                MESSAGE_FORMAT_JSON
             } else {
-                JSON_MESSAGE_FORMAT
-            }
-        } else if color == COLOR_ALWAYS {
-            JSON_MESSAGE_FORMAT_WITH_COLORS
-        } else if color == COLOR_NEVER {
-            JSON_MESSAGE_FORMAT
-        } else {
-            unreachable!()
-        };
-        result.cargo_args.push(message_format_arg.to_owned());
+                unreachable!()
+            };
+            result.cargo_args.push(message_format_arg.to_owned());
+        }
 
         let mut program_color_is_set = false;
         if program_args_started {
@@ -106,10 +153,23 @@ impl Options {
 
     fn validate_color(color: &str) -> Result<()> {
         if !VALID_COLORS.contains(&color) {
-            return Err(anyhow!(
-                "argument for --color must be {} (was {})",
+            return Err(format_err!(
+                "argument for {} must be {} (was {})",
+                &COLOR[0..COLOR.len() - 1],
                 VALID_COLORS.join(", "),
                 color,
+            ));
+        }
+        Ok(())
+    }
+
+    fn validate_message_format(format: &str) -> Result<()> {
+        if !VALID_MESSAGE_FORMATS.contains(&format) {
+            return Err(format_err!(
+                "argument for {} must be {} (was {})",
+                &MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1],
+                VALID_MESSAGE_FORMATS.join(", "),
+                format,
             ));
         }
         Ok(())
