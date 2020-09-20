@@ -42,7 +42,7 @@ cargo ltest
 - `CARGO_ASC`
     - show compiler messages in ascending order
     - `false` is default
-- `CARGO_ALWAYS_SHOW_WARNINGS`
+- `CARGO_FORCE_WARN`
     - show warnings even if errors still exist
     - `false` is default
 
