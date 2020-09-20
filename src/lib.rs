@@ -18,6 +18,11 @@ const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
+const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
+    "Additional environment variables:\n    CARGO_LIMIT    Limit compiler messages number (0 \
+     means no limit, which is default)\n    CARGO_ASC      Show compiler messages in ascending \
+     order (false is default)\n    CARGO_ALWAYS_SHOW_WARNINGS    Show warnings even if errors \
+     still exist (false is default)";
 
 #[derive(Default)]
 struct ParsedMessages {
@@ -41,7 +46,9 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     let mut reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
 
-    if !parsed_args.help {
+    let help = parsed_args.help;
+
+    if !help {
         let raw_messages = read_raw_messages(&mut reader)?;
         let parsed_messages = ParsedMessages::parse(raw_messages)?;
         let processed_messages = process_messages(parsed_messages, &parsed_args);
@@ -60,6 +67,10 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     }
 
     io::copy(&mut reader, &mut FlushingWriter::new(io::stdout()))?;
+
+    if help {
+        println!("\n{}", ADDITIONAL_ENVIRONMENT_VARIABLES);
+    }
 
     let exit_code = command.wait()?.code().unwrap_or(NO_EXIT_CODE);
     Ok(exit_code)
