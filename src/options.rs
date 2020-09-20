@@ -45,7 +45,7 @@ impl Options {
             cargo_args: Vec::new(),
             limit_messages: Self::parse_var("CARGO_LIMIT", "0")?,
             ascending_messages_order: Self::parse_var("CARGO_ASC", "false")?,
-            show_warnings_if_errors_exist: Self::parse_var("CARGO_ALWAYS_SHOW_WARNINGS", "false")?,
+            show_warnings_if_errors_exist: Self::parse_var("CARGO_FORCE_WARN", "false")?,
             help: false,
             json_message_format: false,
             short_message_format: false,

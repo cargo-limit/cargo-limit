@@ -19,9 +19,9 @@ const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
-    "Additional environment variables:\n    CARGO_LIMIT    Limit compiler messages number (0 \
-     means no limit, which is default)\n    CARGO_ASC      Show compiler messages in ascending \
-     order (false is default)\n    CARGO_ALWAYS_SHOW_WARNINGS    Show warnings even if errors \
+    "Additional environment variables:\n    CARGO_LIMIT         Limit compiler messages number (0 \
+     means no limit, which is default)\n    CARGO_ASC           Show compiler messages in \
+     ascending order (false is default)\n    CARGO_FORCE_WARN    Show warnings even if errors \
      still exist (false is default)";
 
 #[derive(Default)]
