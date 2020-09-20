@@ -2,7 +2,7 @@ mod flushing_writer;
 mod options;
 
 use anyhow::{Context, Result};
-use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
+use cargo_metadata::{diagnostic::DiagnosticLevel, CompilerMessage, Message};
 use either::Either;
 use flushing_writer::FlushingWriter;
 use itertools::Itertools;
@@ -26,9 +26,9 @@ const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
 
 #[derive(Default)]
 struct ParsedMessages {
-    internal_compiler_errors: Vec<Message>,
-    errors: Vec<Message>,
-    non_errors: Vec<Message>,
+    internal_compiler_errors: Vec<CompilerMessage>,
+    errors: Vec<CompilerMessage>,
+    non_errors: Vec<CompilerMessage>,
 }
 
 pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
@@ -83,18 +83,9 @@ impl ParsedMessages {
         for message in Message::parse_stream(Cursor::new(raw_messages)) {
             if let Message::CompilerMessage(compiler_message) = message? {
                 match compiler_message.message.level {
-                    DiagnosticLevel::Ice => {
-                        let message = Message::CompilerMessage(compiler_message);
-                        result.internal_compiler_errors.push(message)
-                    },
-                    DiagnosticLevel::Error => {
-                        let message = Message::CompilerMessage(compiler_message);
-                        result.errors.push(message)
-                    },
-                    _ => {
-                        let message = Message::CompilerMessage(compiler_message);
-                        result.non_errors.push(message)
-                    },
+                    DiagnosticLevel::Ice => result.internal_compiler_errors.push(compiler_message),
+                    DiagnosticLevel::Error => result.errors.push(compiler_message),
+                    _ => result.non_errors.push(compiler_message),
                 }
             }
         }
@@ -142,11 +133,13 @@ fn process_messages(
     };
 
     let messages = messages.collect::<Vec<_>>().into_iter();
-    if parsed_args.ascending_messages_order {
+    let messages = if parsed_args.ascending_messages_order {
         Either::Left(messages)
     } else {
         Either::Right(messages.rev())
-    }
+    };
+
+    messages.map(Message::CompilerMessage)
 }
 
 fn read_raw_messages<R: io::Read>(reader: &mut BufReader<R>) -> Result<Vec<u8>> {
