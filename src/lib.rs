@@ -5,11 +5,11 @@ mod options;
 use anyhow::{Context, Result};
 use cargo_metadata::Message;
 use flushing_writer::FlushingWriter;
-use messages::{process_messages, read_raw_messages, ParsedMessages};
+use messages::{process_messages, ParsedMessages, RawMessages};
 use options::Options;
 use std::{
     env,
-    io::{self, BufReader},
+    io::{self, BufReader, Write},
     path::PathBuf,
     process::{Command, Stdio},
 };
@@ -26,24 +26,27 @@ const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
 #[doc(hidden)]
 pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     let parsed_args = Options::from_args_and_vars(cargo_command)?;
-
     let cargo_path = env::var(CARGO_ENV_VAR)
         .map(PathBuf::from)
         .ok()
         .unwrap_or_else(|| PathBuf::from(CARGO_EXECUTABLE));
-
     let mut command = Command::new(cargo_path)
         .args(parsed_args.cargo_args.clone())
         .stdout(Stdio::piped())
         .spawn()?;
 
     let mut reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
-
+    let mut stdout = FlushingWriter::new(io::stdout());
     let help = parsed_args.help;
 
     if !help {
-        let raw_messages = read_raw_messages(&mut reader)?;
-        let parsed_messages = ParsedMessages::parse(raw_messages)?;
+        let RawMessages { jsons, others } = RawMessages::read(&mut reader)?;
+
+        for line in others {
+            stdout.write(line.as_bytes())?;
+        }
+
+        let parsed_messages = ParsedMessages::parse(jsons)?;
         let processed_messages = process_messages(parsed_messages, &parsed_args);
         if parsed_args.json_message_format {
             for message in processed_messages {
@@ -59,7 +62,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         }
     }
 
-    io::copy(&mut reader, &mut FlushingWriter::new(io::stdout()))?;
+    io::copy(&mut reader, &mut stdout)?;
 
     if help {
         println!("\n{}", ADDITIONAL_ENVIRONMENT_VARIABLES);

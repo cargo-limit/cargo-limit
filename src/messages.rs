@@ -14,6 +14,11 @@ pub struct ParsedMessages {
     non_errors: Vec<CompilerMessage>,
 }
 
+pub struct RawMessages {
+    pub jsons: Vec<u8>,
+    pub others: Vec<String>,
+}
+
 impl ParsedMessages {
     pub fn parse(raw_messages: Vec<u8>) -> Result<Self> {
         let mut result = ParsedMessages::default();
@@ -80,18 +85,26 @@ pub fn process_messages(
     messages.map(Message::CompilerMessage)
 }
 
-pub fn read_raw_messages<R: io::Read>(reader: &mut BufReader<R>) -> Result<Vec<u8>> {
-    let mut line = String::new();
-    let mut raw_messages = Vec::new();
+impl RawMessages {
+    pub fn read<R: io::Read>(reader: &mut BufReader<R>) -> Result<RawMessages> {
+        let mut line = String::new();
+        let mut jsons = Vec::new();
+        let mut others = Vec::new();
 
-    loop {
-        let len = reader.read_line(&mut line)?;
-        raw_messages.extend(line.as_bytes());
-        if len == 0 || line.contains(BUILD_FINISHED_MESSAGE) {
-            break;
+        loop {
+            let len = reader.read_line(&mut line)?;
+
+            if len == 0 || line.contains(BUILD_FINISHED_MESSAGE) {
+                break;
+            } else if line.starts_with('{') {
+                jsons.extend(line.as_bytes());
+            } else {
+                others.push(line.clone());
+            }
+
+            line.clear();
         }
-        line.clear();
-    }
 
-    Ok(raw_messages)
+        Ok(Self { jsons, others })
+    }
 }
