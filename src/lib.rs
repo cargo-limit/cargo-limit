@@ -43,7 +43,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         let RawMessages { jsons, others } = RawMessages::read(&mut reader)?;
 
         for line in others {
-            stdout.write(line.as_bytes())?;
+            stdout.write_all(line.as_bytes())?;
         }
 
         let parsed_messages = ParsedMessages::parse(jsons)?;
