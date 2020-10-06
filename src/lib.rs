@@ -23,6 +23,7 @@ const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
      ascending order (false is default)\n    CARGO_FORCE_WARN    Show warnings even if errors \
      still exist (false is default)";
 
+#[doc(hidden)]
 pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     let parsed_args = Options::from_args_and_vars(cargo_command)?;
 
