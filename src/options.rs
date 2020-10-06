@@ -1,12 +1,13 @@
 use anyhow::{format_err, Context, Error, Result};
+use const_format::concatcp;
 use std::{env, str::FromStr};
 
 const PROGRAM_ARGS_DELIMITER: &str = "--";
 
 const MESSAGE_FORMAT: &str = "--message-format=";
-const MESSAGE_FORMAT_JSON: &str = "--message-format=json";
-const MESSAGE_FORMAT_JSON_WITH_COLORS: &str = "--message-format=json-diagnostic-rendered-ansi";
-const MESSAGE_FORMAT_JSON_SHORT: &str = "--message-format=json-diagnostic-short";
+const MESSAGE_FORMAT_JSON: &str = concatcp!(MESSAGE_FORMAT, JSON_FORMAT);
+const MESSAGE_FORMAT_JSON_WITH_COLORS: &str = concatcp!(MESSAGE_FORMAT, JSON_FORMAT_WITH_COLORS);
+const MESSAGE_FORMAT_JSON_SHORT: &str = concatcp!(MESSAGE_FORMAT, JSON_FORMAT_SHORT);
 
 const JSON_FORMAT: &str = "json";
 const JSON_FORMAT_WITH_COLORS: &str = "json-diagnostic-rendered-ansi";
