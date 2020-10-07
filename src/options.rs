@@ -5,8 +5,11 @@ use std::{env, str::FromStr};
 const PROGRAM_ARGS_DELIMITER: &str = "--";
 
 const MESSAGE_FORMAT: &str = "--message-format=";
+#[allow(clippy::eval_order_dependence, clippy::transmute_ptr_to_ptr)]
 const MESSAGE_FORMAT_JSON: &str = concatcp!(MESSAGE_FORMAT, JSON_FORMAT);
+#[allow(clippy::eval_order_dependence, clippy::transmute_ptr_to_ptr)]
 const MESSAGE_FORMAT_JSON_WITH_COLORS: &str = concatcp!(MESSAGE_FORMAT, JSON_FORMAT_WITH_COLORS);
+#[allow(clippy::eval_order_dependence, clippy::transmute_ptr_to_ptr)]
 const MESSAGE_FORMAT_JSON_SHORT: &str = concatcp!(MESSAGE_FORMAT, JSON_FORMAT_SHORT);
 
 const JSON_FORMAT: &str = "json";
