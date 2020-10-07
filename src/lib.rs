@@ -47,7 +47,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         }
 
         let parsed_messages = ParsedMessages::parse(jsons)?;
-        let processed_messages = process_messages(parsed_messages, &parsed_args);
+        let processed_messages = process_messages(parsed_messages, &parsed_args)?;
         if parsed_args.json_message_format {
             for message in processed_messages {
                 println!("{}", serde_json::to_string(&message)?);

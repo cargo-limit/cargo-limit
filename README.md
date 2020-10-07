@@ -6,6 +6,7 @@ Cargo with less noise:
 - errors have highest priority
     - they never appear in the middle of warnings
     - warnings are skipped by default until errors are fixed
+    - all dependencies' warnings are skipped by default
 - all messages come in reversed order by default
     - to avoid extra scrolling
 - [duplicated messages](https://github.com/rust-lang/cargo/issues/3531#issuecomment-272043238) are skipped
@@ -46,6 +47,9 @@ For IntelliJ IDEA you might need to specify `--color=always`.
     - `false` is default
 - `CARGO_FORCE_WARN`
     - show warnings even if errors still exist
+    - `false` is default
+- `CARGO_DEPS_WARN`
+    - show dependencies' warnings
     - `false` is default
 
 ## Why?

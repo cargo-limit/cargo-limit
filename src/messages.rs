@@ -1,6 +1,6 @@
 use crate::options::Options;
 use anyhow::Result;
-use cargo_metadata::{diagnostic::DiagnosticLevel, CompilerMessage, Message};
+use cargo_metadata::{diagnostic::DiagnosticLevel, CompilerMessage, Message, MetadataCommand};
 use either::Either;
 use itertools::Itertools;
 use std::io::{self, BufRead, BufReader, Cursor};
@@ -40,14 +40,25 @@ impl ParsedMessages {
 pub fn process_messages(
     parsed_messages: ParsedMessages,
     parsed_args: &Options,
-) -> impl Iterator<Item = Message> {
+) -> Result<impl Iterator<Item = Message>> {
+    let non_errors = if parsed_args.show_dependencies_warnings {
+        Either::Left(parsed_messages.non_errors.into_iter())
+    } else {
+        let workspace_root = MetadataCommand::new().exec()?.workspace_root;
+        let non_errors = parsed_messages
+            .non_errors
+            .into_iter()
+            .filter(|i| i.target.src_path.starts_with(&workspace_root));
+        Either::Right(non_errors.collect::<Vec<_>>().into_iter())
+    };
+
     let messages = if parsed_args.show_warnings_if_errors_exist {
         Either::Left(
             parsed_messages
                 .internal_compiler_errors
                 .into_iter()
                 .chain(parsed_messages.errors.into_iter())
-                .chain(parsed_messages.non_errors.into_iter()),
+                .chain(non_errors),
         )
     } else {
         let has_any_errors = !parsed_messages.internal_compiler_errors.is_empty()
@@ -60,7 +71,7 @@ pub fn process_messages(
                     .chain(parsed_messages.errors.into_iter()),
             )
         } else {
-            Either::Right(parsed_messages.non_errors.into_iter())
+            Either::Right(non_errors)
         };
         Either::Right(messages)
     };
@@ -82,7 +93,8 @@ pub fn process_messages(
         Either::Right(messages.rev())
     };
 
-    messages.map(Message::CompilerMessage)
+    let messages = messages.map(Message::CompilerMessage);
+    Ok(messages)
 }
 
 impl RawMessages {
