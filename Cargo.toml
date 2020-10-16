@@ -12,7 +12,7 @@ readme = "README.md"
 [dependencies]
 anyhow = "1"
 atty = "0.2"
-cargo_metadata = { git = "https://github.com/alopatindev/cargo_metadata", branch = "fix-recursion-limit-error" }
+cargo_metadata = "0.12"
 const_format = "^0.2.8"
 either = "1"
 itertools = "0.9"
