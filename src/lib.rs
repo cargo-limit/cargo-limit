@@ -35,6 +35,21 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         .stdout(Stdio::piped())
         .spawn()?;
 
+    let pid = command.id();
+    ctrlc::set_handler(move || {
+        #[cfg(unix)]
+        unsafe {
+            libc::kill(pid as libc::pid_t, libc::SIGINT);
+        }
+
+        #[cfg(windows)]
+        {
+            let _ = Command::new("taskkill")
+                .args(&["/PID", pid.to_string().as_str(), "/t"])
+                .output();
+        }
+    })?;
+
     let mut reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
     let mut stdout = FlushingWriter::new(io::stdout());
     let help = parsed_args.help;
