@@ -44,7 +44,7 @@ For IntelliJ IDEA you might need to specify `--color=always`.
     - `0` means no limit, which is default
 - `CARGO_TIME_LIMIT`
     - `cargo` execution time limit in seconds after encountering first compiling error
-    - `2` is default
+    - `1` is default
     - `0` means no limit
 - `CARGO_ASC`
     - show compiler messages in ascending order

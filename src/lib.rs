@@ -22,7 +22,7 @@ const NO_EXIT_CODE: i32 = 127;
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     "Additional environment variables:\n    CARGO_LIMIT         Limit compiler messages number (0 \
      means no limit, which is default)\n    CARGO_TIME_LIMIT    Execution time limit in seconds \
-     after encountering first compiling error (0 means no limit, 2 is default)\n    \
+     after encountering first compiling error (0 means no limit, 1 is default)\n    \
      CARGO_ASC           Show compiler messages in \
      ascending order (false is default)\n    CARGO_FORCE_WARN    Show warnings even if errors \
      still exist (false is default)";
