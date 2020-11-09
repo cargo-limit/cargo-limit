@@ -111,7 +111,7 @@ impl RawMessages {
         let mut line = String::new();
         let mut jsons = Vec::new();
         let mut others = Vec::new();
-        let mut kill_timer_started = false;
+        let mut kill_timer_handler = None;
 
         loop {
             let len = reader.read_line(&mut line)?;
@@ -121,12 +121,11 @@ impl RawMessages {
             } else if line.starts_with('{') {
                 if line.contains(ERROR_MESSAGE) {
                     let time_limit = parsed_args.time_limit_after_error;
-                    if time_limit > Duration::from_secs(0) && !kill_timer_started {
-                        kill_timer_started = true;
-                        thread::spawn(move || {
+                    if time_limit > Duration::from_secs(0) && kill_timer_handler.is_none() {
+                        kill_timer_handler = Some(thread::spawn(move || {
                             thread::sleep(time_limit);
                             process::kill(cargo_pid)
-                        });
+                        }));
                     }
                 }
                 jsons.extend(line.as_bytes());
@@ -135,6 +134,12 @@ impl RawMessages {
             }
 
             line.clear();
+        }
+
+        if let Some(kill_timer_handler) = kill_timer_handler {
+            kill_timer_handler
+                .join()
+                .expect("kill timer thread panicked");
         }
 
         Ok(Self { jsons, others })
