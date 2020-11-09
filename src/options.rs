@@ -1,6 +1,6 @@
 use anyhow::{format_err, Context, Error, Result};
 use const_format::concatcp;
-use std::{env, str::FromStr};
+use std::{env, str::FromStr, time::Duration};
 
 const PROGRAM_ARGS_DELIMITER: &str = "--";
 
@@ -32,6 +32,7 @@ const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 pub struct Options {
     pub cargo_args: Vec<String>,
     pub limit_messages: usize,
+    pub time_limit_after_error: Duration,
     pub ascending_messages_order: bool,
     pub show_warnings_if_errors_exist: bool,
     pub show_dependencies_warnings: bool,
@@ -46,6 +47,7 @@ impl Options {
         let mut result = Self {
             cargo_args: Vec::new(),
             limit_messages: Self::parse_var("CARGO_LIMIT", "0")?,
+            time_limit_after_error: Duration::from_secs(Self::parse_var("CARGO_TIME_LIMIT", "2")?),
             ascending_messages_order: Self::parse_var("CARGO_ASC", "false")?,
             show_warnings_if_errors_exist: Self::parse_var("CARGO_FORCE_WARN", "false")?,
             show_dependencies_warnings: Self::parse_var("CARGO_DEPS_WARN", "false")?,

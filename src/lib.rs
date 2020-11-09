@@ -1,6 +1,7 @@
 mod flushing_writer;
 mod messages;
 mod options;
+mod process;
 
 use anyhow::{Context, Result};
 use cargo_metadata::Message;
@@ -17,9 +18,12 @@ use std::{
 const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
+
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     "Additional environment variables:\n    CARGO_LIMIT         Limit compiler messages number (0 \
-     means no limit, which is default)\n    CARGO_ASC           Show compiler messages in \
+     means no limit, which is default)\n    CARGO_TIME_LIMIT    Execution time limit in seconds \
+     after encountering first compiling error (0 means no limit, 2 is default)\n    \
+     CARGO_ASC           Show compiler messages in \
      ascending order (false is default)\n    CARGO_FORCE_WARN    Show warnings even if errors \
      still exist (false is default)";
 
@@ -35,30 +39,22 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         .stdout(Stdio::piped())
         .spawn()?;
 
-    let pid = command.id();
+    let cargo_pid = command.id();
     ctrlc::set_handler(move || {
-        #[cfg(unix)]
-        unsafe {
-            libc::kill(pid as libc::pid_t, libc::SIGINT);
-        }
-
-        #[cfg(windows)]
-        {
-            let _ = Command::new("taskkill")
-                .args(&["/PID", pid.to_string().as_str(), "/t"])
-                .output();
-        }
+        process::kill(cargo_pid);
     })?;
 
-    let mut reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
-    let mut stdout = FlushingWriter::new(io::stdout());
+    let mut stdout_reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
+    let mut stdout_writer = FlushingWriter::new(io::stdout());
+
     let help = parsed_args.help;
 
     if !help {
-        let RawMessages { jsons, others } = RawMessages::read(&mut reader)?;
+        let RawMessages { jsons, others } =
+            RawMessages::read(&mut stdout_reader, cargo_pid, &parsed_args)?;
 
         for line in others {
-            stdout.write_all(line.as_bytes())?;
+            stdout_writer.write_all(line.as_bytes())?;
         }
 
         let parsed_messages = ParsedMessages::parse(jsons)?;
@@ -77,7 +73,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         }
     }
 
-    io::copy(&mut reader, &mut stdout)?;
+    io::copy(&mut stdout_reader, &mut stdout_writer)?;
 
     if help {
         println!("\n{}", ADDITIONAL_ENVIRONMENT_VARIABLES);

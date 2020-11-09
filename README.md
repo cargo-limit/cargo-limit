@@ -39,9 +39,13 @@ cargo ltest
 For IntelliJ IDEA you might need to specify `--color=always`.
 
 ### Environment variables
-- `CARGO_LIMIT`
+- `CARGO_LIMIT_MESSAGES`
     - limit compiler messages number
     - `0` means no limit, which is default
+- `CARGO_TIME_LIMIT`
+    - `cargo` execution time limit in seconds after encountering first compiling error
+    - `2` is default
+    - `0` means no limit
 - `CARGO_ASC`
     - show compiler messages in ascending order
     - `false` is default

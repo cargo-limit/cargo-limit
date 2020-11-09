@@ -1,11 +1,16 @@
-use crate::options::Options;
+use crate::{options::Options, process};
 use anyhow::Result;
 use cargo_metadata::{diagnostic::DiagnosticLevel, CompilerMessage, Message, MetadataCommand};
 use either::Either;
 use itertools::Itertools;
-use std::io::{self, BufRead, BufReader, Cursor};
+use std::{
+    io::{self, Cursor},
+    thread,
+    time::Duration,
+};
 
 const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
+const ERROR_MESSAGE: &str = r#""level":"error""#;
 
 #[derive(Default)]
 pub struct ParsedMessages {
@@ -98,10 +103,15 @@ pub fn process_messages(
 }
 
 impl RawMessages {
-    pub fn read<R: io::Read>(reader: &mut BufReader<R>) -> Result<RawMessages> {
+    pub fn read<R: io::BufRead>(
+        reader: &mut R,
+        cargo_pid: u32,
+        parsed_args: &Options,
+    ) -> Result<RawMessages> {
         let mut line = String::new();
         let mut jsons = Vec::new();
         let mut others = Vec::new();
+        let mut kill_timer_started = false;
 
         loop {
             let len = reader.read_line(&mut line)?;
@@ -109,6 +119,16 @@ impl RawMessages {
             if len == 0 || line.contains(BUILD_FINISHED_MESSAGE) {
                 break;
             } else if line.starts_with('{') {
+                if line.contains(ERROR_MESSAGE) {
+                    let time_limit = parsed_args.time_limit_after_error;
+                    if time_limit > Duration::from_secs(0) && !kill_timer_started {
+                        kill_timer_started = true;
+                        thread::spawn(move || {
+                            thread::sleep(time_limit);
+                            process::kill(cargo_pid)
+                        });
+                    }
+                }
                 jsons.extend(line.as_bytes());
             } else {
                 others.push(line.clone());
