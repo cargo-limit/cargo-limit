@@ -42,7 +42,7 @@ cargo ltest
 For IntelliJ IDEA you might need to specify `--color=always`.
 
 ### Environment variables
-- `CARGO_LIMIT_MESSAGES`
+- `CARGO_MSG_LIMIT`
     - limit compiler messages number
     - `0` means no limit, which is default
 - `CARGO_TIME_LIMIT`
@@ -140,7 +140,7 @@ To learn more, run the command again with --verbose.
 After fixing it we probably want to see the first warning(s):
 ```
 $ sed -i '/.*i -= 1;/d' src/main.rs
-$ CARGO_LIMIT=1 cargo lrun
+$ CARGO_MSG_LIMIT=1 cargo lrun
     Finished dev [unoptimized + debuginfo] target(s) in 0.00s
 warning: unused variable: `i`
  --> src/main.rs:6:9

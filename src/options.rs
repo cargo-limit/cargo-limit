@@ -46,7 +46,7 @@ impl Options {
         let mut passed_args = env::args().skip(2);
         let mut result = Self {
             cargo_args: Vec::new(),
-            limit_messages: Self::parse_var("CARGO_LIMIT", "0")?,
+            limit_messages: Self::parse_var("CARGO_MSG_LIMIT", "0")?,
             time_limit_after_error: Duration::from_secs(Self::parse_var("CARGO_TIME_LIMIT", "1")?),
             ascending_messages_order: Self::parse_var("CARGO_ASC", "false")?,
             show_warnings_if_errors_exist: Self::parse_var("CARGO_FORCE_WARN", "false")?,
