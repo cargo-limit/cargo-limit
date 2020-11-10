@@ -101,12 +101,29 @@ impl Options {
             }
         }
 
-        let terminal_supports_colors = atty::is(atty::Stream::Stdout);
-        result.add_color_arg(&color);
+        result.process_color_arguments(
+            &mut color,
+            &mut passed_args,
+            cargo_command,
+            program_args_started,
+        );
 
-        if result.short_message_format {
-            result.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
-        } else if !result.json_message_format {
+        Ok(result)
+    }
+
+    fn process_color_arguments(
+        &mut self,
+        color: &mut String,
+        passed_args: &mut impl Iterator<Item = String>,
+        cargo_command: &str,
+        program_args_started: bool,
+    ) {
+        let terminal_supports_colors = atty::is(atty::Stream::Stdout);
+        self.add_color_arg(&color);
+
+        if self.short_message_format {
+            self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
+        } else if !self.json_message_format {
             let message_format_arg = if color == COLOR_AUTO {
                 if terminal_supports_colors {
                     MESSAGE_FORMAT_JSON_WITH_COLORS
@@ -120,30 +137,28 @@ impl Options {
             } else {
                 unreachable!()
             };
-            result.cargo_args.push(message_format_arg.to_owned());
+            self.cargo_args.push(message_format_arg.to_owned());
         }
 
         let mut program_color_is_set = false;
         if program_args_started {
-            result.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
+            self.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
             for arg in passed_args {
                 if arg == COLOR[0..COLOR.len() - 1] || arg.starts_with(COLOR) {
                     program_color_is_set = true;
                 }
-                result.cargo_args.push(arg);
+                self.cargo_args.push(arg);
             }
         }
 
         if !program_args_started {
-            result.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
+            self.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
         }
 
         let command_supports_color_arg = cargo_command == "test";
         if command_supports_color_arg && !program_color_is_set && terminal_supports_colors {
-            result.add_color_arg("always");
+            self.add_color_arg("always");
         }
-
-        Ok(result)
     }
 
     fn parse_var<T: FromStr>(key: &str, default: &str) -> Result<T>
