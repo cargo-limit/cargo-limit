@@ -59,18 +59,29 @@ impl Options {
         let mut color = COLOR_AUTO.to_owned();
 
         result.cargo_args.push(cargo_command.to_owned());
+        result.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
+        result.process_color_args(color, passed_args, cargo_command, program_args_started);
 
+        Ok(result)
+    }
+
+    fn process_main_args(
+        &mut self,
+        color: &mut String,
+        passed_args: &mut impl Iterator<Item = String>,
+        program_args_started: &mut bool,
+    ) -> Result<()> {
         while let Some(arg) = passed_args.next() {
             if arg == "-h" || arg == "--help" {
-                result.help = true;
-                result.cargo_args.push(arg);
+                self.help = true;
+                self.cargo_args.push(arg);
             } else if arg == COLOR[0..COLOR.len() - 1] {
-                color = passed_args.next().context(
+                *color = passed_args.next().context(
                     "the argument '--color <WHEN>' requires a value but none was supplied",
                 )?;
                 Self::validate_color(&color)?;
             } else if arg.starts_with(COLOR) {
-                color = arg[COLOR.len()..].to_owned();
+                *color = arg[COLOR.len()..].to_owned();
                 Self::validate_color(&color)?;
             } else if arg == MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1] {
                 let format = passed_args.next().context(
@@ -78,43 +89,36 @@ impl Options {
                 )?;
                 Self::validate_message_format(&format)?;
                 if format.starts_with(JSON_FORMAT) {
-                    result.json_message_format = true;
-                    result.cargo_args.push(arg);
-                    result.cargo_args.push(format);
+                    self.json_message_format = true;
+                    self.cargo_args.push(arg);
+                    self.cargo_args.push(format);
                 } else if format == SHORT_FORMAT {
-                    result.short_message_format = true;
+                    self.short_message_format = true;
                 }
             } else if arg.starts_with(MESSAGE_FORMAT) {
                 let format = &arg[MESSAGE_FORMAT.len()..];
                 Self::validate_message_format(&format)?;
                 if format.starts_with(JSON_FORMAT) {
-                    result.json_message_format = true;
-                    result.cargo_args.push(arg);
+                    self.json_message_format = true;
+                    self.cargo_args.push(arg);
                 } else if format == SHORT_FORMAT {
-                    result.short_message_format = true;
+                    self.short_message_format = true;
                 }
             } else if arg == PROGRAM_ARGS_DELIMITER {
-                program_args_started = true;
+                *program_args_started = true;
                 break;
             } else {
-                result.cargo_args.push(arg);
+                self.cargo_args.push(arg);
             }
         }
 
-        result.process_color_arguments(
-            &mut color,
-            &mut passed_args,
-            cargo_command,
-            program_args_started,
-        );
-
-        Ok(result)
+        Ok(())
     }
 
-    fn process_color_arguments(
+    fn process_color_args(
         &mut self,
-        color: &mut String,
-        passed_args: &mut impl Iterator<Item = String>,
+        color: String,
+        passed_args: impl Iterator<Item = String>,
         cargo_command: &str,
         program_args_started: bool,
     ) {
