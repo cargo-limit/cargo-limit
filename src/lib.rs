@@ -82,3 +82,13 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     let exit_code = command.wait()?.code().unwrap_or(NO_EXIT_CODE);
     Ok(exit_code)
 }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! run_command {
+    ($command:expr) => {
+        fn main() -> anyhow::Result<()> {
+            std::process::exit(cargo_limit::run_cargo_filtered($command)?);
+        }
+    };
+}
