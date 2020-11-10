@@ -10,6 +10,9 @@ Cargo with less noise:
 - all messages come in reversed order by default
     - to avoid extra scrolling
 - [duplicated messages](https://github.com/rust-lang/cargo/issues/3531#issuecomment-272043238) are skipped
+- after encoutering first error the rest of build time is limited by default
+
+This tool is especially useful for large projects in combination with [`cargo-watch`](https://crates.io/crates/cargo-watch).
 
 [Discussion](https://www.reddit.com/r/rust/comments/is9o7x/cargo_with_less_noise/) on reddit.
 
