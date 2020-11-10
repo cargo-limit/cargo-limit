@@ -5,7 +5,6 @@ use either::Either;
 use itertools::Itertools;
 use std::{
     io::{self, Cursor},
-    thread,
     time::Duration,
 };
 
@@ -122,10 +121,8 @@ impl RawMessages {
                 if line.contains(ERROR_MESSAGE) {
                     let time_limit = parsed_args.time_limit_after_error;
                     if time_limit > Duration::from_secs(0) && kill_timer_handler.is_none() {
-                        kill_timer_handler = Some(thread::spawn(move || {
-                            thread::sleep(time_limit);
-                            process::kill(cargo_pid)
-                        }));
+                        kill_timer_handler =
+                            Some(process::kill_after_timeout(cargo_pid, time_limit));
                     }
                 }
                 jsons.extend(line.as_bytes());
