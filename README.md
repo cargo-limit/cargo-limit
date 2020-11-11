@@ -2,7 +2,6 @@
 [![Crates.io](https://img.shields.io/crates/v/cargo-limit.svg)](https://crates.io/crates/cargo-limit)
 
 Cargo with less noise:
-- number of messages can be limited
 - errors have highest priority
     - they never appear in the middle of warnings
     - warnings are skipped by default until errors are fixed
@@ -10,6 +9,7 @@ Cargo with less noise:
 - all messages come in reversed order by default
     - to avoid extra scrolling
 - [duplicated messages](https://github.com/rust-lang/cargo/issues/3531#issuecomment-272043238) are skipped
+- number of messages can be limited
 - after encoutering first error the rest of build time is limited by default
 
 This tool is especially useful for large projects in combination with [`cargo-watch`](https://crates.io/crates/cargo-watch).
