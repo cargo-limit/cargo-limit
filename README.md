@@ -12,9 +12,9 @@ Cargo with less noise:
 - number of messages can be limited
 - after encoutering first error the rest of build time is limited by default
 
-This tool is especially useful for large projects in combination with [`cargo-watch`](https://crates.io/crates/cargo-watch).
+This tool is especially useful in combination with [cargo-watch](https://crates.io/crates/cargo-watch).
 
-[Discussion](https://www.reddit.com/r/rust/comments/is9o7x/cargo_with_less_noise/) on reddit.
+[![asciicast](https://asciinema.org/a/372235.svg)](https://asciinema.org/a/372235)
 
 ## Installation
 
