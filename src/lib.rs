@@ -6,11 +6,11 @@ mod process;
 use anyhow::{Context, Result};
 use cargo_metadata::Message;
 use flushing_writer::FlushingWriter;
-use messages::{process_messages, ParsedMessages, RawMessages};
+use messages::{process_messages, ParsedMessages};
 use options::Options;
 use std::{
     env,
-    io::{self, BufReader, Write},
+    io::{self, BufReader},
     path::PathBuf,
     process::{Command, Stdio},
 };
@@ -50,14 +50,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     let help = parsed_args.help;
 
     if !help {
-        let RawMessages { jsons, others } =
-            RawMessages::read(&mut stdout_reader, cargo_pid, &parsed_args)?;
-
-        for line in others {
-            stdout_writer.write_all(line.as_bytes())?;
-        }
-
-        let parsed_messages = ParsedMessages::parse(jsons)?;
+        let parsed_messages = ParsedMessages::parse(&mut stdout_reader, cargo_pid, &parsed_args)?;
         let processed_messages = process_messages(parsed_messages, &parsed_args)?;
         if parsed_args.json_message_format {
             for message in processed_messages {

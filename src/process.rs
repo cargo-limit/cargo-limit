@@ -13,12 +13,16 @@ pub fn kill(pid: u32) {
             .args(&["/PID", pid.to_string().as_str(), "/t"])
             .output();
     }
+
+    #[cfg(not(any(unix, windows)))]
+    compile_error!("this platform is unsupported");
 }
 
 #[doc(hidden)]
-pub fn kill_after_timeout(pid: u32, time_limit: Duration) -> thread::JoinHandle<()> {
+pub fn wait_in_background_and_kill_and_print(pid: u32, time_limit: Duration) {
     thread::spawn(move || {
         thread::sleep(time_limit);
-        kill(pid)
-    })
+        kill(pid);
+        println!();
+    });
 }

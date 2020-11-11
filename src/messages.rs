@@ -3,13 +3,7 @@ use anyhow::Result;
 use cargo_metadata::{diagnostic::DiagnosticLevel, CompilerMessage, Message, MetadataCommand};
 use either::Either;
 use itertools::Itertools;
-use std::{
-    io::{self, Cursor},
-    time::Duration,
-};
-
-const BUILD_FINISHED_MESSAGE: &str = r#""build-finished""#;
-const ERROR_MESSAGE: &str = r#""level":"error""#;
+use std::{io, time::Duration};
 
 #[derive(Default)]
 pub struct ParsedMessages {
@@ -18,21 +12,37 @@ pub struct ParsedMessages {
     non_errors: Vec<CompilerMessage>,
 }
 
-pub struct RawMessages {
-    pub jsons: Vec<u8>,
-    pub others: Vec<String>,
-}
-
 impl ParsedMessages {
-    pub fn parse(raw_messages: Vec<u8>) -> Result<Self> {
+    pub fn parse<R: io::BufRead>(
+        reader: &mut R,
+        cargo_pid: u32,
+        parsed_args: &Options,
+    ) -> Result<Self> {
         let mut result = ParsedMessages::default();
+        let mut kill_timer_started = false;
 
-        for message in Message::parse_stream(Cursor::new(raw_messages)) {
-            if let Message::CompilerMessage(compiler_message) = message? {
-                match compiler_message.message.level {
-                    DiagnosticLevel::Ice => result.internal_compiler_errors.push(compiler_message),
-                    DiagnosticLevel::Error => result.errors.push(compiler_message),
-                    _ => result.non_errors.push(compiler_message),
+        for message in Message::parse_stream(reader) {
+            match message? {
+                Message::CompilerMessage(compiler_message) => {
+                    match compiler_message.message.level {
+                        DiagnosticLevel::Ice => {
+                            result.internal_compiler_errors.push(compiler_message)
+                        },
+                        DiagnosticLevel::Error => result.errors.push(compiler_message),
+                        _ => result.non_errors.push(compiler_message),
+                    }
+                },
+                Message::BuildFinished(_) => {
+                    break;
+                },
+                _ => (),
+            }
+
+            if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
+                let time_limit = parsed_args.time_limit_after_error;
+                if time_limit > Duration::from_secs(0) && !kill_timer_started {
+                    kill_timer_started = true;
+                    process::wait_in_background_and_kill_and_print(cargo_pid, time_limit);
                 }
             }
         }
@@ -99,40 +109,4 @@ pub fn process_messages(
 
     let messages = messages.map(Message::CompilerMessage);
     Ok(messages)
-}
-
-impl RawMessages {
-    pub fn read<R: io::BufRead>(
-        reader: &mut R,
-        cargo_pid: u32,
-        parsed_args: &Options,
-    ) -> Result<RawMessages> {
-        let mut line = String::new();
-        let mut jsons = Vec::new();
-        let mut others = Vec::new();
-        let mut kill_timer_started = false;
-
-        loop {
-            let len = reader.read_line(&mut line)?;
-
-            if len == 0 || line.contains(BUILD_FINISHED_MESSAGE) {
-                break;
-            } else if line.starts_with('{') {
-                if line.contains(ERROR_MESSAGE) {
-                    let time_limit = parsed_args.time_limit_after_error;
-                    if time_limit > Duration::from_secs(0) && !kill_timer_started {
-                        kill_timer_started = true;
-                        process::kill_after_timeout(cargo_pid, time_limit);
-                    }
-                }
-                jsons.extend(line.as_bytes());
-            } else {
-                others.push(line.clone());
-            }
-
-            line.clear();
-        }
-
-        Ok(Self { jsons, others })
-    }
 }
