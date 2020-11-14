@@ -25,7 +25,7 @@ cargo install cargo-limit
 
 ### From git
 ```
-cargo install --git https://github.com/alopatindev/cargo-limit
+cargo install --force --git https://github.com/alopatindev/cargo-limit
 ```
 
 ## Usage
