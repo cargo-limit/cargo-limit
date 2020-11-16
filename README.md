@@ -10,7 +10,7 @@ Cargo with less noise:
     - to avoid extra scrolling
 - [duplicated messages](https://github.com/rust-lang/cargo/issues/3531#issuecomment-272043238) are skipped
 - number of messages can be limited
-- after encoutering first error the rest of build time is limited by default
+- after encountering first error the rest of build time is limited by default
 
 This tool is especially useful in combination with [cargo-watch](https://crates.io/crates/cargo-watch).
 
