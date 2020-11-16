@@ -25,7 +25,7 @@ const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
      after encountering first compiling error (0 means no limit, 1 is default)\n    \
      CARGO_ASC           Show compiler messages in \
      ascending order (false is default)\n    CARGO_FORCE_WARN    Show warnings even if errors \
-     still exist (false is default)";
+     still exist (false is default)\n    CARGO_DEPS_WARN     Show dependencies' warnings (false is default)";
 
 #[doc(hidden)]
 pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
