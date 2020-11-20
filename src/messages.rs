@@ -1,8 +1,7 @@
 use crate::{options::Options, process};
 use anyhow::Result;
 use cargo_metadata::{diagnostic::DiagnosticLevel, CompilerMessage, Message, MetadataCommand};
-use either::Either;
-use itertools::Itertools;
+use itertools::{Either, Itertools};
 use std::{io, time::Duration};
 
 #[derive(Default)]
