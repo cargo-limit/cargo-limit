@@ -95,8 +95,7 @@ impl Options {
                 } else if format == SHORT_FORMAT {
                     self.short_message_format = true;
                 }
-            } else if arg.starts_with(MESSAGE_FORMAT) {
-                let format = &arg[MESSAGE_FORMAT.len()..];
+            } else if let Some(format) = arg.strip_prefix(MESSAGE_FORMAT) {
                 Self::validate_message_format(&format)?;
                 if format.starts_with(JSON_FORMAT) {
                     self.json_message_format = true;
