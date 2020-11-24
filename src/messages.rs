@@ -91,6 +91,7 @@ pub fn process_messages(
 
     let messages = messages
         .unique()
+        .filter(|i| !i.message.spans.is_empty())
         .ordered_group_by(|i| {
             i.message
                 .spans
