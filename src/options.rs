@@ -80,8 +80,8 @@ impl Options {
                     "the argument '--color <WHEN>' requires a value but none was supplied",
                 )?;
                 Self::validate_color(&color)?;
-            } else if arg.starts_with(COLOR) {
-                *color = arg[COLOR.len()..].to_owned();
+            } else if let Some(color_value) = arg.strip_prefix(COLOR) {
+                *color = color_value.to_owned();
                 Self::validate_color(&color)?;
             } else if arg == MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1] {
                 let format = passed_args.next().context(
