@@ -9,6 +9,7 @@ Cargo with less noise:
 - all messages come in reversed order by default
     - to avoid extra scrolling
 - [duplicated messages](https://github.com/rust-lang/cargo/issues/3531#issuecomment-272043238) are skipped
+- messages are grouped by filenames
 - number of messages can be limited
 - after encountering first error the rest of build time is limited by default
 

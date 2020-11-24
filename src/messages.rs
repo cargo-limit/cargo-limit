@@ -1,6 +1,7 @@
 use crate::{options::Options, process};
 use anyhow::Result;
 use cargo_metadata::{diagnostic::DiagnosticLevel, CompilerMessage, Message, MetadataCommand};
+use indexmap::IndexMap;
 use itertools::{Either, Itertools};
 use std::{io, time::Duration};
 
@@ -90,6 +91,25 @@ pub fn process_messages(
     };
 
     let messages = messages.unique();
+
+    let messages = {
+        let mut paths_to_messages = IndexMap::new();
+        for i in messages.into_iter() {
+            let paths = i
+                .message
+                .spans
+                .iter()
+                .map(|span| span.file_name.clone())
+                .collect::<Vec<_>>();
+            paths_to_messages
+                .entry(paths)
+                .or_insert_with(Vec::new)
+                .push(i);
+        }
+        paths_to_messages
+            .into_iter()
+            .flat_map(|(_paths, messages)| messages.into_iter())
+    };
 
     let limit_messages = parsed_args.limit_messages;
     let no_limit = limit_messages == 0;
