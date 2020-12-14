@@ -36,6 +36,7 @@ cargo lbench
 cargo lbuild
 cargo lcheck
 cargo lclippy
+cargo lfix
 cargo lrun
 cargo ltest
 ```
