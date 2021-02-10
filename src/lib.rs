@@ -1,5 +1,4 @@
 mod flushing_writer;
-mod iterator_ext;
 mod messages;
 mod options;
 mod process;

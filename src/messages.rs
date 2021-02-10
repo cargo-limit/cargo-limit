@@ -1,4 +1,4 @@
-use crate::{iterator_ext::IteratorExt, options::Options, process};
+use crate::{options::Options, process};
 use anyhow::Result;
 use cargo_metadata::{diagnostic::DiagnosticLevel, CompilerMessage, Message, MetadataCommand};
 use itertools::{Either, Itertools};
@@ -92,14 +92,18 @@ pub fn process_messages(
     let messages = messages
         .unique()
         .filter(|i| !i.message.spans.is_empty())
-        .ordered_group_by(|i| {
-            i.message
+        .map(|i| {
+            let key = i
+                .message
                 .spans
                 .iter()
-                .map(|span| span.file_name.clone())
-                .collect::<Vec<_>>()
+                .map(|span| (span.file_name.clone(), span.line_start))
+                .collect::<Vec<_>>();
+            (key, i)
         })
+        .into_group_map()
         .into_iter()
+        .sorted_by_key(|(paths, _messages)| paths.clone())
         .flat_map(|(_paths, messages)| messages.into_iter());
 
     let limit_messages = parsed_args.limit_messages;
