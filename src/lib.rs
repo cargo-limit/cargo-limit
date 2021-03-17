@@ -61,7 +61,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
                 Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
                 _ => None,
             }) {
-                print!("{}", message);
+                eprint!("{}", message);
             }
         }
     }
