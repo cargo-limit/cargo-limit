@@ -41,8 +41,6 @@ cargo lrun
 cargo ltest
 ```
 
-For IntelliJ IDEA you might need to specify `--color=always`.
-
 ### Environment variables
 - `CARGO_MSG_LIMIT`
     - limit compiler messages number
