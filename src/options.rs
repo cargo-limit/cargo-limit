@@ -156,7 +156,7 @@ impl Options {
             self.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
         }
 
-        let command_supports_color_arg = cargo_command == "test";
+        let command_supports_color_arg = cargo_command == "test" || cargo_command == "bench";
         if command_supports_color_arg && !program_color_is_set && terminal_supports_colors {
             self.add_color_arg(COLOR_ALWAYS);
         }
