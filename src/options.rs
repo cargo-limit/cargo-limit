@@ -122,8 +122,6 @@ impl Options {
         program_args_started: bool,
     ) {
         let terminal_supports_colors = atty::is(atty::Stream::Stderr);
-        self.add_color_arg(&color);
-
         if self.short_message_format {
             self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
         } else if !self.json_message_format {
@@ -158,7 +156,7 @@ impl Options {
             self.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
         }
 
-        let command_supports_color_arg = cargo_command != "clippy";
+        let command_supports_color_arg = cargo_command == "test";
         if command_supports_color_arg && !program_color_is_set && terminal_supports_colors {
             self.add_color_arg(COLOR_ALWAYS);
         }
