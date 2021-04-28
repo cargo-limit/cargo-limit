@@ -1,14 +1,22 @@
 use crate::{options::Options, process};
 use anyhow::Result;
-use cargo_metadata::{diagnostic::DiagnosticLevel, CompilerMessage, Message, MetadataCommand};
+use cargo_metadata::{
+    diagnostic::{DiagnosticLevel, DiagnosticSpan},
+    CompilerMessage, Message, MetadataCommand,
+};
 use itertools::{Either, Itertools};
-use std::{io, time::Duration};
+use std::{collections::HashSet, io, time::Duration};
 
 #[derive(Default)]
 pub struct ParsedMessages {
     internal_compiler_errors: Vec<CompilerMessage>,
     errors: Vec<CompilerMessage>,
     non_errors: Vec<CompilerMessage>,
+}
+
+pub struct ProcessedMessages {
+    pub messages: Vec<Message>,
+    pub spans_in_consistent_order: Vec<DiagnosticSpan>,
 }
 
 impl ParsedMessages {
@@ -53,7 +61,7 @@ impl ParsedMessages {
 pub fn process_messages(
     parsed_messages: ParsedMessages,
     parsed_args: &Options,
-) -> Result<impl Iterator<Item = Message>> {
+) -> Result<ProcessedMessages> {
     let non_errors = if parsed_args.show_dependencies_warnings {
         Either::Left(parsed_messages.non_errors.into_iter())
     } else {
@@ -114,13 +122,34 @@ pub fn process_messages(
         Either::Right(messages.take(limit_messages))
     };
 
-    let messages = messages.collect::<Vec<_>>().into_iter();
+    let messages = messages.collect::<Vec<_>>();
+
+    let mut used_file_names = HashSet::new();
+    let mut spans_in_consistent_order = Vec::new();
+    for span in messages.iter().flat_map(|message| {
+        message
+            .message
+            .spans
+            .iter()
+            .filter(|span| span.is_primary)
+            .cloned()
+    }) {
+        if !used_file_names.contains(&span.file_name) {
+            used_file_names.insert(span.file_name.clone());
+            spans_in_consistent_order.push(span);
+        }
+    }
+
+    let messages = messages.into_iter();
     let messages = if parsed_args.ascending_messages_order {
         Either::Left(messages)
     } else {
         Either::Right(messages.rev())
     };
 
-    let messages = messages.map(Message::CompilerMessage);
-    Ok(messages)
+    let messages = messages.map(Message::CompilerMessage).collect();
+    Ok(ProcessedMessages {
+        messages,
+        spans_in_consistent_order,
+    })
 }

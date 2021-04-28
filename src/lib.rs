@@ -6,11 +6,11 @@ mod process;
 use anyhow::{Context, Result};
 use cargo_metadata::Message;
 use flushing_writer::FlushingWriter;
-use messages::{process_messages, ParsedMessages};
+use messages::{process_messages, ParsedMessages, ProcessedMessages};
 use options::Options;
 use std::{
     env,
-    io::{self, BufReader},
+    io::{self, BufReader, Write},
     path::PathBuf,
     process::{Command, Stdio},
 };
@@ -46,7 +46,28 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     if !help {
         let parsed_messages = ParsedMessages::parse(&mut stdout_reader, cargo_pid, &parsed_args)?;
-        let processed_messages = process_messages(parsed_messages, &parsed_args)?;
+        let ProcessedMessages {
+            messages,
+            spans_in_consistent_order,
+        } = process_messages(parsed_messages, &parsed_args)?;
+        let processed_messages = messages.into_iter();
+
+        let open_in_external_application = parsed_args.open_in_external_application;
+        if !open_in_external_application.is_empty() {
+            let mut args = Vec::new();
+            for span in spans_in_consistent_order.into_iter() {
+                args.push(format!(
+                    "{}:{}:{}",
+                    span.file_name, span.line_start, span.column_start
+                ));
+            }
+            let output = Command::new(open_in_external_application)
+                .args(args)
+                .output()?;
+            io::stderr().write_all(&output.stdout)?;
+            io::stderr().write_all(&output.stderr)?;
+        }
+
         if parsed_args.json_message_format {
             for message in processed_messages {
                 println!("{}", serde_json::to_string(&message)?);

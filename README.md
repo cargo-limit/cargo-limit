@@ -12,6 +12,7 @@ Cargo with less noise:
 - messages are grouped by filenames
 - number of messages can be limited
 - after encountering first error the rest of build time is limited by default
+- files can be [automatically opened](NEOVIM-INTEGRATION.md) with your text editor
 
 This tool is especially useful in combination with [cargo-watch](https://crates.io/crates/cargo-watch).
 
@@ -58,6 +59,11 @@ cargo ltest
 - `CARGO_DEPS_WARN`
     - show dependencies' warnings
     - `false` is default
+- `CARGO_OPEN`
+    - opens affected files in external application
+        - see [neovim integration](NEOVIM-INTEGRATION.md) as example
+    - empty means don't run external application
+    - empty by default
 
 ## Why?
 It's a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189). Consider a program:
