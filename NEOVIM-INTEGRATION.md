@@ -10,7 +10,7 @@ Theoretically this can be used for any text editor or IDE which supports client/
 ## Installation
 1. Run `pip3 install --user neovim-remote` and check that `nvr --version` runs without errors
 
-2. Put a file called `open-in-nvim-all` somewhere in your `$PATH`:
+2. Put a file called `open-in-nvim` somewhere in your `$PATH`:
 ```bash
 #!/bin/sh
 
@@ -30,18 +30,6 @@ done
 NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}" nvr -s --nostart --remote-send "${cmd}"
 ```
 
-If you prefer to open the first file only then add a file called `open-in-nvim-first`:
-```bash
-#!/bin/sh
-
-pwd_escaped=$(pwd | sed 's!/!%!g')
-item="${1}"
-filename=$(echo "${item}" | cut -d':' -f1)
-line=$(echo "${item}" | cut -d':' -f2)
-column=$(echo "${item}" | cut -d':' -f3)
-NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}" nvr -s --nostart --remote-send "<esc>:tab drop ${filename}<cr>${line}G${column}|"
-```
-
 3. Add a file called `vi` to your `$PATH`:
 ```bash
 #!/bin/sh
@@ -50,13 +38,14 @@ pwd_escaped=$(pwd | sed 's!/!%!g')
 NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}" /usr/bin/nvim -p "$@"
 ```
 
-4. `chmod +x open-in-nvim* vi`
+4. `chmod +x open-in-nvim vi`
 
-5. Set `CARGO_OPEN=open-in-nvim-all` environment variable
+5. Set `CARGO_OPEN=open-in-nvim` environment variable
 
 6. Open two terminals
 - run `cd to/your/project ; vi` in one of them
 - run `cd to/your/project ; cargo lcheck` in the other
+    - optionally set `CARGO_MSG_LIMIT=1` if you want to open at most 1 file automatically
 
 For each file affected by error or warning Neovim will
 - open it in new or existing tab
