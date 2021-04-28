@@ -20,12 +20,7 @@ const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
-    "Additional environment variables:\n    CARGO_MSG_LIMIT     Limit compiler messages number (0 \
-     means no limit, which is default)\n    CARGO_TIME_LIMIT    Execution time limit in seconds \
-     after encountering first compiling error (0 means no limit, 1 is default)\n    \
-     CARGO_ASC           Show compiler messages in \
-     ascending order (false is default)\n    CARGO_FORCE_WARN    Show warnings even if errors \
-     still exist (false is default)\n    CARGO_DEPS_WARN     Show dependencies' warnings (false is default)";
+    include_str!("../additional_environment_variables.txt");
 
 #[doc(hidden)]
 pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
@@ -69,7 +64,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     io::copy(&mut stdout_reader, &mut stdout_writer)?;
 
     if help {
-        println!("\n{}", ADDITIONAL_ENVIRONMENT_VARIABLES);
+        print!("{}", ADDITIONAL_ENVIRONMENT_VARIABLES);
     }
 
     let exit_code = command.wait()?.code().unwrap_or(NO_EXIT_CODE);
