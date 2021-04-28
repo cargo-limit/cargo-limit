@@ -168,10 +168,10 @@ impl Options {
     where
         <T as FromStr>::Err: std::error::Error + Sync + Send + 'static,
     {
-        Ok(env::var(key)
+        env::var(key)
             .or_else(|_| Ok::<_, Error>(default.to_owned()))?
             .parse()
-            .context(format!("invalid {} value", key))?)
+            .context(format!("invalid {} value", key))
     }
 
     fn validate_color(color: &str) -> Result<()> {
