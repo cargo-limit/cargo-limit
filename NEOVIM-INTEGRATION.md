@@ -5,7 +5,7 @@
 path/to/file1.rs:10:5 path/to/file2.rs:4:1
 ```
 
-Theoretically this can be used for any text editor or IDE which supports remote control. In order to do that you need a wrapper script which parses the list and gives it to the text editor or IDE.
+Theoretically this can be used for any text editor or IDE which supports client/server communication. In order to do that you need a wrapper script which parses the list and gives it to the text editor or IDE client.
 
 ## Installation
 1. Run `pip3 install --user neovim-remote` and check that `nvr --version` runs without errors
@@ -58,4 +58,6 @@ NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}" /usr/bin/nvim -p "$@"
 - run `cd to/your/project ; vi` in one of them
 - run `cd to/your/project ; cargo lcheck` in the other
 
-On any error or warning Neovim will open corresponding files in new or existing tabs and will set the cursor in each of them.
+For each file affected by error or warning Neovim will
+- open it in new or existing tab
+- jump to the corresponding line and column

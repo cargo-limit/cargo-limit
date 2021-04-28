@@ -66,7 +66,7 @@ cargo ltest
     - empty is default
 
 ## Why?
-It's a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189). Consider a program:
+Initially it was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189). Consider a program:
 ```rust
 fn f() -> Result<(), ()> {
     Ok(())
