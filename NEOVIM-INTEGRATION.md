@@ -10,7 +10,7 @@ Theoretically this can be used for any text editor or IDE which supports remote 
 ## Installation
 1. Run `pip3 install --user neovim-remote` and check that `nvr --version` runs without errors
 
-2. Put somewhere in your `$PATH` a file called `open-in-nvim-all`:
+2. Put a file called `open-in-nvim-all` somewhere in your `$PATH`:
 ```bash
 #!/bin/sh
 
@@ -42,7 +42,7 @@ column=$(echo "${item}" | cut -d':' -f3)
 NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}" nvr -s --nostart --remote-send "<esc>:tab drop ${filename}<cr>${line}G${column}|"
 ```
 
-3. Add a file called `vi` to your `$PATH`
+3. Add a file called `vi` to your `$PATH`:
 ```bash
 #!/bin/sh
 
@@ -55,9 +55,7 @@ NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}" /usr/bin/nvim -p "$@"
 5. Set `CARGO_OPEN=open-in-nvim-all` environment variable
 
 6. Open two terminals
-
-7. Run `cd to/your/project ; vi` in one of them
-
-8. Run `cd to/your/project ; cargo lcheck` in the other
+- run `cd to/your/project ; vi` in one of them
+- run `cd to/your/project ; cargo lcheck` in the other
 
 On any error or warning Neovim will open corresponding files in new or existing tabs and will set the cursor in each of them.
