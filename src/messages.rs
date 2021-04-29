@@ -126,14 +126,27 @@ pub fn process_messages(
 
     let mut used_file_names = HashSet::new();
     let mut spans_in_consistent_order = Vec::new();
-    for span in messages.iter().flat_map(|message| {
-        message
-            .message
-            .spans
-            .iter()
-            .filter(|span| span.is_primary)
-            .cloned()
-    }) {
+    let messages_for_external_application = messages
+        .iter()
+        .filter(|message| {
+            if parsed_args.open_in_external_application_on_warnings {
+                true
+            } else {
+                match message.message.level {
+                    DiagnosticLevel::Error | DiagnosticLevel::Ice => true,
+                    _ => false,
+                }
+            }
+        })
+        .flat_map(|message| {
+            message
+                .message
+                .spans
+                .iter()
+                .filter(|span| span.is_primary)
+                .cloned()
+        });
+    for span in messages_for_external_application {
         if !used_file_names.contains(&span.file_name) {
             used_file_names.insert(span.file_name.clone());
             spans_in_consistent_order.push(span);

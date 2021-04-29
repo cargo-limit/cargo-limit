@@ -46,6 +46,7 @@ NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}" /usr/bin/nvim -p "$@"
 - run `cd to/your/project ; vi` in one of them
 - run `cd to/your/project ; cargo lcheck` in the other
     - optionally set `CARGO_MSG_LIMIT=1` if you want to open at most 1 file automatically
+    - set `CARGO_OPEN_WARN=true` if you want to open files not just on errors but on warnings as well
 
 For each file affected by error or warning Neovim will
 - open it in new or existing tab
