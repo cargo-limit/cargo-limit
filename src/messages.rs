@@ -124,9 +124,27 @@ pub fn process_messages(
 
     let messages = messages.collect::<Vec<_>>();
 
-    let mut used_file_names = HashSet::new();
-    let mut spans_in_consistent_order = Vec::new();
-    let messages_for_external_application = messages
+    let spans_in_consistent_order = extract_spans_for_external_application(&messages, parsed_args);
+
+    let messages = messages.into_iter();
+    let messages = if parsed_args.ascending_messages_order {
+        Either::Left(messages)
+    } else {
+        Either::Right(messages.rev())
+    };
+
+    let messages = messages.map(Message::CompilerMessage).collect();
+    Ok(ProcessedMessages {
+        messages,
+        spans_in_consistent_order,
+    })
+}
+
+fn extract_spans_for_external_application(
+    messages: &[CompilerMessage],
+    parsed_args: &Options,
+) -> Vec<DiagnosticSpan> {
+    let spans_for_external_application = messages
         .iter()
         .filter(|message| {
             if parsed_args.open_in_external_application_on_warnings {
@@ -146,23 +164,15 @@ pub fn process_messages(
                 .filter(|span| span.is_primary)
                 .cloned()
         });
-    for span in messages_for_external_application {
+
+    let mut spans_in_consistent_order = Vec::new();
+    let mut used_file_names = HashSet::new();
+    for span in spans_for_external_application {
         if !used_file_names.contains(&span.file_name) {
             used_file_names.insert(span.file_name.clone());
             spans_in_consistent_order.push(span);
         }
     }
 
-    let messages = messages.into_iter();
-    let messages = if parsed_args.ascending_messages_order {
-        Either::Left(messages)
-    } else {
-        Either::Right(messages.rev())
-    };
-
-    let messages = messages.map(Message::CompilerMessage).collect();
-    Ok(ProcessedMessages {
-        messages,
-        spans_in_consistent_order,
-    })
+    spans_in_consistent_order
 }
