@@ -62,6 +62,43 @@ pub fn process_messages(
     parsed_messages: ParsedMessages,
     parsed_args: &Options,
 ) -> Result<ProcessedMessages> {
+    let messages =
+        filter_and_order_messages(process_warnings_and_errors(parsed_messages, parsed_args)?);
+
+    let limit_messages = parsed_args.limit_messages;
+    let no_limit = limit_messages == 0;
+    let messages = {
+        if no_limit {
+            Either::Left(messages)
+        } else {
+            Either::Right(messages.take(limit_messages))
+        }
+    }
+    .collect::<Vec<_>>();
+
+    let spans_in_consistent_order = extract_spans_for_external_application(&messages, parsed_args);
+
+    let messages = messages.into_iter();
+    let messages = {
+        if parsed_args.ascending_messages_order {
+            Either::Left(messages)
+        } else {
+            Either::Right(messages.rev())
+        }
+    }
+    .map(Message::CompilerMessage)
+    .collect();
+
+    Ok(ProcessedMessages {
+        messages,
+        spans_in_consistent_order,
+    })
+}
+
+fn process_warnings_and_errors(
+    parsed_messages: ParsedMessages,
+    parsed_args: &Options,
+) -> Result<impl Iterator<Item = CompilerMessage>> {
     let non_errors = if parsed_args.show_dependencies_warnings {
         Either::Left(parsed_messages.non_errors.into_iter())
     } else {
@@ -97,7 +134,13 @@ pub fn process_messages(
         Either::Right(messages)
     };
 
-    let messages = messages
+    Ok(messages)
+}
+
+fn filter_and_order_messages(
+    messages: impl Iterator<Item = CompilerMessage>,
+) -> impl Iterator<Item = CompilerMessage> {
+    messages
         .unique()
         .filter(|i| !i.message.spans.is_empty())
         .map(|i| {
@@ -112,32 +155,7 @@ pub fn process_messages(
         .into_group_map()
         .into_iter()
         .sorted_by_key(|(paths, _messages)| paths.clone())
-        .flat_map(|(_paths, messages)| messages.into_iter());
-
-    let limit_messages = parsed_args.limit_messages;
-    let no_limit = limit_messages == 0;
-    let messages = if no_limit {
-        Either::Left(messages)
-    } else {
-        Either::Right(messages.take(limit_messages))
-    };
-
-    let messages = messages.collect::<Vec<_>>();
-
-    let spans_in_consistent_order = extract_spans_for_external_application(&messages, parsed_args);
-
-    let messages = messages.into_iter();
-    let messages = if parsed_args.ascending_messages_order {
-        Either::Left(messages)
-    } else {
-        Either::Right(messages.rev())
-    };
-
-    let messages = messages.map(Message::CompilerMessage).collect();
-    Ok(ProcessedMessages {
-        messages,
-        spans_in_consistent_order,
-    })
+        .flat_map(|(_paths, messages)| messages.into_iter())
 }
 
 fn extract_spans_for_external_application(
