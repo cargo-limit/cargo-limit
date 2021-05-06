@@ -40,6 +40,7 @@ pub struct Options {
     pub open_in_external_application: String,
     pub open_in_external_application_on_warnings: bool,
     pub help: bool,
+    pub version: bool,
     pub json_message_format: bool,
     pub short_message_format: bool,
 }
@@ -57,6 +58,7 @@ impl Options {
             open_in_external_application: Self::parse_var("CARGO_OPEN", "")?,
             open_in_external_application_on_warnings: Self::parse_var("CARGO_OPEN_WARN", "false")?,
             help: false,
+            version: false,
             json_message_format: false,
             short_message_format: false,
         };
@@ -85,6 +87,9 @@ impl Options {
         while let Some(arg) = passed_args.next() {
             if arg == "-h" || arg == "--help" {
                 self.help = true;
+                self.cargo_args.push(arg);
+            } else if arg == "-v" || arg == "--version" {
+                self.version = true;
                 self.cargo_args.push(arg);
             } else if arg == COLOR[0..COLOR.len() - 1] {
                 *color = passed_args.next().context(

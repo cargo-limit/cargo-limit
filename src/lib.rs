@@ -45,8 +45,9 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     let mut stdout_writer = FlushingWriter::new(io::stdout());
 
     let help = parsed_args.help;
+    let version = parsed_args.version;
 
-    if !help {
+    if !help && !version {
         let parsed_messages = ParsedMessages::parse(&mut stdout_reader, cargo_pid, &parsed_args)?;
         let ProcessedMessages {
             messages,
