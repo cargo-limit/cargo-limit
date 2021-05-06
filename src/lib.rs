@@ -43,6 +43,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     let mut stdout_reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
     let mut stdout_writer = FlushingWriter::new(io::stdout());
+    let mut stderr_writer = FlushingWriter::new(io::stderr());
 
     let help = parsed_args.help;
     let version = parsed_args.version;
@@ -75,14 +76,14 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
         if parsed_args.json_message_format {
             for message in processed_messages {
-                println!("{}", serde_json::to_string(&message)?);
+                std::writeln!(&mut stdout_writer, "{}", serde_json::to_string(&message)?)?;
             }
         } else {
             for message in processed_messages.filter_map(|message| match message {
                 Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
                 _ => None,
             }) {
-                eprint!("{}", message);
+                std::write!(&mut stderr_writer, "{}", message)?;
             }
         }
     }
@@ -90,7 +91,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     io::copy(&mut stdout_reader, &mut stdout_writer)?;
 
     if help {
-        print!("{}", ADDITIONAL_ENVIRONMENT_VARIABLES);
+        std::write!(&mut stdout_writer, "{}", ADDITIONAL_ENVIRONMENT_VARIABLES)?;
     }
 
     let exit_code = command.wait()?.code().unwrap_or(NO_EXIT_CODE);

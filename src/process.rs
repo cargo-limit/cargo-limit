@@ -19,7 +19,7 @@ pub fn kill(pid: u32) {
 }
 
 #[doc(hidden)]
-pub fn wait_in_background_and_kill_and_print(pid: u32, time_limit: Duration) {
+pub fn wait_in_background_and_kill_and_print_empty_line(pid: u32, time_limit: Duration) {
     thread::spawn(move || {
         thread::sleep(time_limit);
         kill(pid);
