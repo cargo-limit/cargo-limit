@@ -12,7 +12,7 @@ Cargo with less noise:
 - messages are grouped by filenames
 - number of messages can be limited
 - after encountering first error the rest of build time is limited by default
-- files can be [automatically opened](NEOVIM-INTEGRATION.md) in your text editor
+- files can be [automatically opened](NEOVIM-INTEGRATION.md) in your text editor on affected lines
 
 This tool is especially useful in combination with [cargo-watch](https://crates.io/crates/cargo-watch).
 
