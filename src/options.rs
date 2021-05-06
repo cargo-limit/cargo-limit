@@ -1,7 +1,7 @@
 use crate::cargo_toml::CargoToml;
 use anyhow::{format_err, Context, Error, Result};
 use const_format::concatcp;
-use std::{env, path::PathBuf, str::FromStr, time::Duration};
+use std::{env, path::Path, str::FromStr, time::Duration};
 
 const PROGRAM_ARGS_DELIMITER: &str = "--";
 
@@ -46,7 +46,7 @@ pub struct Options {
 }
 
 impl Options {
-    pub fn from_args_and_vars(cargo_command: &str, workspace_root: &PathBuf) -> Result<Self> {
+    pub fn from_args_and_vars(cargo_command: &str, workspace_root: &Path) -> Result<Self> {
         let mut passed_args = env::args().skip(2);
         let mut result = Self {
             cargo_args: Vec::new(),
@@ -136,7 +136,7 @@ impl Options {
         passed_args: impl Iterator<Item = String>,
         cargo_command: &str,
         program_args_started: bool,
-        workspace_root: &PathBuf,
+        workspace_root: &Path,
     ) -> Result<()> {
         let terminal_supports_colors = atty::is(atty::Stream::Stderr);
         if self.short_message_format {

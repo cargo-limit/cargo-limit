@@ -1,5 +1,6 @@
 use std::io::{self, Write};
 
+#[derive(Clone)]
 pub struct FlushingWriter<W> {
     writer: W,
 }

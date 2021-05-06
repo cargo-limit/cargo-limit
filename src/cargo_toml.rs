@@ -1,6 +1,6 @@
 use anyhow::Result;
 use serde::Deserialize;
-use std::{convert::identity, fs, path::PathBuf};
+use std::{convert::identity, fs, path::Path};
 
 #[derive(Deserialize)]
 pub struct CargoToml {
@@ -17,8 +17,8 @@ struct Item {
 }
 
 impl CargoToml {
-    pub fn parse(workspace_root: &PathBuf) -> Result<Self> {
-        let mut cargo_toml_path = workspace_root.clone();
+    pub fn parse(workspace_root: &Path) -> Result<Self> {
+        let mut cargo_toml_path = workspace_root.to_path_buf();
         cargo_toml_path.push("Cargo.toml");
         Ok(toml::from_str(&String::from_utf8(fs::read(
             cargo_toml_path,

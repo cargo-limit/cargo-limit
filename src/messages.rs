@@ -5,7 +5,7 @@ use cargo_metadata::{
     CompilerMessage, Message,
 };
 use itertools::{Either, Itertools};
-use std::{collections::HashSet, io, path::PathBuf, time::Duration};
+use std::{collections::HashSet, io, io::Write, path::Path, time::Duration};
 
 #[derive(Default)]
 pub struct ParsedMessages {
@@ -49,8 +49,8 @@ impl ParsedMessages {
                 let time_limit = parsed_args.time_limit_after_error;
                 if time_limit > Duration::from_secs(0) && !kill_timer_started {
                     kill_timer_started = true;
-                    process::wait_in_background_and_kill(cargo_pid, time_limit, || {
-                        println!();
+                    process::wait_in_background_and_kill(cargo_pid, time_limit, move || {
+                        let _ = std::writeln!(&mut io::stdout(), "");
                     });
                 }
             }
@@ -63,13 +63,13 @@ impl ParsedMessages {
 pub fn process_messages(
     parsed_messages: ParsedMessages,
     parsed_args: &Options,
-    workspace_root: &PathBuf,
+    workspace_root: &Path,
 ) -> Result<ProcessedMessages> {
     let messages = filter_and_order_messages(process_warnings_and_errors(
         parsed_messages,
         parsed_args,
         workspace_root,
-    )?);
+    ));
 
     let limit_messages = parsed_args.limit_messages;
     let no_limit = limit_messages == 0;
@@ -104,19 +104,19 @@ pub fn process_messages(
 fn process_warnings_and_errors(
     parsed_messages: ParsedMessages,
     parsed_args: &Options,
-    workspace_root: &PathBuf,
-) -> Result<impl Iterator<Item = CompilerMessage>> {
+    workspace_root: &Path,
+) -> impl Iterator<Item = CompilerMessage> {
     let non_errors = if parsed_args.show_dependencies_warnings {
         Either::Left(parsed_messages.non_errors.into_iter())
     } else {
         let non_errors = parsed_messages
             .non_errors
             .into_iter()
-            .filter(|i| i.target.src_path.starts_with(&workspace_root));
+            .filter(|i| i.target.src_path.starts_with(workspace_root));
         Either::Right(non_errors.collect::<Vec<_>>().into_iter())
     };
 
-    let messages = if parsed_args.show_warnings_if_errors_exist {
+    if parsed_args.show_warnings_if_errors_exist {
         Either::Left(
             parsed_messages
                 .internal_compiler_errors
@@ -138,9 +138,7 @@ fn process_warnings_and_errors(
             Either::Right(non_errors)
         };
         Either::Right(messages)
-    };
-
-    Ok(messages)
+    }
 }
 
 fn filter_and_order_messages(
@@ -174,10 +172,10 @@ fn extract_spans_for_external_application(
             if parsed_args.open_in_external_application_on_warnings {
                 true
             } else {
-                match message.message.level {
-                    DiagnosticLevel::Error | DiagnosticLevel::Ice => true,
-                    _ => false,
-                }
+                matches!(
+                    message.message.level,
+                    DiagnosticLevel::Error | DiagnosticLevel::Ice
+                )
             }
         })
         .flat_map(|message| {

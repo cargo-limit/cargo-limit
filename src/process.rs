@@ -21,7 +21,7 @@ pub fn kill(pid: u32) {
 #[doc(hidden)]
 pub fn wait_in_background_and_kill<F: 'static>(pid: u32, time_limit: Duration, after_kill: F)
 where
-    F: Fn() -> () + Send,
+    F: Fn() + Send,
 {
     thread::spawn(move || {
         thread::sleep(time_limit);
