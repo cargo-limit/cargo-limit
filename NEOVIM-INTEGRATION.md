@@ -35,7 +35,9 @@ NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}" nvr -s --nostart --remote-send "$
 #!/bin/sh
 
 pwd_escaped=$(pwd | sed 's!/!%!g')
-NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}" /usr/bin/nvim -p "$@"
+export NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}"
+rm -f "${NVIM_LISTEN_ADDRESS}"
+/usr/bin/nvim -p "$@"
 ```
 
 4. `chmod +x open-in-nvim vi`
