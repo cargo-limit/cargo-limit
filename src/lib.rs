@@ -69,8 +69,8 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
                 let output = Command::new(open_in_external_application)
                     .args(args)
                     .output()?;
-                io::stderr().write_all(&output.stdout)?;
-                io::stderr().write_all(&output.stderr)?;
+                stderr_writer.write_all(&output.stdout)?;
+                stderr_writer.write_all(&output.stderr)?;
             }
         }
 
