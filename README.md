@@ -64,6 +64,9 @@ cargo ltest
         - see [neovim integration](NEOVIM-INTEGRATION.md) as example
     - empty (`""`) means don't run external application
     - empty is default
+- `CARGO_OPEN_WARN`
+    - open warnings (besides errors) in external application
+    - false is default
 
 ## Why?
 Initially it was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189). Consider a program:
