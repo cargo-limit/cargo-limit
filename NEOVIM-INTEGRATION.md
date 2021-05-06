@@ -36,7 +36,10 @@ NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}" nvr -s --nostart --remote-send "$
 
 pwd_escaped=$(pwd | sed 's!/!%!g')
 export NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}"
-rm -f "${NVIM_LISTEN_ADDRESS}"
+
+# if can't connect then remove the socket
+nvr -s --nostart || rm -f "${NVIM_LISTEN_ADDRESS}"
+
 /usr/bin/nvim -p "$@"
 ```
 
