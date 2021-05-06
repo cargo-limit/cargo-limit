@@ -49,9 +49,9 @@ impl ParsedMessages {
                 let time_limit = parsed_args.time_limit_after_error;
                 if time_limit > Duration::from_secs(0) && !kill_timer_started {
                     kill_timer_started = true;
-                    process::wait_in_background_and_kill_and_print_empty_line(
-                        cargo_pid, time_limit,
-                    );
+                    process::wait_in_background_and_kill(cargo_pid, time_limit, || {
+                        println!();
+                    });
                 }
             }
         }
