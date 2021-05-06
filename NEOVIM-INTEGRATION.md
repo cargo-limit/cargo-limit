@@ -37,7 +37,7 @@ NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}" nvr -s --nostart --remote-send "$
 pwd_escaped=$(pwd | sed 's!/!%!g')
 export NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}"
 
-# if can't connect then remove the socket
+# check if we can connect, otherwise remove the socket
 nvr -s --nostart || rm -f "${NVIM_LISTEN_ADDRESS}"
 
 /usr/bin/nvim -p "$@"
@@ -51,8 +51,8 @@ nvr -s --nostart || rm -f "${NVIM_LISTEN_ADDRESS}"
 - run `cd to/your/project ; vi` in one of them
 - run `cd to/your/project ; cargo lcheck` in the other
     - optionally set `CARGO_MSG_LIMIT=1` if you want to open at most 1 file automatically
-    - set `CARGO_OPEN_WARN=true` if you want to open files not just on errors but on warnings as well
 
-For each file affected by error or warning Neovim will
+## Result
+For each file affected by error (or warning as well, if `CARGO_OPEN_WARN=true`) Neovim will:
 - open it in new or existing tab
 - jump to the corresponding line and column
