@@ -64,11 +64,13 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
                     span.file_name, span.line_start, span.column_start
                 ));
             }
-            let output = Command::new(open_in_external_application)
-                .args(args)
-                .output()?;
-            io::stderr().write_all(&output.stdout)?;
-            io::stderr().write_all(&output.stderr)?;
+            if !args.is_empty() {
+                let output = Command::new(open_in_external_application)
+                    .args(args)
+                    .output()?;
+                io::stderr().write_all(&output.stdout)?;
+                io::stderr().write_all(&output.stderr)?;
+            }
         }
 
         if parsed_args.json_message_format {
