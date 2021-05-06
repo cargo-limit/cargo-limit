@@ -2,10 +2,10 @@ use crate::{options::Options, process};
 use anyhow::Result;
 use cargo_metadata::{
     diagnostic::{DiagnosticLevel, DiagnosticSpan},
-    CompilerMessage, Message, MetadataCommand,
+    CompilerMessage, Message,
 };
 use itertools::{Either, Itertools};
-use std::{collections::HashSet, io, time::Duration};
+use std::{collections::HashSet, io, path::PathBuf, time::Duration};
 
 #[derive(Default)]
 pub struct ParsedMessages {
@@ -61,9 +61,13 @@ impl ParsedMessages {
 pub fn process_messages(
     parsed_messages: ParsedMessages,
     parsed_args: &Options,
+    workspace_root: &PathBuf,
 ) -> Result<ProcessedMessages> {
-    let messages =
-        filter_and_order_messages(process_warnings_and_errors(parsed_messages, parsed_args)?);
+    let messages = filter_and_order_messages(process_warnings_and_errors(
+        parsed_messages,
+        parsed_args,
+        workspace_root,
+    )?);
 
     let limit_messages = parsed_args.limit_messages;
     let no_limit = limit_messages == 0;
@@ -98,11 +102,11 @@ pub fn process_messages(
 fn process_warnings_and_errors(
     parsed_messages: ParsedMessages,
     parsed_args: &Options,
+    workspace_root: &PathBuf,
 ) -> Result<impl Iterator<Item = CompilerMessage>> {
     let non_errors = if parsed_args.show_dependencies_warnings {
         Either::Left(parsed_messages.non_errors.into_iter())
     } else {
-        let workspace_root = MetadataCommand::new().exec()?.workspace_root;
         let non_errors = parsed_messages
             .non_errors
             .into_iter()

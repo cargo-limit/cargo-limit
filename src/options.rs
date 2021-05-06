@@ -1,6 +1,7 @@
+use crate::cargo_toml::CargoToml;
 use anyhow::{format_err, Context, Error, Result};
 use const_format::concatcp;
-use std::{env, str::FromStr, time::Duration};
+use std::{env, path::PathBuf, str::FromStr, time::Duration};
 
 const PROGRAM_ARGS_DELIMITER: &str = "--";
 
@@ -44,7 +45,7 @@ pub struct Options {
 }
 
 impl Options {
-    pub fn from_args_and_vars(cargo_command: &str) -> Result<Self> {
+    pub fn from_args_and_vars(cargo_command: &str, workspace_root: &PathBuf) -> Result<Self> {
         let mut passed_args = env::args().skip(2);
         let mut result = Self {
             cargo_args: Vec::new(),
@@ -64,7 +65,13 @@ impl Options {
 
         result.cargo_args.push(cargo_command.to_owned());
         result.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
-        result.process_color_args(color, passed_args, cargo_command, program_args_started);
+        result.process_color_args(
+            color,
+            passed_args,
+            cargo_command,
+            program_args_started,
+            workspace_root,
+        )?;
 
         Ok(result)
     }
@@ -124,7 +131,8 @@ impl Options {
         passed_args: impl Iterator<Item = String>,
         cargo_command: &str,
         program_args_started: bool,
-    ) {
+        workspace_root: &PathBuf,
+    ) -> Result<()> {
         let terminal_supports_colors = atty::is(atty::Stream::Stderr);
         if self.short_message_format {
             self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
@@ -160,10 +168,25 @@ impl Options {
             self.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
         }
 
-        let command_supports_color_arg = cargo_command == "test" || cargo_command == "bench";
+        let is_test = cargo_command == "test";
+        let is_bench = cargo_command == "bench";
+        let command_supports_color_arg = is_test || is_bench;
         if command_supports_color_arg && !program_color_is_set && terminal_supports_colors {
-            self.add_color_arg(COLOR_ALWAYS);
+            let cargo_toml = CargoToml::parse(workspace_root)?;
+            let all_items_have_harness = if is_test {
+                cargo_toml.all_tests_have_harness()
+            } else if is_bench {
+                cargo_toml.all_benchmarks_have_harness()
+            } else {
+                unreachable!()
+            };
+            if all_items_have_harness {
+                // Workaround for programs that can't understand that terminal supports colors.
+                // To fix that properly we need to run programs in pty.
+                self.add_color_arg(COLOR_ALWAYS);
+            }
         }
+        Ok(())
     }
 
     fn parse_var<T: FromStr>(key: &str, default: &str) -> Result<T>

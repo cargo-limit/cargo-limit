@@ -1,10 +1,11 @@
+mod cargo_toml;
 mod flushing_writer;
 mod messages;
 mod options;
 mod process;
 
 use anyhow::{Context, Result};
-use cargo_metadata::Message;
+use cargo_metadata::{Message, MetadataCommand};
 use flushing_writer::FlushingWriter;
 use messages::{process_messages, ParsedMessages, ProcessedMessages};
 use options::Options;
@@ -24,7 +25,8 @@ const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
 
 #[doc(hidden)]
 pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
-    let parsed_args = Options::from_args_and_vars(cargo_command)?;
+    let workspace_root = MetadataCommand::new().exec()?.workspace_root;
+    let parsed_args = Options::from_args_and_vars(cargo_command, &workspace_root)?;
     let cargo_path = env::var(CARGO_ENV_VAR)
         .map(PathBuf::from)
         .ok()
@@ -49,7 +51,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         let ProcessedMessages {
             messages,
             spans_in_consistent_order,
-        } = process_messages(parsed_messages, &parsed_args)?;
+        } = process_messages(parsed_messages, &parsed_args, &workspace_root)?;
         let processed_messages = messages.into_iter();
 
         let open_in_external_application = parsed_args.open_in_external_application;
