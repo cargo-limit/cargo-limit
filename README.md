@@ -66,7 +66,7 @@ cargo ltest
     - empty is default
 - `CARGO_OPEN_WARN`
     - open warnings (besides errors) in external application
-    - false is default
+    - `false` is default
 
 ## Why?
 Initially it was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189). Consider a program:
