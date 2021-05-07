@@ -1,5 +1,5 @@
 # Neovim integration
-`cargo-limit` can run an external application, providing it a list of files, lines and columns as arguments in the following format:
+`cargo-limit` can run an external application, providing it a list of affected files, lines and columns as arguments in the following format:
 
 ```
 path/to/file1.rs:10:5 path/to/file2.rs:4:1
@@ -8,11 +8,11 @@ path/to/file1.rs:10:5 path/to/file2.rs:4:1
 Theoretically this can be used for any text editor or IDE which supports client/server communication. In order to do that you need a wrapper script which parses the list and gives it to the text editor or IDE client.
 
 ## Installation
-1. Run `pip3 install --user neovim-remote` and check that `nvr --version` runs without errors
+1. Run `pip3 install --user neovim-remote` and check that `nvr --version` runs without errors (`$HOME/.local/bin` should be listed in your `$PATH`)
 
 2. Put a file called `open-in-nvim` somewhere in your `$PATH`:
 ```bash
-#!/bin/sh
+#!/bin/bash
 
 pwd_escaped=$(pwd | sed 's!/!%!g')
 files=( "$@" )
@@ -32,7 +32,7 @@ NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}" nvr -s --nostart --remote-send "$
 
 3. Add a file called `vi` to your `$PATH`:
 ```bash
-#!/bin/sh
+#!/bin/bash
 
 pwd_escaped=$(pwd | sed 's!/!%!g')
 export NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}"
