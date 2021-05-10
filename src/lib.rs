@@ -31,10 +31,13 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         .map(PathBuf::from)
         .ok()
         .unwrap_or_else(|| PathBuf::from(CARGO_EXECUTABLE));
+
+    let error_text = format!("failed to execute {:?}", cargo_path);
     let mut command = Command::new(cargo_path)
         .args(parsed_args.cargo_args.clone())
         .stdout(Stdio::piped())
-        .spawn()?;
+        .spawn()
+        .context(error_text)?;
 
     let cargo_pid = command.id();
     ctrlc::set_handler(move || {
@@ -79,7 +82,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
                 ));
             }
             if !args.is_empty() {
-                let error_text = format!("failed to execute {}", open_in_external_application);
+                let error_text = format!("failed to execute {:?}", open_in_external_application);
                 let output = Command::new(open_in_external_application)
                     .args(args)
                     .output()
