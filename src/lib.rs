@@ -56,24 +56,6 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         } = process_messages(parsed_messages, &parsed_args, &workspace_root)?;
         let processed_messages = messages.into_iter();
 
-        let open_in_external_application = parsed_args.open_in_external_application;
-        if !open_in_external_application.is_empty() {
-            let mut args = Vec::new();
-            for span in spans_in_consistent_order.into_iter() {
-                args.push(format!(
-                    "{}:{}:{}",
-                    span.file_name, span.line_start, span.column_start
-                ));
-            }
-            if !args.is_empty() {
-                let output = Command::new(open_in_external_application)
-                    .args(args)
-                    .output()?;
-                stderr_writer.write_all(&output.stdout)?;
-                stderr_writer.write_all(&output.stderr)?;
-            }
-        }
-
         if parsed_args.json_message_format {
             for message in processed_messages {
                 std::writeln!(&mut stdout_writer, "{}", serde_json::to_string(&message)?)?;
@@ -84,6 +66,26 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
                 _ => None,
             }) {
                 std::write!(&mut stderr_writer, "{}", message)?;
+            }
+        }
+
+        let open_in_external_application = parsed_args.open_in_external_application;
+        if !open_in_external_application.is_empty() {
+            let mut args = Vec::new();
+            for span in spans_in_consistent_order.into_iter() {
+                args.push(format!(
+                    "{}:{}:{}",
+                    span.file_name, span.line_start, span.column_start
+                ));
+            }
+            if !args.is_empty() {
+                let error_text = format!("failed to execute {}", open_in_external_application);
+                let output = Command::new(open_in_external_application)
+                    .args(args)
+                    .output()
+                    .context(error_text)?;
+                stderr_writer.write_all(&output.stdout)?;
+                stderr_writer.write_all(&output.stderr)?;
             }
         }
     }
