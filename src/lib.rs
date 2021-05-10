@@ -10,7 +10,7 @@ use flushing_writer::FlushingWriter;
 use messages::{process_messages, ParsedMessages, ProcessedMessages};
 use options::Options;
 use std::{
-    env,
+    env, fmt,
     io::{self, BufReader, Write},
     path::PathBuf,
     process::{Command, Stdio},
@@ -32,7 +32,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         .ok()
         .unwrap_or_else(|| PathBuf::from(CARGO_EXECUTABLE));
 
-    let error_text = format!("failed to execute {:?}", cargo_path);
+    let error_text = failed_to_execute_error_text(&cargo_path);
     let mut command = Command::new(cargo_path)
         .args(parsed_args.cargo_args.clone())
         .stdout(Stdio::piped())
@@ -82,7 +82,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
                 ));
             }
             if !args.is_empty() {
-                let error_text = format!("failed to execute {:?}", open_in_external_application);
+                let error_text = failed_to_execute_error_text(&open_in_external_application);
                 let output = Command::new(open_in_external_application)
                     .args(args)
                     .output()
@@ -101,6 +101,10 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     let exit_code = command.wait()?.code().unwrap_or(NO_EXIT_CODE);
     Ok(exit_code)
+}
+
+fn failed_to_execute_error_text<T: fmt::Debug>(program: T) -> String {
+    format!("failed to execute {:?}", program)
 }
 
 #[doc(hidden)]
