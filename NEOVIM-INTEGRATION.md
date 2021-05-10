@@ -5,7 +5,7 @@
 path/to/file1.rs:10:5 path/to/file2.rs:4:1
 ```
 
-Theoretically this can be used for any text editor or IDE which supports client/server communication. In order to do that you need a wrapper script which parses the list and gives it to the text editor or IDE client.
+Theoretically this can be used for any text editor or IDE which supports client/server communication. In order to do that you need a wrapper script that parses the list and gives it to the text editor or IDE client.
 
 ## Installation
 1. Run `pip3 install --user neovim-remote` and check that `nvr --version` runs without errors (`$HOME/.local/bin` should be listed in your `$PATH`)
