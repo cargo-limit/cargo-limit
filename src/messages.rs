@@ -185,6 +185,13 @@ fn extract_spans_for_external_application(
                 .iter()
                 .filter(|span| span.is_primary)
                 .cloned()
+        })
+        .map(|span| {
+            if let Some(expansion) = span.expansion {
+                expansion.span
+            } else {
+                span
+            }
         });
 
     let mut spans_in_consistent_order = Vec::new();
