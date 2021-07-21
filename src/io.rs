@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use getset::{Getters, MutGetters, Setters};
+use getset::MutGetters;
 use std::{
     io::{self, Write},
     process::{Child, ChildStdout},

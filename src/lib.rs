@@ -11,7 +11,6 @@ use messages::{process_messages, ParsedMessages, ProcessedMessages};
 use options::Options;
 use std::{
     env, fmt,
-    io::Write,
     path::{Path, PathBuf},
     process::{Command, Stdio},
 };
@@ -92,14 +91,7 @@ fn parse_and_process_messages(
         }
     }
 
-    open_in_external_application_for_affected_files(
-        buffers,
-        spans_in_consistent_order,
-        parsed_args,
-    )?;
-
-    //buffers.copy_from_child_stdout_reader_to_stdout_writer()?; // TODO
-    Ok(())
+    open_in_external_application_for_affected_files(buffers, spans_in_consistent_order, parsed_args)
 }
 
 fn open_in_external_application_for_affected_files(
