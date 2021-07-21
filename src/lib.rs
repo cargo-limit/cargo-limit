@@ -1,19 +1,19 @@
 mod cargo_toml;
-mod flushing_writer;
+mod io;
 mod messages;
 mod options;
 mod process;
 
 use anyhow::{Context, Result};
 use cargo_metadata::{Message, MetadataCommand};
-use flushing_writer::FlushingWriter;
+use io::Buffers;
 use messages::{process_messages, ParsedMessages, ProcessedMessages};
 use options::Options;
 use std::{
     env, fmt,
-    io::{self, BufReader, Write},
+    io::Write,
     path::PathBuf,
-    process::{Child, ChildStdout, Command, Stdio},
+    process::{Command, Stdio},
 };
 
 const CARGO_EXECUTABLE: &str = "cargo";
@@ -107,39 +107,6 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     // TODO: process messages again
     //buffers.copy_from_child_reader_to_stdout_writer()?;
     Ok(exit_code)
-}
-
-// TODO: move
-struct Buffers {
-    child_stdout_reader: BufReader<ChildStdout>,
-    stdout_writer: FlushingWriter<io::Stdout>,
-    stderr_writer: FlushingWriter<io::Stderr>,
-}
-
-impl Buffers {
-    pub fn new(child: &mut Child) -> Result<Self> {
-        let child_stdout_reader =
-            BufReader::new(child.stdout.take().context("cannot read stdout")?);
-        let stdout_writer = FlushingWriter::new(io::stdout());
-        let stderr_writer = FlushingWriter::new(io::stderr());
-        Ok(Self {
-            child_stdout_reader,
-            stdout_writer,
-            stderr_writer,
-        })
-    }
-
-    pub fn writeln_to_stdout(&mut self, text: String) -> io::Result<()> {
-        std::writeln!(&mut self.stdout_writer, "{}", text)
-    }
-
-    pub fn write_to_stderr(&mut self, text: String) -> io::Result<()> {
-        std::write!(&mut self.stderr_writer, "{}", text)
-    }
-
-    pub fn copy_from_child_stdout_reader_to_stdout_writer(&mut self) -> io::Result<u64> {
-        io::copy(&mut self.child_stdout_reader, &mut self.stdout_writer)
-    }
 }
 
 fn failed_to_execute_error_text<T: fmt::Debug>(program: T) -> String {
