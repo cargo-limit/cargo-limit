@@ -55,14 +55,14 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
 
-    if help {
-        buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
-        // TODO: do it after wait?
-    }
-
     let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
     // TODO: process messages again
     //buffers.copy_from_child_reader_to_stdout_writer()?;
+
+    if help {
+        buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
+    }
+
     Ok(exit_code)
 }
 
