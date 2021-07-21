@@ -46,20 +46,14 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     let mut buffers = Buffers::new(&mut child)?;
 
-    let help = parsed_args.help;
-    let version = parsed_args.version;
-
-    if !help && !version {
-        parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args, workspace_root)?;
-    }
-
+    parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args, workspace_root)?;
     buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
 
     let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
     // TODO: process messages again
     //buffers.copy_from_child_reader_to_stdout_writer()?;
 
-    if help {
+    if parsed_args.help {
         buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
     }
 
@@ -72,6 +66,10 @@ fn parse_and_process_messages(
     parsed_args: &Options,
     workspace_root: PathBuf,
 ) -> Result<()> {
+    if parsed_args.help || parsed_args.version {
+        return Ok(());
+    }
+
     let parsed_messages =
         ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)?;
     let ProcessedMessages {
