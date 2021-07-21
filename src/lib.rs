@@ -60,18 +60,14 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
         if parsed_args.json_message_format {
             for message in processed_messages {
-                std::writeln!(
-                    &mut buffers.stdout_writer,
-                    "{}",
-                    serde_json::to_string(&message)?
-                )?;
+                buffers.writeln_to_stdout(serde_json::to_string(&message)?)?;
             }
         } else {
             for message in processed_messages.filter_map(|message| match message {
                 Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
                 _ => None,
             }) {
-                std::write!(&mut buffers.stderr_writer, "{}", message)?;
+                buffers.write_to_stderr(message)?;
             }
         }
 
@@ -121,7 +117,7 @@ struct Buffers {
 }
 
 impl Buffers {
-    fn new(child: &mut Child) -> Result<Self> {
+    pub fn new(child: &mut Child) -> Result<Self> {
         let stdout_reader = BufReader::new(child.stdout.take().context("cannot read stdout")?);
         let stdout_writer = FlushingWriter::new(io::stdout());
         let stderr_writer = FlushingWriter::new(io::stderr());
@@ -132,11 +128,16 @@ impl Buffers {
         })
     }
 
-    // TODO: add write methods?
+    pub fn writeln_to_stdout(&mut self, text: String) -> io::Result<()> {
+        std::writeln!(&mut self.stdout_writer, "{}", text)
+    }
 
-    fn copy_from_child_reader_to_stdout_writer(&mut self) -> Result<()> {
-        io::copy(&mut self.stdout_reader, &mut self.stdout_writer)?;
-        Ok(())
+    pub fn write_to_stderr(&mut self, text: String) -> io::Result<()> {
+        std::write!(&mut self.stderr_writer, "{}", text)
+    }
+
+    pub fn copy_from_child_reader_to_stdout_writer(&mut self) -> io::Result<u64> {
+        io::copy(&mut self.stdout_reader, &mut self.stdout_writer)
     }
 }
 
