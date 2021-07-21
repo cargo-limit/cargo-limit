@@ -86,8 +86,8 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
                     .args(args)
                     .output()
                     .context(error_text)?;
-                buffers.stderr_writer.write_all(&output.stdout)?;
-                buffers.stderr_writer.write_all(&output.stderr)?;
+                buffers.write_all_to_stderr(&output.stdout)?;
+                buffers.write_all_to_stderr(&output.stderr)?;
             }
         }
     }

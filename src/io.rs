@@ -15,7 +15,7 @@ pub struct Buffers {
     #[get_mut = "pub"]
     child_stdout_reader: io::BufReader<ChildStdout>,
     stdout_writer: FlushingWriter<io::Stdout>,
-    pub stderr_writer: FlushingWriter<io::Stderr>, // TODO
+    stderr_writer: FlushingWriter<io::Stderr>,
 }
 
 impl<W> FlushingWriter<W> {
@@ -59,6 +59,10 @@ impl Buffers {
 
     pub fn write_to_stderr(&mut self, text: String) -> io::Result<()> {
         std::write!(&mut self.stderr_writer, "{}", text)
+    }
+
+    pub fn write_all_to_stderr(&mut self, buf: &[u8]) -> io::Result<()> {
+        self.stderr_writer.write_all(buf)
     }
 
     pub fn copy_from_child_stdout_reader_to_stdout_writer(&mut self) -> io::Result<u64> {
