@@ -13,7 +13,7 @@ use std::{
     env, fmt,
     io::{self, BufReader, Write},
     path::PathBuf,
-    process::{Command, Stdio},
+    process::{Child, ChildStdout, Command, Stdio},
 };
 
 const CARGO_EXECUTABLE: &str = "cargo";
@@ -44,15 +44,14 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         process::kill(cargo_pid);
     })?;
 
-    let mut stdout_reader = BufReader::new(child.stdout.take().context("cannot read stdout")?);
-    let mut stdout_writer = FlushingWriter::new(io::stdout());
-    let mut stderr_writer = FlushingWriter::new(io::stderr());
+    let mut buffers = Buffers::new(&mut child)?;
 
     let help = parsed_args.help;
     let version = parsed_args.version;
 
     if !help && !version {
-        let parsed_messages = ParsedMessages::parse(&mut stdout_reader, cargo_pid, &parsed_args)?;
+        let parsed_messages =
+            ParsedMessages::parse(&mut buffers.stdout_reader, cargo_pid, &parsed_args)?;
         let ProcessedMessages {
             messages,
             spans_in_consistent_order,
@@ -61,14 +60,18 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
         if parsed_args.json_message_format {
             for message in processed_messages {
-                std::writeln!(&mut stdout_writer, "{}", serde_json::to_string(&message)?)?;
+                std::writeln!(
+                    &mut buffers.stdout_writer,
+                    "{}",
+                    serde_json::to_string(&message)?
+                )?;
             }
         } else {
             for message in processed_messages.filter_map(|message| match message {
                 Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
                 _ => None,
             }) {
-                std::write!(&mut stderr_writer, "{}", message)?;
+                std::write!(&mut buffers.stderr_writer, "{}", message)?;
             }
         }
 
@@ -87,21 +90,54 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
                     .args(args)
                     .output()
                     .context(error_text)?;
-                stderr_writer.write_all(&output.stdout)?;
-                stderr_writer.write_all(&output.stderr)?;
+                buffers.stderr_writer.write_all(&output.stdout)?;
+                buffers.stderr_writer.write_all(&output.stderr)?;
             }
         }
     }
 
-    io::copy(&mut stdout_reader, &mut stdout_writer)?;
+    buffers.copy_from_child_reader_to_stdout_writer()?;
 
     if help {
-        std::write!(&mut stdout_writer, "{}", ADDITIONAL_ENVIRONMENT_VARIABLES)?;
+        std::write!(
+            &mut buffers.stdout_writer,
+            "{}",
+            ADDITIONAL_ENVIRONMENT_VARIABLES
+        )?;
+        // TODO: do it after wait?
     }
 
     let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
-    io::copy(&mut stdout_reader, &mut stdout_writer)?;
+    // TODO: process messages again
+    //buffers.copy_from_child_reader_to_stdout_writer()?;
     Ok(exit_code)
+}
+
+// TODO: move
+struct Buffers {
+    stdout_reader: BufReader<ChildStdout>,
+    stdout_writer: FlushingWriter<io::Stdout>,
+    stderr_writer: FlushingWriter<io::Stderr>,
+}
+
+impl Buffers {
+    fn new(child: &mut Child) -> Result<Self> {
+        let stdout_reader = BufReader::new(child.stdout.take().context("cannot read stdout")?);
+        let stdout_writer = FlushingWriter::new(io::stdout());
+        let stderr_writer = FlushingWriter::new(io::stderr());
+        Ok(Self {
+            stdout_reader,
+            stdout_writer,
+            stderr_writer,
+        })
+    }
+
+    // TODO: add write methods?
+
+    fn copy_from_child_reader_to_stdout_writer(&mut self) -> Result<()> {
+        io::copy(&mut self.stdout_reader, &mut self.stdout_writer)?;
+        Ok(())
+    }
 }
 
 fn failed_to_execute_error_text<T: fmt::Debug>(program: T) -> String {
