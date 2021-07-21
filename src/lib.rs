@@ -44,14 +44,9 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     })?;
 
     let mut buffers = Buffers::new(&mut child)?;
-
     parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args, &workspace_root)?;
-    buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
-
     let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
-
     parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args, &workspace_root)?;
-    buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
 
     if parsed_args.help {
         buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
@@ -66,32 +61,37 @@ fn parse_and_process_messages(
     parsed_args: &Options,
     workspace_root: &Path,
 ) -> Result<()> {
-    if parsed_args.help || parsed_args.version {
-        return Ok(());
+    if !parsed_args.help && !parsed_args.version {
+        let parsed_messages =
+            ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)?;
+        let ProcessedMessages {
+            messages,
+            spans_in_consistent_order,
+        } = process_messages(parsed_messages, &parsed_args, &workspace_root)?;
+        let processed_messages = messages.into_iter();
+
+        if parsed_args.json_message_format {
+            for message in processed_messages {
+                buffers.writeln_to_stdout(serde_json::to_string(&message)?)?;
+            }
+        } else {
+            for message in processed_messages.filter_map(|message| match message {
+                Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
+                _ => None,
+            }) {
+                buffers.write_to_stderr(message)?;
+            }
+        }
+
+        open_in_external_application_for_affected_files(
+            buffers,
+            spans_in_consistent_order,
+            parsed_args,
+        )?;
     }
 
-    let parsed_messages =
-        ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)?;
-    let ProcessedMessages {
-        messages,
-        spans_in_consistent_order,
-    } = process_messages(parsed_messages, &parsed_args, &workspace_root)?;
-    let processed_messages = messages.into_iter();
-
-    if parsed_args.json_message_format {
-        for message in processed_messages {
-            buffers.writeln_to_stdout(serde_json::to_string(&message)?)?;
-        }
-    } else {
-        for message in processed_messages.filter_map(|message| match message {
-            Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
-            _ => None,
-        }) {
-            buffers.write_to_stderr(message)?;
-        }
-    }
-
-    open_in_external_application_for_affected_files(buffers, spans_in_consistent_order, parsed_args)
+    buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
+    Ok(())
 }
 
 fn open_in_external_application_for_affected_files(
