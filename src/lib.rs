@@ -100,6 +100,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     }
 
     let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
+    io::copy(&mut stdout_reader, &mut stdout_writer)?;
     Ok(exit_code)
 }
 
