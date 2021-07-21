@@ -51,7 +51,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     if !help && !version {
         let parsed_messages =
-            ParsedMessages::parse(&mut buffers.stdout_reader, cargo_pid, &parsed_args)?;
+            ParsedMessages::parse(&mut buffers.child_stdout_reader, cargo_pid, &parsed_args)?;
         let ProcessedMessages {
             messages,
             spans_in_consistent_order,
@@ -92,7 +92,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         }
     }
 
-    buffers.copy_from_child_reader_to_stdout_writer()?;
+    buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
 
     if help {
         std::write!(
@@ -111,18 +111,19 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
 // TODO: move
 struct Buffers {
-    stdout_reader: BufReader<ChildStdout>,
+    child_stdout_reader: BufReader<ChildStdout>,
     stdout_writer: FlushingWriter<io::Stdout>,
     stderr_writer: FlushingWriter<io::Stderr>,
 }
 
 impl Buffers {
     pub fn new(child: &mut Child) -> Result<Self> {
-        let stdout_reader = BufReader::new(child.stdout.take().context("cannot read stdout")?);
+        let child_stdout_reader =
+            BufReader::new(child.stdout.take().context("cannot read stdout")?);
         let stdout_writer = FlushingWriter::new(io::stdout());
         let stderr_writer = FlushingWriter::new(io::stderr());
         Ok(Self {
-            stdout_reader,
+            child_stdout_reader,
             stdout_writer,
             stderr_writer,
         })
@@ -136,8 +137,8 @@ impl Buffers {
         std::write!(&mut self.stderr_writer, "{}", text)
     }
 
-    pub fn copy_from_child_reader_to_stdout_writer(&mut self) -> io::Result<u64> {
-        io::copy(&mut self.stdout_reader, &mut self.stdout_writer)
+    pub fn copy_from_child_stdout_reader_to_stdout_writer(&mut self) -> io::Result<u64> {
+        io::copy(&mut self.child_stdout_reader, &mut self.stdout_writer)
     }
 }
 
