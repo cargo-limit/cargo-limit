@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use getset::{Getters, MutGetters, Setters};
 use std::{
     io::{self, Write},
     process::{Child, ChildStdout},
@@ -9,10 +10,12 @@ pub struct FlushingWriter<W> {
     writer: W,
 }
 
+#[derive(MutGetters)]
 pub struct Buffers {
-    pub child_stdout_reader: io::BufReader<ChildStdout>, // TODO
-    pub stdout_writer: FlushingWriter<io::Stdout>,       // TODO
-    pub stderr_writer: FlushingWriter<io::Stderr>,       // TODO
+    #[get_mut = "pub"]
+    child_stdout_reader: io::BufReader<ChildStdout>,
+    pub stdout_writer: FlushingWriter<io::Stdout>, // TODO
+    pub stderr_writer: FlushingWriter<io::Stderr>, // TODO
 }
 
 impl<W> FlushingWriter<W> {

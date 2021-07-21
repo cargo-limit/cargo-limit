@@ -51,7 +51,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
 
     if !help && !version {
         let parsed_messages =
-            ParsedMessages::parse(&mut buffers.child_stdout_reader, cargo_pid, &parsed_args)?;
+            ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, &parsed_args)?;
         let ProcessedMessages {
             messages,
             spans_in_consistent_order,
