@@ -33,18 +33,18 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         .unwrap_or_else(|| PathBuf::from(CARGO_EXECUTABLE));
 
     let error_text = failed_to_execute_error_text(&cargo_path);
-    let mut command = Command::new(cargo_path)
+    let mut child = Command::new(cargo_path)
         .args(parsed_args.cargo_args.clone())
         .stdout(Stdio::piped())
         .spawn()
         .context(error_text)?;
 
-    let cargo_pid = command.id();
+    let cargo_pid = child.id();
     ctrlc::set_handler(move || {
         process::kill(cargo_pid);
     })?;
 
-    let mut stdout_reader = BufReader::new(command.stdout.take().context("cannot read stdout")?);
+    let mut stdout_reader = BufReader::new(child.stdout.take().context("cannot read stdout")?);
     let mut stdout_writer = FlushingWriter::new(io::stdout());
     let mut stderr_writer = FlushingWriter::new(io::stderr());
 
@@ -99,7 +99,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
         std::write!(&mut stdout_writer, "{}", ADDITIONAL_ENVIRONMENT_VARIABLES)?;
     }
 
-    let exit_code = command.wait()?.code().unwrap_or(NO_EXIT_CODE);
+    let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
     Ok(exit_code)
 }
 
