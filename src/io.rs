@@ -14,7 +14,7 @@ pub struct FlushingWriter<W> {
 pub struct Buffers {
     #[get_mut = "pub"]
     child_stdout_reader: io::BufReader<ChildStdout>,
-    pub stdout_writer: FlushingWriter<io::Stdout>, // TODO
+    stdout_writer: FlushingWriter<io::Stdout>,
     pub stderr_writer: FlushingWriter<io::Stderr>, // TODO
 }
 
@@ -47,6 +47,10 @@ impl Buffers {
             stdout_writer,
             stderr_writer,
         })
+    }
+
+    pub fn write_to_stdout(&mut self, text: &str) -> io::Result<()> {
+        std::write!(&mut self.stdout_writer, "{}", text)
     }
 
     pub fn writeln_to_stdout(&mut self, text: String) -> io::Result<()> {

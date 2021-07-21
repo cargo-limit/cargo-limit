@@ -95,11 +95,7 @@ pub fn run_cargo_filtered(cargo_command: &str) -> Result<i32> {
     buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
 
     if help {
-        std::write!(
-            &mut buffers.stdout_writer,
-            "{}",
-            ADDITIONAL_ENVIRONMENT_VARIABLES
-        )?;
+        buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
         // TODO: do it after wait?
     }
 
