@@ -91,7 +91,14 @@ fn parse_and_process_messages(
         }
     }
 
-    open_in_external_application_for_affected_files(buffers, spans_in_consistent_order, parsed_args)
+    open_in_external_application_for_affected_files(
+        buffers,
+        spans_in_consistent_order,
+        parsed_args,
+    )?;
+
+    //buffers.copy_from_child_stdout_reader_to_stdout_writer()?; // TODO
+    Ok(())
 }
 
 fn open_in_external_application_for_affected_files(
@@ -99,8 +106,8 @@ fn open_in_external_application_for_affected_files(
     spans_in_consistent_order: Vec<DiagnosticSpan>,
     parsed_args: &Options,
 ) -> Result<()> {
-    let open_in_external_application = &parsed_args.open_in_external_application;
-    if !open_in_external_application.is_empty() {
+    let program = &parsed_args.open_in_external_application;
+    if !program.is_empty() {
         let mut args = Vec::new();
         for span in spans_in_consistent_order.into_iter() {
             args.push(format!(
@@ -109,8 +116,8 @@ fn open_in_external_application_for_affected_files(
             ));
         }
         if !args.is_empty() {
-            let error_text = failed_to_execute_error_text(open_in_external_application);
-            let output = Command::new(open_in_external_application)
+            let error_text = failed_to_execute_error_text(program);
+            let output = Command::new(program)
                 .args(args)
                 .output()
                 .context(error_text)?;
