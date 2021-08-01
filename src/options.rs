@@ -30,7 +30,9 @@ const COLOR_ALWAYS: &str = "always";
 const COLOR_NEVER: &str = "never";
 const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 
+// TODO: Default
 pub struct Options {
+    // TODO: getset?
     pub cargo_args: Vec<String>,
     pub limit_messages: usize,
     pub time_limit_after_error: Duration,
@@ -43,14 +45,14 @@ pub struct Options {
     pub version: bool,
     pub json_message_format: bool,
     pub short_message_format: bool,
+    // TODO: terminal_supports_colors
 }
 
 impl Options {
     pub fn from_args_and_vars(cargo_command: &str, workspace_root: &Path) -> Result<Self> {
-        let mut passed_args = env::args().skip(2);
         let mut result = Self {
             cargo_args: Vec::new(),
-            limit_messages: Self::parse_var("CARGO_MSG_LIMIT", "0")?,
+            limit_messages: Self::parse_var("CARGO_MSG_LIMIT", "0")?, // TODO: extract strings?
             time_limit_after_error: Duration::from_secs(Self::parse_var("CARGO_TIME_LIMIT", "1")?),
             ascending_messages_order: Self::parse_var("CARGO_ASC", "false")?,
             show_warnings_if_errors_exist: Self::parse_var("CARGO_FORCE_WARN", "false")?,
@@ -62,12 +64,33 @@ impl Options {
             json_message_format: false,
             short_message_format: false,
         };
-        let mut program_args_started = false;
+
+        result.process_args(&mut env::args(), cargo_command, workspace_root)?;
+        Ok(result)
+    }
+
+    // TODO: maybe just move self?
+    fn process_args(
+        &mut self,
+        args: &mut impl Iterator<Item = String>,
+        cargo_command: &str,
+        workspace_root: &Path, // TODO: should not be here?
+    ) -> Result<()> {
+        //dbg!(&env::args().collect::<Vec<_>>());
+        // TODO: why 2? ["/home/al/.cargo/bin/cargo-lrun", "lrun", "a"] -> ["a"]
+        // TODO: better turn "lrun" to "run"?
+        let mut passed_args = args.skip(2);
+
+        // TODO: extract testable code: without env vars, without real app args, without real Cargo.toml
+        // TODO: test args => cargo_args
+
+        // TODO: extract to process_args
+        let mut program_args_started = false; // TODO: define in process_main_args?
         let mut color = COLOR_AUTO.to_owned();
 
-        result.cargo_args.push(cargo_command.to_owned());
-        result.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
-        result.process_color_args(
+        self.cargo_args.push(cargo_command.to_owned());
+        self.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
+        self.process_color_args(
             color,
             passed_args,
             cargo_command,
@@ -75,13 +98,13 @@ impl Options {
             workspace_root,
         )?;
 
-        Ok(result)
+        Ok(()) // TODO: maybe return self
     }
 
     fn process_main_args(
         &mut self,
         color: &mut String,
-        passed_args: &mut impl Iterator<Item = String>,
+        passed_args: &mut impl Iterator<Item = String>, // TODO: why ref?
         program_args_started: &mut bool,
     ) -> Result<()> {
         while let Some(arg) = passed_args.next() {
@@ -92,6 +115,7 @@ impl Options {
                 self.version = true;
                 self.cargo_args.push(arg);
             } else if arg == COLOR[0..COLOR.len() - 1] {
+                // TODO: don't use []
                 *color = passed_args.next().context(
                     "the argument '--color <WHEN>' requires a value but none was supplied",
                 )?;
@@ -230,5 +254,56 @@ impl Options {
 
     fn add_color_arg(&mut self, value: &str) {
         self.cargo_args.push(format!("{}{}", COLOR, value));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn process_args() -> Result<()> {
+        let cargo_bin = "/usr/bin/cargo";
+        assert_cargo_args(vec![cargo_bin, "run"], vec!["run"])?; // TODO: message-format
+        assert_cargo_args(
+            vec![cargo_bin, "run", "--cargo-argument", "other-cargo-argument"],
+            vec!["run", "--cargo-argument", "other-cargo-argument"],
+        )?;
+        assert_cargo_args(
+            vec![cargo_bin, "run", "program-argument"],
+            vec!["run", "program-argument"],
+        )?;
+        assert_cargo_args(
+            vec![cargo_bin, "run", "--", "program-argument"],
+            vec!["run", "--", "program-argument"],
+        )?;
+        // TODO: colors (both for app and run), other options, harness
+        assert_cargo_args(
+            vec![cargo_bin, "run", "--color=always"],
+            vec!["run", "--color=always"],
+        )?;
+        assert_cargo_args(vec!["run", "--color=never"], vec!["run", "--color=never"])?;
+        assert_cargo_args(
+            vec![cargo_bin, "run", "--", "--color=always"],
+            vec!["run", "--", "--color=always"],
+        )?;
+        // vec!["run", "--version"] (TODO: version bool flag)
+        // vec!["run", "--help"] (TODO: help bool flag)
+        Ok(())
+    }
+
+    // TODO: test "lrun --message-format=..." args as well
+
+    fn assert_cargo_args(input: Vec<&str>, expected_cargo_args: Vec<&str>) -> Result<()> {
+        //let mut options = Options::default();
+        let mut options: Options = todo!();
+        Options::process_args(
+            &mut options,
+            &mut input.into_iter().map(|i| i.to_string()),
+            "run",
+            Path::new(""),
+        )?;
+        assert_eq!(options.cargo_args, expected_cargo_args);
+        Ok(())
     }
 }
