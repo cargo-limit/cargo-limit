@@ -1,0 +1,7 @@
+[package]
+name = "custom_bench_runner"
+version = "0.0.0"
+
+[[test]]
+name = "bench_runner"
+harness = false
