@@ -70,7 +70,7 @@ impl Default for Options {
 
 impl Options {
     pub fn from_args_and_os(workspace_root: &Path) -> Result<Self> {
-        Self::from_vars_and_atty()?.process_args(&mut env::args().peekable(), workspace_root)
+        Self::from_vars_and_atty()?.process_args(&mut env::args(), workspace_root)
     }
 
     fn from_vars_and_atty() -> Result<Self> {
@@ -103,11 +103,9 @@ impl Options {
         workspace_root: &Path, // TODO: should not be here?
     ) -> Result<Self> {
         let mut passed_args = args.skip(1).peekable();
-
-        let cargo_command: String = passed_args
+        let cargo_command = passed_args
             .next()
             .ok_or_else(|| format_err!("cargo command not found"))?;
-
         let (first_letter, cargo_command) = cargo_command // TODO: either don't crash or crash everywhere
             .split_at(1);
         assert_eq!(first_letter, "l");
@@ -143,6 +141,7 @@ impl Options {
         if *program_args_started {
             return Ok(());
         }
+
         while let Some(arg) = passed_args.next() {
             if arg == "-h" || arg == "--help" {
                 self.help = true;
@@ -152,7 +151,6 @@ impl Options {
                 self.version = true;
                 self.cargo_args.push(arg);
             } else if arg == COLOR[0..COLOR.len() - 1] {
-                // TODO: don't use []
                 *color = passed_args.next().context(
                     "the argument '--color <WHEN>' requires a value but none was supplied",
                 )?;
@@ -314,6 +312,16 @@ mod tests {
         )?;
 
         assert_cargo_args(
+            vec![cargo_bin, "lrun", "program-argument"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+                "program-argument",
+            ],
+        )?;
+
+        assert_cargo_args(
             vec![cargo_bin, "lrun", "--verbose", "program-argument"],
             vec![
                 "run",
@@ -322,16 +330,6 @@ mod tests {
                 "--",
                 "program-argument",
                 // "--color=always", // TODO?
-            ],
-        )?;
-
-        assert_cargo_args(
-            vec![cargo_bin, "lrun", "program-argument"],
-            vec![
-                "run",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-                "program-argument",
             ],
         )?;
 
