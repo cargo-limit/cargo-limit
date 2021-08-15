@@ -70,9 +70,7 @@ impl Default for Options {
 
 impl Options {
     pub fn from_args_and_os(workspace_root: &Path) -> Result<Self> {
-        let mut result = Self::from_vars_and_atty()?;
-        result.process_args(&mut env::args().peekable(), workspace_root)?; // TODO: &mut?
-        Ok(result)
+        Self::from_vars_and_atty()?.process_args(&mut env::args().peekable(), workspace_root)
     }
 
     fn from_vars_and_atty() -> Result<Self> {
@@ -99,12 +97,11 @@ impl Options {
         Ok(result)
     }
 
-    // TODO: maybe just move self?
     fn process_args(
-        &mut self,
+        mut self,
         args: impl Iterator<Item = String>,
         workspace_root: &Path, // TODO: should not be here?
-    ) -> Result<()> {
+    ) -> Result<Self> {
         let mut passed_args = args.skip(1).peekable();
 
         let cargo_command: String = passed_args
@@ -134,7 +131,7 @@ impl Options {
             workspace_root,
         )?;
 
-        Ok(()) // TODO: maybe return self
+        Ok(self)
     }
 
     fn process_main_args(
@@ -396,9 +393,8 @@ mod tests {
     // TODO: test "lrun --message-format=..." args as well
 
     fn assert_cargo_args(input: Vec<&str>, expected_cargo_args: Vec<&str>) -> Result<()> {
-        let mut options = Options::default();
-        Options::process_args(
-            &mut options,
+        let options = Options::process_args(
+            Options::default(),
             input.into_iter().map(|i| i.to_string()),
             Path::new("tests/stubs/minimal"),
         )?;
