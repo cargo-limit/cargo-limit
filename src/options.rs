@@ -70,7 +70,12 @@ impl Default for Options {
 
 impl Options {
     pub fn from_args_and_os(workspace_root: &Path) -> Result<Self> {
-        // TODO: extract?
+        let mut result = Self::from_vars_and_atty()?;
+        result.process_args(&mut env::args().peekable(), workspace_root)?; // TODO: &mut?
+        Ok(result)
+    }
+
+    fn from_vars_and_atty() -> Result<Self> {
         let mut result = Self::default();
         result.terminal_supports_colors = atty::is(atty::Stream::Stderr);
         Self::parse_var("CARGO_MSG_LIMIT", &mut result.limit_messages)?;
@@ -91,8 +96,6 @@ impl Options {
             "CARGO_OPEN_WARN",
             &mut result.open_in_external_application_on_warnings,
         )?;
-
-        result.process_args(&mut env::args().peekable(), workspace_root)?; // TODO: &mut?
         Ok(result)
     }
 
