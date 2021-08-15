@@ -124,7 +124,7 @@ impl Options {
 
         let mut color = COLOR_AUTO.to_owned();
         self.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
-        self.process_color_args(
+        self.process_color_and_program_args(
             color,
             passed_args,
             cargo_command,
@@ -205,8 +205,7 @@ impl Options {
         Ok(())
     }
 
-    // TODO: rename
-    fn process_color_args(
+    fn process_color_and_program_args(
         &mut self,
         color: String,
         passed_args: impl Iterator<Item = String>,
@@ -235,13 +234,7 @@ impl Options {
 
         let mut program_color_is_set = false;
         if program_args_started {
-            self.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
-            for arg in passed_args {
-                if arg == COLOR[0..COLOR.len() - 1] || arg.starts_with(COLOR) {
-                    program_color_is_set = true;
-                }
-                self.cargo_args.push(arg); // FIXME: actually program args
-            }
+            self.process_program_args(passed_args, &mut program_color_is_set);
         }
 
         if !program_args_started {
@@ -268,6 +261,20 @@ impl Options {
         }
         dbg!(&self.cargo_args);
         Ok(())
+    }
+
+    fn process_program_args(
+        &mut self,
+        passed_args: impl Iterator<Item = String>,
+        program_color_is_set: &mut bool,
+    ) {
+        self.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
+        for arg in passed_args {
+            if arg == COLOR[0..COLOR.len() - 1] || arg.starts_with(COLOR) {
+                *program_color_is_set = true;
+            }
+            self.cargo_args.push(arg);
+        }
     }
 
     fn parse_var<T: FromStr>(key: &str, value: &mut T) -> Result<()>
