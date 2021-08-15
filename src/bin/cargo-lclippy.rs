@@ -1,1 +1,1 @@
-cargo_limit::run_command!("clippy");
+cargo_limit::run_command!();

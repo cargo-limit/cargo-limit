@@ -1,1 +1,1 @@
-cargo_limit::run_command!("bench");
+cargo_limit::run_command!();

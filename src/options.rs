@@ -60,7 +60,7 @@ impl Default for Options {
             open_in_external_application: "".to_string(),
             open_in_external_application_on_warnings: false,
             help: false,
-            version: false,
+            version: false, // TODO: WTF
             json_message_format: false,
             short_message_format: false,
         }
@@ -68,7 +68,7 @@ impl Default for Options {
 }
 
 impl Options {
-    pub fn from_args_and_vars(cargo_command: &str, workspace_root: &Path) -> Result<Self> {
+    pub fn from_args_and_vars(workspace_root: &Path) -> Result<Self> {
         // TODO: extract?
         let mut result = Self::default();
         Self::parse_var("CARGO_MSG_LIMIT", &mut result.limit_messages)?;
@@ -90,7 +90,7 @@ impl Options {
             &mut result.open_in_external_application_on_warnings,
         )?;
 
-        result.process_args(&mut env::args(), cargo_command, workspace_root)?;
+        result.process_args(&mut env::args(), workspace_root)?; // TODO: &mut?
         Ok(result)
     }
 
@@ -98,13 +98,19 @@ impl Options {
     fn process_args(
         &mut self,
         args: &mut impl Iterator<Item = String>,
-        cargo_command: &str,
         workspace_root: &Path, // TODO: should not be here?
     ) -> Result<()> {
-        //dbg!(&env::args().collect::<Vec<_>>());
-        // TODO: why 2? ["/home/al/.cargo/bin/cargo-lrun", "lrun", "a"] -> ["a"]
-        // TODO: better turn "lrun" to "run"?
-        let mut passed_args = args.skip(2);
+        dbg!(&env::args().collect::<Vec<_>>());
+        // TODO: args are ["/home/al/.cargo/bin/cargo-lrun", "lrun", "a"] -> ["a"]
+        let mut passed_args = args.skip(1);
+
+        let cargo_command: String = passed_args
+            .next()
+            .ok_or_else(|| format_err!("cargo command not found"))?;
+
+        let (first_letter, cargo_command) = cargo_command // TODO: either don't crash or crash everywhere
+            .split_at(1);
+        assert_eq!(first_letter, "l");
 
         // TODO: extract testable code: without env vars, without real app args, without real Cargo.toml
         // TODO: test args => cargo_args
@@ -250,7 +256,7 @@ impl Options {
         if let Ok(new_value) = env::var(key) {
             *value = new_value
                 .parse()
-                .context(format!("invalid {} value", key))?;
+                .context(format!("invalid {} value", key))?; // TODO: with_context
         }
         Ok(())
     }
@@ -293,27 +299,34 @@ mod tests {
         let cargo_bin = "/usr/bin/cargo";
 
         assert_cargo_args(
-            vec![cargo_bin, "run"],
+            vec![cargo_bin, "ltest"],
             vec![
-                "run",
+                "test",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--",
+                "--color=always",
             ],
         )?;
 
         assert_cargo_args(
-            vec![cargo_bin, "run", "--cargo-argument", "other-cargo-argument"],
+            vec![
+                cargo_bin,
+                "lrun",
+                "--cargo-argument",
+                "other-cargo-argument",
+            ],
             vec![
                 "run",
                 "--cargo-argument",
                 "other-cargo-argument",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--",
+                // "--color=always", // TODO?
             ],
         )?;
 
         /*assert_cargo_args(
-            vec![cargo_bin, "run", "program-argument"], // https://github.com/alopatindev/cargo-limit/issues/6
+            vec![cargo_bin, "lrun", "program-argument"], // https://github.com/alopatindev/cargo-limit/issues/6
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -323,7 +336,7 @@ mod tests {
         )?;*/
 
         assert_cargo_args(
-            vec![cargo_bin, "run", "--", "program-argument"],
+            vec![cargo_bin, "lrun", "--", "program-argument"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -334,7 +347,7 @@ mod tests {
 
         // TODO: colors (both for app and run), other options, harness
         /*assert_cargo_args(
-            vec![cargo_bin, "run", "--color=always"],
+            vec![cargo_bin, "lrun", "--color=always"],
             vec![
                 "run",
                 "--color=always",
@@ -344,7 +357,7 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec!["run", "--color=never"],
+            vec!["lrun", "--color=never"],
             vec![
                 "run",
                 "--color=never",
@@ -356,7 +369,7 @@ mod tests {
         //assert_cargo_args(vec!["run", "--color", "never"], vec!["run", "--color", "never"])?; // TODO
 
         assert_cargo_args(
-            vec![cargo_bin, "run", "--", "--color=always"],
+            vec![cargo_bin, "lrun", "--", "--color=always"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -365,9 +378,9 @@ mod tests {
             ],
         )?;
 
-        // vec!["run", "--version"] (TODO: version bool flag)
+        //assert_cargo_args(vec![cargo_bin, "--version"], vec!["--version"])?; // TODO: WTF
 
-        // vec!["run", "--help"] (TODO: help bool flag)
+        //assert_cargo_args(vec![cargo_bin, "--help"], vec!["--help"])?; // TODO: WTF
 
         // TODO: message-format
         Ok(())
@@ -380,8 +393,7 @@ mod tests {
         Options::process_args(
             &mut options,
             &mut input.into_iter().map(|i| i.to_string()),
-            "run",
-            Path::new("tests/minimal"),
+            Path::new("tests/stubs/minimal"),
         )?;
         assert_eq!(options.cargo_args, expected_cargo_args);
         Ok(())

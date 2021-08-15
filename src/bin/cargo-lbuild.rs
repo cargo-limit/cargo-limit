@@ -1,1 +1,1 @@
-cargo_limit::run_command!("build");
+cargo_limit::run_command!();

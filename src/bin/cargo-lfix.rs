@@ -1,1 +1,1 @@
-cargo_limit::run_command!("fix");
+cargo_limit::run_command!();
