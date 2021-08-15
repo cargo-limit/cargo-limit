@@ -147,6 +147,7 @@ impl Options {
                 self.help = true;
                 self.cargo_args.push(arg);
             } else if arg == "-v" || arg == "--version" {
+                dbg!("version");
                 self.version = true;
                 self.cargo_args.push(arg);
             } else if arg == COLOR[0..COLOR.len() - 1] {
@@ -381,24 +382,25 @@ mod tests {
             ],
         )?;
 
-        /*assert_cargo_args(
-            vec![cargo_bin, "--version"],
+        // TODO: test flag?
+        assert_cargo_args(
+            vec![cargo_bin, "lclippy", "--version"],
             vec![
+                "clippy",
                 "--version",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--",
-                "--color=always",
             ],
-        )?;*/
+        )?;
 
+        // TODO: help flag?
         assert_cargo_args(
-            vec![cargo_bin, "ltest", "--help"],
+            vec![cargo_bin, "lclippy", "--help"],
             vec![
-                "test",
+                "clippy",
                 "--help",
                 "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
                 "--",
-                "--color=always",
             ],
         )?;
 
