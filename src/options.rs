@@ -246,8 +246,8 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
     let mut args = args.peekable();
     if let Some(binary) = args.peek() {
         if binary.starts_with(PREFIX) {
-            let (first_letter, command) = binary.split_at(PREFIX.len()); // TODO: letter naming
-            assert_eq!(first_letter, PREFIX);
+            let (prefix, command) = binary.split_at(PREFIX.len());
+            assert_eq!(prefix, PREFIX);
             cargo_command = Some(command.to_owned());
         }
     }
@@ -259,8 +259,8 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
             .peek()
             .ok_or_else(|| format_err!("command not found"))?;
 
-        let (first_letter, command) = app_name.split_at(1);
-        assert_eq!(first_letter, "l");
+        let (prefix, command) = app_name.split_at(1);
+        assert_eq!(prefix, "l");
         cargo_command = Some(command.to_owned());
     }
 
