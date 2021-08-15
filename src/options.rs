@@ -34,6 +34,7 @@ const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 pub struct Options {
     // TODO: getset?
     pub cargo_args: Vec<String>,
+    pub terminal_supports_colors: bool,
     pub limit_messages: usize,
     pub time_limit_after_error: Duration,
     pub ascending_messages_order: bool,
@@ -45,13 +46,13 @@ pub struct Options {
     pub version: bool,
     pub json_message_format: bool,
     pub short_message_format: bool,
-    // TODO: terminal_supports_colors
 }
 
 impl Default for Options {
     fn default() -> Self {
         Self {
             cargo_args: Vec::new(),
+            terminal_supports_colors: true,
             limit_messages: 0,
             time_limit_after_error: Duration::from_secs(1),
             ascending_messages_order: false,
@@ -68,9 +69,10 @@ impl Default for Options {
 }
 
 impl Options {
-    pub fn from_args_and_vars(workspace_root: &Path) -> Result<Self> {
+    pub fn from_args_and_os(workspace_root: &Path) -> Result<Self> {
         // TODO: extract?
         let mut result = Self::default();
+        result.terminal_supports_colors = atty::is(atty::Stream::Stderr);
         Self::parse_var("CARGO_MSG_LIMIT", &mut result.limit_messages)?;
         {
             // TODO
@@ -196,12 +198,11 @@ impl Options {
         program_args_started: bool,
         workspace_root: &Path,
     ) -> Result<()> {
-        let terminal_supports_colors = atty::is(atty::Stream::Stderr);
         if self.short_message_format {
             self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
         } else if !self.json_message_format {
             let message_format_arg = if color == COLOR_AUTO {
-                if terminal_supports_colors {
+                if self.terminal_supports_colors {
                     MESSAGE_FORMAT_JSON_WITH_COLORS
                 } else {
                     MESSAGE_FORMAT_JSON
@@ -234,7 +235,7 @@ impl Options {
         let is_test = cargo_command == "test";
         let is_bench = cargo_command == "bench";
         let command_supports_color_arg = is_test || is_bench;
-        if command_supports_color_arg && !program_color_is_set && terminal_supports_colors {
+        if command_supports_color_arg && !program_color_is_set && self.terminal_supports_colors {
             let cargo_toml = CargoToml::parse(workspace_root)?;
             let all_items_have_harness = if is_test {
                 cargo_toml.all_tests_have_harness()
