@@ -2,8 +2,8 @@ use crate::cargo_toml::CargoToml;
 use anyhow::{format_err, Context, Error, Result};
 use clap::{App, AppSettings, Arg};
 use const_format::concatcp;
-use itertools::{repeat_n, Itertools};
-use std::{env, path::Path, str::FromStr, time::Duration};
+use itertools::{repeat_n, Either, Itertools};
+use std::{env, iter, path::Path, str::FromStr, time::Duration};
 
 const PROGRAM_ARGS_DELIMITER: &str = "--";
 
@@ -49,9 +49,8 @@ pub struct Options {
 
 impl Options {
     pub fn from_args_and_vars(workspace_root: &Path) -> Result<Self> {
-        parse_args_with_clap(env::args().skip(1));
+        let mut passed_args = parse_and_reorder_args_with_clap(env::args().skip(1))?.into_iter();
 
-        let mut passed_args = env::args().skip(1);
         let mut result = Self {
             cargo_args: Vec::new(),
             limit_messages: Self::parse_var("CARGO_MSG_LIMIT", "0")?,
@@ -243,8 +242,12 @@ impl Options {
     }
 }
 
-fn parse_args_with_clap(args: impl Iterator<Item = String>) {
-    let app = App::new("cargo-limit")
+fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Result<Vec<String>> {
+    let mut args = args.peekable();
+    let app_name = args
+        .peek()
+        .ok_or_else(|| format_err!("command not found"))?;
+    let app = App::new(app_name)
         .settings(&[
             AppSettings::UnifiedHelpMessage,
             AppSettings::DeriveDisplayOrder,
@@ -288,24 +291,21 @@ fn parse_args_with_clap(args: impl Iterator<Item = String>) {
                 .multiple(true)
                 .number_of_values(1)
                 .global(true),
-        )
-        .get_matches_from(args);
-    let cargo_args = app
+        );
+
+    let cargo_command = app.get_name().to_owned();
+
+    let app_matches = app.get_matches_from(args);
+
+    let cargo_args = app_matches
         .args
         .into_iter()
-        .flat_map(|(key, matched_args)| {
-            let missing_values =
-                repeat_n(None, matched_args.indices.len() - matched_args.vals.len());
-            matched_args
+        .flat_map(|(key, matched_arg)| {
+            let missing_values = repeat_n(None, matched_arg.indices.len() - matched_arg.vals.len());
+            matched_arg
                 .indices
                 .into_iter()
-                .zip(
-                    matched_args
-                        .vals
-                        .into_iter()
-                        .map(Some)
-                        .chain(missing_values),
-                )
+                .zip(matched_arg.vals.into_iter().map(Some).chain(missing_values))
                 .map(move |(i, value)| (i, key, value))
         })
         .sorted_by_key(|(i, _, _)| *i)
@@ -323,15 +323,38 @@ fn parse_args_with_clap(args: impl Iterator<Item = String>) {
             };
             Ok(result)
         })
-        .collect::<Result<Vec<_>>>()
-        .unwrap();
-    dbg!(&cargo_args);
-    //.subcommands();
-    //dbg!(&xs);
-    /*dbg!(&xs.args);
-    dbg!(xs.subcommand().0);
-    dbg!(xs.subcommand().1.unwrap().values_of(""));
-    dbg!(&xs.args["color"]);*/
+        .collect::<Result<Vec<_>>>()?;
+
+    let program_args = app_matches
+        .subcommand
+        .map(|subcommand| {
+            Either::Left(
+                iter::once(Ok(subcommand.name)).chain(
+                    subcommand.matches.clone().args[""]
+                        .vals
+                        .clone()
+                        .into_iter()
+                        .map(|i| {
+                            i.into_string()
+                                .map_err(|_| format_err!("cannot convert argument value"))
+                        }),
+                ),
+            )
+        })
+        .unwrap_or(Either::Right(iter::empty()))
+        .collect::<Result<Vec<_>>>()?;
+
+    let all_args = iter::once(cargo_command)
+        .chain(
+            cargo_args
+                .into_iter()
+                .chain(iter::once("--".to_owned()))
+                .chain(program_args),
+        )
+        .collect::<Vec<_>>();
+    dbg!(&all_args);
+
+    Ok(all_args)
 }
 
 fn opt(name: &'static str, help: &'static str) -> Arg<'static, 'static> {
