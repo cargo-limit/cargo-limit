@@ -396,13 +396,29 @@ mod tests {
             vec![
                 "test",
                 "--help",
-                "--message-format=json-diagnostic-rendered-ansi",
+                "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
                 "--",
                 "--color=always",
             ],
         )?;
 
-        // TODO: message-format
+        assert_cargo_args(
+            vec![cargo_bin, "ltest", "--", "--help"],
+            vec![
+                "test",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+                "--help",
+                "--color=always",
+            ],
+        )?;
+
+        assert_cargo_args(
+            vec![cargo_bin, "ltest", "--message-format=json"],
+            vec!["test", "--message-format=json", "--", "--color=always"],
+        )?;
+
+        // TODO: message-format short?
         Ok(())
     }
 
