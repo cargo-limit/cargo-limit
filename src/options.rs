@@ -48,22 +48,47 @@ pub struct Options {
     // TODO: terminal_supports_colors
 }
 
-impl Options {
-    pub fn from_args_and_vars(cargo_command: &str, workspace_root: &Path) -> Result<Self> {
-        let mut result = Self {
+impl Default for Options {
+    fn default() -> Self {
+        Self {
             cargo_args: Vec::new(),
-            limit_messages: Self::parse_var("CARGO_MSG_LIMIT", "0")?, // TODO: extract strings?
-            time_limit_after_error: Duration::from_secs(Self::parse_var("CARGO_TIME_LIMIT", "1")?),
-            ascending_messages_order: Self::parse_var("CARGO_ASC", "false")?,
-            show_warnings_if_errors_exist: Self::parse_var("CARGO_FORCE_WARN", "false")?,
-            show_dependencies_warnings: Self::parse_var("CARGO_DEPS_WARN", "false")?,
-            open_in_external_application: Self::parse_var("CARGO_OPEN", "")?,
-            open_in_external_application_on_warnings: Self::parse_var("CARGO_OPEN_WARN", "false")?,
+            limit_messages: 0,
+            time_limit_after_error: Duration::from_secs(1),
+            ascending_messages_order: false,
+            show_warnings_if_errors_exist: false,
+            show_dependencies_warnings: false,
+            open_in_external_application: "".to_string(),
+            open_in_external_application_on_warnings: false,
             help: false,
             version: false,
             json_message_format: false,
             short_message_format: false,
-        };
+        }
+    }
+}
+
+impl Options {
+    pub fn from_args_and_vars(cargo_command: &str, workspace_root: &Path) -> Result<Self> {
+        // TODO: extract?
+        let mut result = Self::default();
+        Self::parse_var("CARGO_MSG_LIMIT", &mut result.limit_messages)?;
+        {
+            // TODO
+            let mut seconds = result.time_limit_after_error.as_secs();
+            Self::parse_var("CARGO_TIME_LIMIT", &mut seconds)?;
+            result.time_limit_after_error = Duration::from_secs(seconds);
+        }
+        Self::parse_var("CARGO_ASC", &mut result.ascending_messages_order)?;
+        Self::parse_var(
+            "CARGO_FORCE_WARN",
+            &mut result.show_warnings_if_errors_exist,
+        )?;
+        Self::parse_var("CARGO_DEPS_WARN", &mut result.show_dependencies_warnings)?;
+        Self::parse_var("CARGO_OPEN", &mut result.open_in_external_application)?;
+        Self::parse_var(
+            "CARGO_OPEN_WARN",
+            &mut result.open_in_external_application_on_warnings,
+        )?;
 
         result.process_args(&mut env::args(), cargo_command, workspace_root)?;
         Ok(result)
@@ -218,14 +243,16 @@ impl Options {
         Ok(())
     }
 
-    fn parse_var<T: FromStr>(key: &str, default: &str) -> Result<T>
+    fn parse_var<T: FromStr>(key: &str, value: &mut T) -> Result<()>
     where
         <T as FromStr>::Err: std::error::Error + Sync + Send + 'static,
     {
-        env::var(key)
-            .or_else(|_| Ok::<_, Error>(default.to_owned()))?
-            .parse()
-            .context(format!("invalid {} value", key))
+        if let Ok(new_value) = env::var(key) {
+            *value = new_value
+                .parse()
+                .context(format!("invalid {} value", key))?;
+        }
+        Ok(())
     }
 
     fn validate_color(color: &str) -> Result<()> {
@@ -264,44 +291,97 @@ mod tests {
     #[test]
     fn process_args() -> Result<()> {
         let cargo_bin = "/usr/bin/cargo";
-        assert_cargo_args(vec![cargo_bin, "run"], vec!["run"])?; // TODO: message-format
+
+        assert_cargo_args(
+            vec![cargo_bin, "run"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+        )?;
+
         assert_cargo_args(
             vec![cargo_bin, "run", "--cargo-argument", "other-cargo-argument"],
-            vec!["run", "--cargo-argument", "other-cargo-argument"],
+            vec![
+                "run",
+                "--cargo-argument",
+                "other-cargo-argument",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
         )?;
-        assert_cargo_args(
-            vec![cargo_bin, "run", "program-argument"],
-            vec!["run", "program-argument"],
-        )?;
+
+        /*assert_cargo_args(
+            vec![cargo_bin, "run", "program-argument"], // https://github.com/alopatindev/cargo-limit/issues/6
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+                "program-argument",
+            ],
+        )?;*/
+
         assert_cargo_args(
             vec![cargo_bin, "run", "--", "program-argument"],
-            vec!["run", "--", "program-argument"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+                "program-argument",
+            ],
         )?;
+
         // TODO: colors (both for app and run), other options, harness
-        assert_cargo_args(
+        /*assert_cargo_args(
             vec![cargo_bin, "run", "--color=always"],
-            vec!["run", "--color=always"],
+            vec![
+                "run",
+                "--color=always",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
         )?;
-        assert_cargo_args(vec!["run", "--color=never"], vec!["run", "--color=never"])?;
+
+        assert_cargo_args(
+            vec!["run", "--color=never"],
+            vec![
+                "run",
+                "--color=never",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+        )?;*/
+
+        //assert_cargo_args(vec!["run", "--color", "never"], vec!["run", "--color", "never"])?; // TODO
+
         assert_cargo_args(
             vec![cargo_bin, "run", "--", "--color=always"],
-            vec!["run", "--", "--color=always"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+                "--color=always",
+            ],
         )?;
+
         // vec!["run", "--version"] (TODO: version bool flag)
+
         // vec!["run", "--help"] (TODO: help bool flag)
+
+        // TODO: message-format
         Ok(())
     }
 
     // TODO: test "lrun --message-format=..." args as well
 
     fn assert_cargo_args(input: Vec<&str>, expected_cargo_args: Vec<&str>) -> Result<()> {
-        //let mut options = Options::default();
-        let mut options: Options = todo!();
+        let mut options = Options::default();
         Options::process_args(
             &mut options,
             &mut input.into_iter().map(|i| i.to_string()),
             "run",
-            Path::new(""),
+            Path::new("tests/minimal"),
         )?;
         assert_eq!(options.cargo_args, expected_cargo_args);
         Ok(())
