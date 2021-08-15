@@ -314,24 +314,19 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec![
-                cargo_bin,
-                "lrun",
-                "--cargo-argument",
-                "other-cargo-argument",
-            ],
+            vec![cargo_bin, "lrun", "--verbose", "program-argument"],
             vec![
                 "run",
-                "--cargo-argument",
-                "other-cargo-argument",
+                "--verbose",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--",
+                "program-argument",
                 // "--color=always", // TODO?
             ],
         )?;
 
         assert_cargo_args(
-            vec![cargo_bin, "lrun", "program-argument"], // https://github.com/alopatindev/cargo-limit/issues/6
+            vec![cargo_bin, "lrun", "program-argument"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
