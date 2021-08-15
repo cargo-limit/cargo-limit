@@ -46,8 +46,8 @@ pub struct Options {
 }
 
 impl Options {
-    pub fn from_args_and_vars(cargo_command: &str, workspace_root: &Path) -> Result<Self> {
-        let mut passed_args = env::args().skip(2);
+    pub fn from_args_and_vars(workspace_root: &Path) -> Result<Self> {
+        let mut passed_args = env::args().skip(1);
         let mut result = Self {
             cargo_args: Vec::new(),
             limit_messages: Self::parse_var("CARGO_MSG_LIMIT", "0")?,
@@ -65,12 +65,18 @@ impl Options {
         let mut program_args_started = false;
         let mut color = COLOR_AUTO.to_owned();
 
+        let first_arg = passed_args
+            .next()
+            .ok_or_else(|| format_err!("command not found"))?;
+        let (first_letter, cargo_command) = first_arg.split_at(1);
+        assert_eq!(first_letter, "l");
         result.cargo_args.push(cargo_command.to_owned());
+
         result.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
-        result.process_color_args(
+        result.process_color_and_program_args(
             color,
             passed_args,
-            cargo_command,
+            &cargo_command,
             program_args_started,
             workspace_root,
         )?;
@@ -130,7 +136,7 @@ impl Options {
         Ok(())
     }
 
-    fn process_color_args(
+    fn process_color_and_program_args(
         &mut self,
         color: String,
         passed_args: impl Iterator<Item = String>,

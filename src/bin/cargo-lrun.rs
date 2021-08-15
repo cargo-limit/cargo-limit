@@ -1,1 +1,1 @@
-cargo_limit::run_command!("run");
+cargo_limit::run_command!();
