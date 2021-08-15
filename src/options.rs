@@ -102,7 +102,7 @@ impl Options {
         args: impl Iterator<Item = String>,
         workspace_root: &Path, // TODO: should not be here?
     ) -> Result<Self> {
-        let mut passed_args = args.skip(1).peekable();
+        let mut passed_args = args.skip(1).peekable(); // TODO: remove peekable
         let cargo_command = passed_args
             .next()
             .ok_or_else(|| format_err!("cargo command not found"))?;
@@ -111,13 +111,16 @@ impl Options {
         assert_eq!(first_letter, "l");
         self.cargo_args.push(cargo_command.to_owned());
 
-        let mut program_args_started =
-            if let Some(first_argument_after_cargo_command) = passed_args.peek() {
-                // https://github.com/alopatindev/cargo-limit/issues/6
-                !first_argument_after_cargo_command.starts_with('-')
-            } else {
-                false
-            };
+        let mut program_args_started = false;
+        /*let mut program_args_started =
+        if let Some(first_argument_after_cargo_command) = passed_args.peek() {
+            // https://github.com/alopatindev/cargo-limit/issues/6
+            !first_argument_after_cargo_command.starts_with('-')
+        } else {
+            false
+        };*/
+        // TODO: program => app
+        //let passed_args = Self::put_program_args_after_two_dashes(passed_args);
 
         let mut color = COLOR_AUTO.to_owned();
         self.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
@@ -132,17 +135,27 @@ impl Options {
         Ok(self)
     }
 
+    /*fn put_program_args_after_two_dashes(passed_args: impl Iterator<Item = String>) -> impl Iterator<Item = String> {
+        let mut cargo_args = Vec::new();
+        let mut program_args = Vec::new();
+        for i in passed_args {
+        }
+        // TODO: extract dashes delimiter constant
+        cargo.into_iter().chain(once(PROGRAM_ARGS_DELIMITER.to_string()))
+    }*/
+
     fn process_main_args(
         &mut self,
         color: &mut String,
         passed_args: &mut impl Iterator<Item = String>,
         program_args_started: &mut bool,
     ) -> Result<()> {
-        if *program_args_started {
-            return Ok(());
-        }
-
         while let Some(arg) = passed_args.next() {
+            /*if !arg.starts_with('-') {
+                *program_args_started = true;
+                break;
+            }*/
+
             if arg == "-h" || arg == "--help" {
                 self.help = true;
                 self.cargo_args.push(arg);
@@ -180,15 +193,19 @@ impl Options {
                 }
             } else if arg == PROGRAM_ARGS_DELIMITER {
                 *program_args_started = true;
+                dbg!("break at args delimiter");
                 break;
             } else {
                 self.cargo_args.push(arg);
             }
         }
 
+        dbg!(&self.cargo_args);
+
         Ok(())
     }
 
+    // TODO: rename
     fn process_color_args(
         &mut self,
         color: String,
@@ -223,7 +240,7 @@ impl Options {
                 if arg == COLOR[0..COLOR.len() - 1] || arg.starts_with(COLOR) {
                     program_color_is_set = true;
                 }
-                self.cargo_args.push(arg);
+                self.cargo_args.push(arg); // FIXME: actually program args
             }
         }
 
@@ -249,6 +266,7 @@ impl Options {
                 self.add_color_arg(COLOR_ALWAYS);
             }
         }
+        dbg!(&self.cargo_args);
         Ok(())
     }
 
@@ -311,27 +329,27 @@ mod tests {
             ],
         )?;
 
-        assert_cargo_args(
-            vec![cargo_bin, "lrun", "program-argument"],
-            vec![
-                "run",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-                "program-argument",
-            ],
-        )?;
-
-        assert_cargo_args(
-            vec![cargo_bin, "lrun", "--verbose", "program-argument"],
-            vec![
-                "run",
-                "--verbose",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-                "program-argument",
-                // "--color=always", // TODO?
-            ],
-        )?;
+        //        assert_cargo_args(
+        //            vec![cargo_bin, "lrun", "program-argument"],
+        //            vec![
+        //                "run",
+        //                "--message-format=json-diagnostic-rendered-ansi",
+        //                "--",
+        //                "program-argument",
+        //            ],
+        //        )?;
+        //
+        //        assert_cargo_args(
+        //            vec![cargo_bin, "lrun", "--verbose", "program-argument"],
+        //            vec![
+        //                "run",
+        //                "--verbose",
+        //                "--message-format=json-diagnostic-rendered-ansi",
+        //                "--",
+        //                "program-argument",
+        //                // "--color=always", // TODO?
+        //            ],
+        //        )?;
 
         assert_cargo_args(
             vec![cargo_bin, "lrun", "--", "program-argument"],
@@ -388,7 +406,7 @@ mod tests {
                 help: true,
                 ..Options::default()
             },
-        );
+        )?;
 
         assert_options(
             vec![cargo_bin, "lclippy", "--version"],
@@ -402,7 +420,7 @@ mod tests {
                 version: true,
                 ..Options::default()
             },
-        );
+        )?;
 
         assert_cargo_args(
             vec![cargo_bin, "ltest", "--", "--help"],
