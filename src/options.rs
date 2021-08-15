@@ -1,6 +1,8 @@
 use crate::cargo_toml::CargoToml;
 use anyhow::{format_err, Context, Error, Result};
+use clap::{App, AppSettings, Arg};
 use const_format::concatcp;
+use itertools::{repeat_n, Itertools};
 use std::{env, path::Path, str::FromStr, time::Duration};
 
 const PROGRAM_ARGS_DELIMITER: &str = "--";
@@ -47,6 +49,8 @@ pub struct Options {
 
 impl Options {
     pub fn from_args_and_vars(workspace_root: &Path) -> Result<Self> {
+        parse_args_with_clap(env::args().skip(1));
+
         let mut passed_args = env::args().skip(1);
         let mut result = Self {
             cargo_args: Vec::new(),
@@ -70,7 +74,7 @@ impl Options {
             .ok_or_else(|| format_err!("command not found"))?;
         let (first_letter, cargo_command) = first_arg.split_at(1);
         assert_eq!(first_letter, "l");
-        result.cargo_args.push(cargo_command.to_owned());
+        result.cargo_args.push(cargo_command.to_owned()); // TODO: it's not really cargo_args anymore
 
         result.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
         result.process_color_and_program_args(
@@ -237,4 +241,110 @@ impl Options {
     fn add_color_arg(&mut self, value: &str) {
         self.cargo_args.push(format!("{}{}", COLOR, value));
     }
+}
+
+fn parse_args_with_clap(args: impl Iterator<Item = String>) {
+    let app = App::new("cargo-limit")
+        .settings(&[
+            AppSettings::UnifiedHelpMessage,
+            AppSettings::DeriveDisplayOrder,
+            AppSettings::VersionlessSubcommands,
+            AppSettings::AllowExternalSubcommands,
+        ])
+        .arg(opt("version", "Print version info and exit").short("V"))
+        .arg(opt("list", "List installed commands"))
+        .arg(opt("explain", "Run `rustc --explain CODE`").value_name("CODE"))
+        .arg(
+            opt(
+                "verbose",
+                "Use verbose output (-vv very verbose/build.rs output)",
+            )
+            .short("v")
+            .multiple(true)
+            .global(true),
+        )
+        .arg(opt("quiet", "No output printed to stdout").short("q"))
+        .arg(
+            opt("color", "Coloring: auto, always, never")
+                .value_name("WHEN")
+                .global(true),
+        )
+        .arg(opt("frozen", "Require Cargo.lock and cache are up to date").global(true))
+        .arg(opt("locked", "Require Cargo.lock is up to date").global(true))
+        .arg(opt("offline", "Run without accessing the network").global(true))
+        .arg(
+            multi_opt(
+                "config",
+                "KEY=VALUE",
+                "Override a configuration value (unstable)",
+            )
+            .global(true),
+        )
+        .arg(
+            Arg::with_name("unstable-features")
+                .help("Unstable (nightly-only) flags to Cargo, see 'cargo -Z help' for details")
+                .short("Z")
+                .value_name("FLAG")
+                .multiple(true)
+                .number_of_values(1)
+                .global(true),
+        )
+        .get_matches_from(args);
+    let cargo_args = app
+        .args
+        .into_iter()
+        .flat_map(|(key, matched_args)| {
+            let missing_values =
+                repeat_n(None, matched_args.indices.len() - matched_args.vals.len());
+            matched_args
+                .indices
+                .into_iter()
+                .zip(
+                    matched_args
+                        .vals
+                        .into_iter()
+                        .map(Some)
+                        .chain(missing_values),
+                )
+                .map(move |(i, value)| (i, key, value))
+        })
+        .sorted_by_key(|(i, _, _)| *i)
+        .map(|(_, key, value)| {
+            let result = if let Some(value) = value {
+                format!(
+                    "--{}={}",
+                    key,
+                    value
+                        .into_string()
+                        .map_err(|_| format_err!("cannot convert argument value"))?
+                )
+            } else {
+                format!("--{}", key) // TODO: extract to contant? or somehow convert using clap?
+            };
+            Ok(result)
+        })
+        .collect::<Result<Vec<_>>>()
+        .unwrap();
+    dbg!(&cargo_args);
+    //.subcommands();
+    //dbg!(&xs);
+    /*dbg!(&xs.args);
+    dbg!(xs.subcommand().0);
+    dbg!(xs.subcommand().1.unwrap().values_of(""));
+    dbg!(&xs.args["color"]);*/
+}
+
+fn opt(name: &'static str, help: &'static str) -> Arg<'static, 'static> {
+    Arg::with_name(name).long(name).help(help)
+}
+
+fn multi_opt(
+    name: &'static str,
+    value_name: &'static str,
+    help: &'static str,
+) -> Arg<'static, 'static> {
+    opt(name, help)
+        .value_name(value_name)
+        .multiple(true)
+        .number_of_values(1)
 }
