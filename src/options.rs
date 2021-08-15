@@ -1,7 +1,7 @@
 use crate::cargo_toml::CargoToml;
 use anyhow::{format_err, Context, Error, Result};
 use const_format::concatcp;
-use std::{env, path::Path, str::FromStr, time::Duration};
+use std::{env, iter::Peekable, path::Path, str::FromStr, time::Duration};
 
 const PROGRAM_ARGS_DELIMITER: &str = "--";
 
@@ -90,19 +90,19 @@ impl Options {
             &mut result.open_in_external_application_on_warnings,
         )?;
 
-        result.process_args(&mut env::args(), workspace_root)?; // TODO: &mut?
+        result.process_args(&mut env::args().peekable(), workspace_root)?; // TODO: &mut?
         Ok(result)
     }
 
     // TODO: maybe just move self?
     fn process_args(
         &mut self,
-        args: &mut impl Iterator<Item = String>,
+        args: impl Iterator<Item = String>,
         workspace_root: &Path, // TODO: should not be here?
     ) -> Result<()> {
         dbg!(&env::args().collect::<Vec<_>>());
         // TODO: args are ["/home/al/.cargo/bin/cargo-lrun", "lrun", "a"] -> ["a"]
-        let mut passed_args = args.skip(1);
+        let mut passed_args = args.skip(1).peekable();
 
         let cargo_command: String = passed_args
             .next()
@@ -111,15 +111,24 @@ impl Options {
         let (first_letter, cargo_command) = cargo_command // TODO: either don't crash or crash everywhere
             .split_at(1);
         assert_eq!(first_letter, "l");
+        self.cargo_args.push(cargo_command.to_owned());
 
         // TODO: extract testable code: without env vars, without real app args, without real Cargo.toml
         // TODO: test args => cargo_args
 
         // TODO: extract to process_args
-        let mut program_args_started = false; // TODO: define in process_main_args?
+
+        // TODO: define in process_main_args?
+        let mut program_args_started =
+            if let Some(first_argument_after_cargo_command) = passed_args.peek() {
+                // https://github.com/alopatindev/cargo-limit/issues/6
+                !first_argument_after_cargo_command.starts_with('-')
+            } else {
+                false
+            };
+
         let mut color = COLOR_AUTO.to_owned();
 
-        self.cargo_args.push(cargo_command.to_owned());
         self.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
         self.process_color_args(
             color,
@@ -138,6 +147,9 @@ impl Options {
         passed_args: &mut impl Iterator<Item = String>, // TODO: why ref?
         program_args_started: &mut bool,
     ) -> Result<()> {
+        if *program_args_started {
+            return Ok(());
+        }
         while let Some(arg) = passed_args.next() {
             if arg == "-h" || arg == "--help" {
                 self.help = true;
@@ -325,7 +337,7 @@ mod tests {
             ],
         )?;
 
-        /*assert_cargo_args(
+        assert_cargo_args(
             vec![cargo_bin, "lrun", "program-argument"], // https://github.com/alopatindev/cargo-limit/issues/6
             vec![
                 "run",
@@ -333,7 +345,7 @@ mod tests {
                 "--",
                 "program-argument",
             ],
-        )?;*/
+        )?;
 
         assert_cargo_args(
             vec![cargo_bin, "lrun", "--", "program-argument"],
@@ -392,7 +404,7 @@ mod tests {
         let mut options = Options::default();
         Options::process_args(
             &mut options,
-            &mut input.into_iter().map(|i| i.to_string()),
+            input.into_iter().map(|i| i.to_string()),
             Path::new("tests/stubs/minimal"),
         )?;
         assert_eq!(options.cargo_args, expected_cargo_args);
