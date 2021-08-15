@@ -202,12 +202,8 @@ fn extract_spans_for_external_application(
 
 fn find_leaf_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {
     // TODO: consider nodes with project higher-priority?
-    loop {
-        if let Some(expansion) = span.expansion {
-            span = expansion.span;
-        } else {
-            break;
-        }
+    while let Some(expansion) = span.expansion {
+        span = expansion.span;
     }
     span
 }
