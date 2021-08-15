@@ -49,7 +49,7 @@ pub struct Options {
 
 impl Options {
     pub fn from_args_and_vars(workspace_root: &Path) -> Result<Self> {
-        let mut passed_args = parse_and_reorder_args_with_clap(env::args().skip(1))?.into_iter();
+        let mut passed_args = parse_and_reorder_args_with_clap(env::args())?.into_iter();
 
         let mut result = Self {
             cargo_args: Vec::new(),
@@ -68,11 +68,9 @@ impl Options {
         let mut program_args_started = false;
         let mut color = COLOR_AUTO.to_owned();
 
-        let first_arg = passed_args
+        let cargo_command = passed_args
             .next()
             .ok_or_else(|| format_err!("command not found"))?;
-        let (first_letter, cargo_command) = first_arg.split_at(1);
-        assert_eq!(first_letter, "l");
         result.cargo_args.push(cargo_command.to_owned()); // TODO: it's not really cargo_args anymore
 
         result.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
@@ -243,11 +241,32 @@ impl Options {
 }
 
 fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Result<Vec<String>> {
+    const PREFIX: &str = "cargo-l";
+    let mut cargo_command = None;
     let mut args = args.peekable();
-    let app_name = args
-        .peek()
-        .ok_or_else(|| format_err!("command not found"))?;
-    let app = App::new(app_name)
+    if let Some(binary) = args.peek() {
+        if binary.starts_with(PREFIX) {
+            let (first_letter, command) = binary.split_at(PREFIX.len()); // TODO: letter naming
+            assert_eq!(first_letter, PREFIX);
+            cargo_command = Some(command.to_owned());
+        }
+    }
+
+    if cargo_command.is_none() {
+        let _ = args.next();
+
+        let app_name = args
+            .peek()
+            .ok_or_else(|| format_err!("command not found"))?;
+
+        let (first_letter, command) = app_name.split_at(1);
+        assert_eq!(first_letter, "l");
+        cargo_command = Some(command.to_owned());
+    }
+
+    let cargo_command = cargo_command.ok_or_else(|| format_err!("command not found"))?;
+
+    let app = App::new(format!("{}{}", PREFIX, cargo_command))
         .settings(&[
             AppSettings::UnifiedHelpMessage,
             AppSettings::DeriveDisplayOrder,
@@ -292,8 +311,6 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
                 .number_of_values(1)
                 .global(true),
         );
-
-    let cargo_command = app.get_name().to_owned();
 
     let app_matches = app.get_matches_from(args);
 
