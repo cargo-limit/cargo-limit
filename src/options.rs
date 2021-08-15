@@ -34,6 +34,7 @@ const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 pub struct Options {
     // TODO: getset?
     pub cargo_args: Vec<String>,
+    pub program_args: Vec<String>,
     pub terminal_supports_colors: bool,
     pub limit_messages: usize,
     pub time_limit_after_error: Duration,
@@ -52,6 +53,7 @@ impl Default for Options {
     fn default() -> Self {
         Self {
             cargo_args: Vec::new(),
+            program_args: Vec::new(),
             terminal_supports_colors: true,
             limit_messages: 0,
             time_limit_after_error: Duration::from_secs(1),
@@ -69,6 +71,13 @@ impl Default for Options {
 }
 
 impl Options {
+    pub fn all_args(&self) -> impl Iterator<Item = String> {
+        self.cargo_args
+            .clone()
+            .into_iter()
+            .chain(self.program_args.clone().into_iter())
+    }
+
     pub fn from_args_and_os(workspace_root: &Path) -> Result<Self> {
         Self::from_vars_and_atty()?.process_args(&mut env::args(), workspace_root)
     }
@@ -109,7 +118,7 @@ impl Options {
         let (first_letter, cargo_command) = cargo_command // TODO: either don't crash or crash everywhere
             .split_at(1);
         assert_eq!(first_letter, "l");
-        self.cargo_args.push(cargo_command.to_owned());
+        self.cargo_args.push(cargo_command.to_owned()); // TODO: which means it's not really args
 
         let mut program_args_started = false;
         /*let mut program_args_started =
@@ -160,7 +169,7 @@ impl Options {
                 self.help = true;
                 self.cargo_args.push(arg);
             } else if arg == "-v" || arg == "--version" {
-                dbg!("version");
+                //dbg!("version");
                 self.version = true;
                 self.cargo_args.push(arg);
             } else if arg == COLOR[0..COLOR.len() - 1] {
@@ -193,14 +202,14 @@ impl Options {
                 }
             } else if arg == PROGRAM_ARGS_DELIMITER {
                 *program_args_started = true;
-                dbg!("break at args delimiter");
+                //dbg!("break at args delimiter");
                 break;
             } else {
                 self.cargo_args.push(arg);
             }
         }
 
-        dbg!(&self.cargo_args);
+        //dbg!(&self.cargo_args);
 
         Ok(())
     }
@@ -259,7 +268,7 @@ impl Options {
                 self.add_color_arg(COLOR_ALWAYS);
             }
         }
-        dbg!(&self.cargo_args);
+        //dbg!(&self.cargo_args);
         Ok(())
     }
 
@@ -273,7 +282,7 @@ impl Options {
             if arg == COLOR[0..COLOR.len() - 1] || arg.starts_with(COLOR) {
                 *program_color_is_set = true;
             }
-            self.cargo_args.push(arg);
+            self.program_args.push(arg);
         }
     }
 
@@ -332,8 +341,8 @@ mod tests {
                 "test",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--",
-                "--color=always",
             ],
+            vec!["--color=always"],
         )?;
 
         //        assert_cargo_args(
@@ -364,8 +373,8 @@ mod tests {
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--",
-                "program-argument",
             ],
+            vec!["program-argument"],
         )?;
 
         // TODO: colors (both for app and run), other options, harness
@@ -397,8 +406,8 @@ mod tests {
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--",
-                "--color=always",
             ],
+            vec!["--color=always"],
         )?;
 
         assert_options(
@@ -409,6 +418,7 @@ mod tests {
                 "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
                 "--",
             ],
+            vec![],
             Options {
                 help: true,
                 ..Options::default()
@@ -423,6 +433,7 @@ mod tests {
                 "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
                 "--",
             ],
+            vec![],
             Options {
                 version: true,
                 ..Options::default()
@@ -435,9 +446,8 @@ mod tests {
                 "test",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--",
-                "--help",
-                "--color=always",
             ],
+            vec!["--help", "--color=always"],
         )?;
 
         /*assert_cargo_args(
@@ -449,13 +459,23 @@ mod tests {
         Ok(())
     }
 
-    fn assert_cargo_args(input: Vec<&str>, expected_cargo_args: Vec<&str>) -> Result<()> {
-        assert_options(input, expected_cargo_args, Default::default())
+    fn assert_cargo_args(
+        input: Vec<&str>,
+        expected_cargo_args: Vec<&str>,
+        expected_program_args: Vec<&str>,
+    ) -> Result<()> {
+        assert_options(
+            input,
+            expected_cargo_args,
+            expected_program_args,
+            Default::default(),
+        )
     }
 
     fn assert_options(
         input: Vec<&str>,
         expected_cargo_args: Vec<&str>,
+        expected_program_args: Vec<&str>,
         expected_options: Options,
     ) -> Result<()> {
         let options = Options::process_args(
@@ -465,6 +485,10 @@ mod tests {
         )?;
         let expected = Options {
             cargo_args: expected_cargo_args
+                .into_iter()
+                .map(|i| i.to_string()) // TODO: extract
+                .collect(),
+            program_args: expected_program_args
                 .into_iter()
                 .map(|i| i.to_string())
                 .collect(),
