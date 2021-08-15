@@ -30,6 +30,7 @@ const COLOR_ALWAYS: &str = "always";
 const COLOR_NEVER: &str = "never";
 const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 
+#[derive(Debug, PartialEq)]
 pub struct Options {
     // TODO: getset?
     pub cargo_args: Vec<String>,
@@ -60,7 +61,7 @@ impl Default for Options {
             open_in_external_application: "".to_string(),
             open_in_external_application_on_warnings: false,
             help: false,
-            version: false, // TODO: WTF
+            version: false,
             json_message_format: false,
             short_message_format: false,
         }
@@ -382,19 +383,7 @@ mod tests {
             ],
         )?;
 
-        // TODO: test flag?
-        assert_cargo_args(
-            vec![cargo_bin, "lclippy", "--version"],
-            vec![
-                "clippy",
-                "--version",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
-        )?;
-
-        // TODO: help flag?
-        assert_cargo_args(
+        assert_options(
             vec![cargo_bin, "lclippy", "--help"],
             vec![
                 "clippy",
@@ -402,7 +391,25 @@ mod tests {
                 "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
                 "--",
             ],
-        )?;
+            Options {
+                help: true,
+                ..Options::default()
+            },
+        );
+
+        assert_options(
+            vec![cargo_bin, "lclippy", "--version"],
+            vec![
+                "clippy",
+                "--version",
+                "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
+                "--",
+            ],
+            Options {
+                version: true,
+                ..Options::default()
+            },
+        );
 
         assert_cargo_args(
             vec![cargo_bin, "ltest", "--", "--help"],
@@ -415,24 +422,37 @@ mod tests {
             ],
         )?;
 
-        assert_cargo_args(
+        /*assert_cargo_args(
             vec![cargo_bin, "ltest", "--message-format=json"],
             vec!["test", "--message-format=json", "--", "--color=always"],
-        )?;
+        )?;*/
 
         // TODO: message-format short?
         Ok(())
     }
 
-    // TODO: test "lrun --message-format=..." args as well
-
     fn assert_cargo_args(input: Vec<&str>, expected_cargo_args: Vec<&str>) -> Result<()> {
+        assert_options(input, expected_cargo_args, Default::default())
+    }
+
+    fn assert_options(
+        input: Vec<&str>,
+        expected_cargo_args: Vec<&str>,
+        expected_options: Options,
+    ) -> Result<()> {
         let options = Options::process_args(
             Options::default(),
             input.into_iter().map(|i| i.to_string()),
-            Path::new("tests/stubs/minimal"),
+            Path::new("tests/stubs/minimal"), // TODO
         )?;
-        assert_eq!(options.cargo_args, expected_cargo_args);
+        let expected = Options {
+            cargo_args: expected_cargo_args
+                .into_iter()
+                .map(|i| i.to_string())
+                .collect(),
+            ..expected_options
+        };
+        assert_eq!(options, expected);
         Ok(())
     }
 }
