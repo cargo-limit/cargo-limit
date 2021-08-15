@@ -59,7 +59,7 @@ impl Default for Options {
             show_dependencies_warnings: false,
             open_in_external_application: "".to_string(),
             open_in_external_application_on_warnings: false,
-            help: false,
+            help: false,    // TODO: WTF
             version: false, // TODO: WTF
             json_message_format: false,
             short_message_format: false,
@@ -100,8 +100,6 @@ impl Options {
         args: impl Iterator<Item = String>,
         workspace_root: &Path, // TODO: should not be here?
     ) -> Result<()> {
-        dbg!(&env::args().collect::<Vec<_>>());
-        // TODO: args are ["/home/al/.cargo/bin/cargo-lrun", "lrun", "a"] -> ["a"]
         let mut passed_args = args.skip(1).peekable();
 
         let cargo_command: String = passed_args
@@ -113,12 +111,6 @@ impl Options {
         assert_eq!(first_letter, "l");
         self.cargo_args.push(cargo_command.to_owned());
 
-        // TODO: extract testable code: without env vars, without real app args, without real Cargo.toml
-        // TODO: test args => cargo_args
-
-        // TODO: extract to process_args
-
-        // TODO: define in process_main_args?
         let mut program_args_started =
             if let Some(first_argument_after_cargo_command) = passed_args.peek() {
                 // https://github.com/alopatindev/cargo-limit/issues/6
@@ -128,7 +120,6 @@ impl Options {
             };
 
         let mut color = COLOR_AUTO.to_owned();
-
         self.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
         self.process_color_args(
             color,
@@ -144,7 +135,7 @@ impl Options {
     fn process_main_args(
         &mut self,
         color: &mut String,
-        passed_args: &mut impl Iterator<Item = String>, // TODO: why ref?
+        passed_args: &mut impl Iterator<Item = String>,
         program_args_started: &mut bool,
     ) -> Result<()> {
         if *program_args_started {
