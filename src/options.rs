@@ -30,7 +30,6 @@ const COLOR_ALWAYS: &str = "always";
 const COLOR_NEVER: &str = "never";
 const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 
-// TODO: Default
 pub struct Options {
     // TODO: getset?
     pub cargo_args: Vec<String>,
@@ -60,7 +59,7 @@ impl Default for Options {
             show_dependencies_warnings: false,
             open_in_external_application: "".to_string(),
             open_in_external_application_on_warnings: false,
-            help: false,    // TODO: WTF
+            help: false,
             version: false, // TODO: WTF
             json_message_format: false,
             short_message_format: false,
@@ -382,9 +381,26 @@ mod tests {
             ],
         )?;
 
-        //assert_cargo_args(vec![cargo_bin, "--version"], vec!["--version"])?; // TODO: WTF
+        /*assert_cargo_args(
+            vec![cargo_bin, "--version"],
+            vec![
+                "--version",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+                "--color=always",
+            ],
+        )?;*/
 
-        //assert_cargo_args(vec![cargo_bin, "--help"], vec!["--help"])?; // TODO: WTF
+        assert_cargo_args(
+            vec![cargo_bin, "ltest", "--help"],
+            vec![
+                "test",
+                "--help",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+                "--color=always",
+            ],
+        )?;
 
         // TODO: message-format
         Ok(())
