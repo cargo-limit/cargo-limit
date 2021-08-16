@@ -240,28 +240,29 @@ impl Options {
     }
 }
 
+fn remove_prefix(expected_prefix: &str, app_name: &str) -> Option<String> {
+    let (prefix, command) = app_name.split_at(expected_prefix.len());
+    assert_eq!(prefix, expected_prefix);
+    Some(command.to_owned())
+}
+
 fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Result<Vec<String>> {
-    const PREFIX: &str = "cargo-l";
     let mut cargo_command = None;
+
+    const PREFIX: &str = "cargo-l";
     let mut args = args.peekable();
     if let Some(binary) = args.peek() {
         if binary.starts_with(PREFIX) {
-            let (prefix, command) = binary.split_at(PREFIX.len());
-            assert_eq!(prefix, PREFIX);
-            cargo_command = Some(command.to_owned());
+            cargo_command = remove_prefix(PREFIX, binary);
         }
     }
 
     if cargo_command.is_none() {
         let _ = args.next();
-
         let app_name = args
             .peek()
             .ok_or_else(|| format_err!("command not found"))?;
-
-        let (prefix, command) = app_name.split_at(1);
-        assert_eq!(prefix, "l");
-        cargo_command = Some(command.to_owned());
+        cargo_command = remove_prefix("l", app_name);
     }
 
     let cargo_command = cargo_command.ok_or_else(|| format_err!("command not found"))?;
