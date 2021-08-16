@@ -186,13 +186,7 @@ fn extract_spans_for_external_application(
                 .filter(|span| span.is_primary)
                 .cloned()
         })
-        .map(|span| {
-            if let Some(expansion) = span.expansion {
-                expansion.span
-            } else {
-                span
-            }
-        });
+        .map(find_leaf_expansion);
 
     let mut spans_in_consistent_order = Vec::new();
     let mut used_file_names = HashSet::new();
@@ -204,4 +198,12 @@ fn extract_spans_for_external_application(
     }
 
     spans_in_consistent_order
+}
+
+fn find_leaf_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {
+    // TODO: consider nodes with project higher-priority?
+    while let Some(expansion) = span.expansion {
+        span = expansion.span;
+    }
+    span
 }
