@@ -341,18 +341,16 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
     let program_args = app_matches
         .subcommand
         .map(|subcommand| {
-            Either::Left(
-                iter::once(Ok(subcommand.name)).chain(
-                    subcommand.matches.clone().args[""]
-                        .vals
-                        .clone()
-                        .into_iter()
-                        .map(|i| {
-                            i.into_string()
-                                .map_err(|_| format_err!("cannot convert argument value"))
-                        }),
-                ),
-            )
+            Either::Left(iter::once(Ok(subcommand.name)).chain({
+                if let Some(matched_args) = subcommand.matches.clone().args.get("") {
+                    Either::Left(matched_args.vals.clone().into_iter().map(|i| {
+                        i.into_string()
+                            .map_err(|_| format_err!("cannot convert argument value"))
+                    }))
+                } else {
+                    Either::Right(iter::empty())
+                }
+            }))
         })
         .unwrap_or(Either::Right(iter::empty()))
         .collect::<Result<Vec<_>>>()?;
