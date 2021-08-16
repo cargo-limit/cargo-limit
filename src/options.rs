@@ -48,8 +48,11 @@ pub struct Options {
 }
 
 impl Options {
+    // TODO: rename?
     pub fn from_args_and_vars(workspace_root: &Path) -> Result<Self> {
         let mut passed_args = parse_and_reorder_args_with_clap(env::args())?.into_iter();
+        //let mut passed_args = env::args().skip(1);
+        //let mut passed_args = env::args();
 
         let mut result = Self {
             cargo_args: Vec::new(),
@@ -73,7 +76,9 @@ impl Options {
             .ok_or_else(|| format_err!("command not found"))?;
         result.cargo_args.push(cargo_command.to_owned()); // TODO: it's not really cargo_args anymore
 
+        dbg!(program_args_started);
         result.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
+        dbg!(program_args_started);
         result.process_color_and_program_args(
             color,
             passed_args,
@@ -81,6 +86,8 @@ impl Options {
             program_args_started,
             workspace_root,
         )?;
+        dbg!(program_args_started);
+        dbg!(&result.cargo_args);
 
         Ok(result)
     }
@@ -91,11 +98,24 @@ impl Options {
         passed_args: &mut impl Iterator<Item = String>,
         program_args_started: &mut bool,
     ) -> Result<()> {
+        /*let mut p = passed_args.peekable();
+        if let Some(p) = p.peek() {
+            if p == "-" {
+                *program_args_started = true;
+            }
+        }*/
         while let Some(arg) = passed_args.next() {
+            dbg!(&arg);
+            /*if arg == "-" {
+                dbg!("processing hyphen");
+                *program_args_started = true;
+                self.cargo_args.push(arg);
+            } else*/
             if arg == "-h" || arg == "--help" {
                 self.help = true;
                 self.cargo_args.push(arg);
-            } else if arg == "-v" || arg == "--version" {
+            } else if arg == "-V" || arg == "--version" {
+                // TODO: is it "-V"? "-v" is verbose
                 self.version = true;
                 self.cargo_args.push(arg);
             } else if arg == COLOR[0..COLOR.len() - 1] {
@@ -142,7 +162,7 @@ impl Options {
         color: String,
         passed_args: impl Iterator<Item = String>,
         cargo_command: &str,
-        program_args_started: bool,
+        mut program_args_started: bool,
         workspace_root: &Path,
     ) -> Result<()> {
         let terminal_supports_colors = atty::is(atty::Stream::Stderr);
@@ -263,15 +283,17 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
     let binary = format!("{}{}", PREFIX, cargo_command);
 
     // https://github.com/rust-lang/cargo/blob/ddf9adba1afb4654edba09ca2b62a59979fcd895/src/bin/cargo/cli.rs#L302
-    let app = App::new(binary)
+    let app = App::new(binary.clone()) // TODO
         .settings(&[
             AppSettings::UnifiedHelpMessage,
             AppSettings::DeriveDisplayOrder,
             AppSettings::VersionlessSubcommands,
             AppSettings::AllowExternalSubcommands,
+            AppSettings::NoBinaryName,
             //AppSettings::DisableHelpSubcommand, // TODO: remove?
+            //AppSettings::AllowLeadingHyphen,
         ])
-        .arg(opt("help", "Print help info and exit").short("h"))
+        /*.arg(opt("help", "Print help info and exit").short("h"))
         .arg(opt("version", "Print version info and exit").short("V"))
         .arg(opt("list", "List installed commands"))
         .arg(opt("explain", "Run `rustc --explain CODE`").value_name("CODE"))
@@ -309,7 +331,7 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
                 .multiple(true)
                 .number_of_values(1)
                 .global(true),
-        );
+        )*/;
 
     let app_matches = app.get_matches_from(args);
     //dbg!(&app_matches);
@@ -341,6 +363,7 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
             Ok(result)
         })
         .collect::<Result<Vec<_>>>()?;
+    //dbg!(&cargo_args); // TODO: empty
 
     let program_args = app_matches
         .subcommand
@@ -358,16 +381,30 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
         })
         .unwrap_or(Either::Right(iter::empty()))
         .collect::<Result<Vec<_>>>()?;
+    //dbg!(&program_args);
 
+    /*let all_args = iter::once(binary)
+    .chain(iter::once(cargo_command))
+    .chain(
+        cargo_args
+            .into_iter()
+            .chain(iter::once("--".to_owned()))
+            .chain(program_args),
+    )
+    .collect::<Vec<_>>();*/
+    /*let all_args = (iter::once(cargo_command))
+    .chain(
+        cargo_args
+            .into_iter()
+            .chain(iter::once("--".to_owned()))
+            .chain(program_args),
+    )
+    .collect::<Vec<_>>();*/
     let all_args = iter::once(cargo_command)
-        .chain(
-            cargo_args
-                .into_iter()
-                .chain(iter::once("--".to_owned()))
-                .chain(program_args),
-        )
-        .collect::<Vec<_>>();
-    dbg!(&all_args);
+        .chain(program_args.into_iter().skip(1))
+        .collect::<Vec<_>>(); // TODO: WTF
+
+    //dbg!(&all_args);
 
     Ok(all_args)
 }
