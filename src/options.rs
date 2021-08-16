@@ -270,7 +270,45 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
             AppSettings::AllowExternalSubcommands,
             AppSettings::DisableHelpSubcommand,
         ])
-        .arg(opt("help", "Print help info and exit").short("h"));
+        .arg(opt("help", "Print help info and exit").short("h"))
+        .arg(opt("version", "Print version info and exit").short("V"))
+        .arg(opt("list", "List installed commands"))
+        .arg(opt("explain", "Run `rustc --explain CODE`").value_name("CODE"))
+        .arg(
+            opt(
+                "verbose",
+                "Use verbose output (-vv very verbose/build.rs output)",
+            )
+            .short("v")
+            .multiple(true)
+            .global(true),
+        )
+        .arg(opt("quiet", "No output printed to stdout").short("q"))
+        .arg(
+            opt("color", "Coloring: auto, always, never")
+                .value_name("WHEN")
+                .global(true),
+        )
+        .arg(opt("frozen", "Require Cargo.lock and cache are up to date").global(true))
+        .arg(opt("locked", "Require Cargo.lock is up to date").global(true))
+        .arg(opt("offline", "Run without accessing the network").global(true))
+        .arg(
+            multi_opt(
+                "config",
+                "KEY=VALUE",
+                "Override a configuration value (unstable)",
+            )
+            .global(true),
+        )
+        .arg(
+            Arg::with_name("unstable-features")
+                .help("Unstable (nightly-only) flags to Cargo, see 'cargo -Z help' for details")
+                .short("Z")
+                .value_name("FLAG")
+                .multiple(true)
+                .number_of_values(1)
+                .global(true),
+        );
 
     let app_matches = app.get_matches_from(args);
     dbg!(&app_matches);
@@ -341,4 +379,15 @@ fn remove_prefix(expected_prefix: &str, app_name: &str) -> Option<String> {
 
 fn opt(name: &'static str, help: &'static str) -> Arg<'static, 'static> {
     Arg::with_name(name).long(name).help(help)
+}
+
+fn multi_opt(
+    name: &'static str,
+    value_name: &'static str,
+    help: &'static str,
+) -> Arg<'static, 'static> {
+    opt(name, help)
+        .value_name(value_name)
+        .multiple(true)
+        .number_of_values(1)
 }
