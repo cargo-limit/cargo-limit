@@ -323,7 +323,8 @@ impl Options {
     }
 
     fn add_color_arg(&mut self, value: &str) {
-        self.cargo_args.push(format!("{}{}", COLOR, value));
+        //self.cargo_args.push(format!("{}{}", COLOR, value));
+        self.program_args.push(format!("{}{}", COLOR, value));
     }
 }
 
@@ -345,16 +346,28 @@ mod tests {
             vec!["--color=always"],
         )?;
 
+        // TODO: +with test
         //        assert_cargo_args(
         //            vec![cargo_bin, "lrun", "program-argument"],
         //            vec![
         //                "run",
         //                "--message-format=json-diagnostic-rendered-ansi",
         //                "--",
-        //                "program-argument",
         //            ],
+        //            vec!["program-argument"],
         //        )?;
-        //
+
+        // TODO
+        //        assert_cargo_args(
+        //            vec![cargo_bin, "lrun", "-"],
+        //            vec![
+        //                "run",
+        //                "--message-format=json-diagnostic-rendered-ansi",
+        //                "--",
+        //            ],
+        //            vec!["-"],
+        //        )?;
+
         //        assert_cargo_args(
         //            vec![cargo_bin, "lrun", "--verbose", "program-argument"],
         //            vec![
