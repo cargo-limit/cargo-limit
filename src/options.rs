@@ -268,7 +268,7 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
             AppSettings::DeriveDisplayOrder,
             AppSettings::VersionlessSubcommands,
             AppSettings::AllowExternalSubcommands,
-            AppSettings::DisableHelpSubcommand,
+            //AppSettings::DisableHelpSubcommand, // TODO: remove?
         ])
         .arg(opt("help", "Print help info and exit").short("h"))
         .arg(opt("version", "Print version info and exit").short("V"))
@@ -311,7 +311,7 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
         );
 
     let app_matches = app.get_matches_from(args);
-    dbg!(&app_matches);
+    //dbg!(&app_matches);
 
     let cargo_args = app_matches
         .args
@@ -332,7 +332,7 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
                     key,
                     value
                         .into_string()
-                        .map_err(|_| format_err!("cannot convert argument value"))?
+                        .map_err(|_| format_err!("cannot convert argument value"))? // TODO: extract
                 )
             } else {
                 format!("--{}", key) // TODO: extract to contant? or somehow convert using clap?
