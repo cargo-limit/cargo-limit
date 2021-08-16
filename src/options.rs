@@ -240,12 +240,6 @@ impl Options {
     }
 }
 
-fn remove_prefix(expected_prefix: &str, app_name: &str) -> Option<String> {
-    let (prefix, command) = app_name.split_at(expected_prefix.len());
-    assert_eq!(prefix, expected_prefix);
-    Some(command.to_owned())
-}
-
 fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Result<Vec<String>> {
     let mut cargo_command = None;
 
@@ -267,7 +261,8 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
 
     let cargo_command = cargo_command.ok_or_else(|| format_err!("command not found"))?;
 
-    let app = App::new(format!("{}{}", PREFIX, cargo_command))
+    let binary = format!("{}{}", PREFIX, cargo_command);
+    let app = App::new(binary)
         .settings(&[
             AppSettings::UnifiedHelpMessage,
             AppSettings::DeriveDisplayOrder,
@@ -373,6 +368,12 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
     dbg!(&all_args);
 
     Ok(all_args)
+}
+
+fn remove_prefix(expected_prefix: &str, app_name: &str) -> Option<String> {
+    let (prefix, command) = app_name.split_at(expected_prefix.len());
+    assert_eq!(prefix, expected_prefix);
+    Some(command.to_owned())
 }
 
 fn opt(name: &'static str, help: &'static str) -> Arg<'static, 'static> {
