@@ -260,8 +260,9 @@ fn parse_and_reorder_args_with_clap(args: impl Iterator<Item = String>) -> Resul
     }
 
     let cargo_command = cargo_command.ok_or_else(|| format_err!("command not found"))?;
-
     let binary = format!("{}{}", PREFIX, cargo_command);
+
+    // https://github.com/rust-lang/cargo/blob/ddf9adba1afb4654edba09ca2b62a59979fcd895/src/bin/cargo/cli.rs#L302
     let app = App::new(binary)
         .settings(&[
             AppSettings::UnifiedHelpMessage,
