@@ -458,10 +458,15 @@ mod tests {
             vec!["--help", "--color=always"],
         )?;
 
-        /*assert_cargo_args(
+        assert_options(
             vec![cargo_bin, "ltest", "--message-format=json"],
-            vec!["test", "--message-format=json", "--", "--color=always"],
-        )?;*/
+            vec!["test", "--message-format=json", "--"],
+            vec!["--color=always"],
+            Options {
+                json_message_format: true,
+                ..Options::default()
+            },
+        )?;
 
         // TODO: message-format short?
         Ok(())
