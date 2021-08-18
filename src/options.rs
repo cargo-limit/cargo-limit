@@ -331,6 +331,7 @@ impl Options {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::{assert_eq, assert_ne};
 
     #[test]
     fn process_args() -> Result<()> {
@@ -391,27 +392,21 @@ mod tests {
         )?;
 
         // TODO: colors (both for app and run), other options, harness
-        /*assert_cargo_args(
+        assert_cargo_args(
             vec![cargo_bin, "lrun", "--color=always"],
             vec![
                 "run",
-                "--color=always",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--",
             ],
+            vec![],
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "--color=never"],
-            vec![
-                "run",
-                "--color=never",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
-        )?;*/
-
-        //assert_cargo_args(vec!["run", "--color", "never"], vec!["run", "--color", "never"])?; // TODO
+            vec![cargo_bin, "lrun", "--color=never"],
+            vec!["run", "--message-format=json", "--"],
+            vec![],
+        )?;
 
         assert_cargo_args(
             vec![cargo_bin, "lrun", "--", "--color=always"],
