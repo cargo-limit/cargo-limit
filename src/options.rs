@@ -468,7 +468,16 @@ mod tests {
             },
         )?;
 
-        // TODO: message-format short?
+        assert_options(
+            vec![cargo_bin, "ltest", "--message-format=short"],
+            vec!["test", "--message-format=json-diagnostic-short", "--"],
+            vec!["--color=always"],
+            Options {
+                short_message_format: true,
+                ..Options::default()
+            },
+        )?;
+
         Ok(())
     }
 
