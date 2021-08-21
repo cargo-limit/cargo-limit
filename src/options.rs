@@ -131,7 +131,8 @@ impl Options {
         let mut color = COLOR_AUTO.to_owned();
         let passed_args = passed_args.collect::<Vec<_>>();
         self.parse_options(passed_args.clone().into_iter(), &mut color)?;
-        self.parse_colors(color);
+
+        self.cargo_args.push(self.message_format(color).to_owned());
 
         // TODO: program => app
         let mut program_args_started = false;
@@ -193,8 +194,8 @@ impl Options {
         Ok(())
     }
 
-    fn parse_colors(&mut self, color: String) {
-        let message_format_arg = if self.short_message_format {
+    fn message_format(&self, color: String) -> String {
+        if self.short_message_format {
             MESSAGE_FORMAT_JSON_SHORT.to_owned()
         } else if self.json_message_format {
             MESSAGE_FORMAT_JSON.to_owned()
@@ -212,9 +213,8 @@ impl Options {
             } else {
                 unreachable!()
             };
-            message_format_arg.to_owned()
-        };
-        self.cargo_args.push(message_format_arg.to_owned());
+            message_format_arg.to_owned() // TODO: once?
+        }
     }
 
     // TODO: naming
