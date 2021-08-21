@@ -158,6 +158,7 @@ impl Options {
         color: &mut String,
     ) -> Result<()> {
         while let Some(arg) = passed_args.next() {
+            // TODO: extract consts
             if arg == "-h" || arg == "--help" {
                 self.help = true;
             } else if arg == "-V" || arg == "--version" {
@@ -227,36 +228,14 @@ impl Options {
         program_args_started: &mut bool,
     ) -> Result<()> {
         while let Some(arg) = passed_args.next() {
-            // TODO: use options' flags?
             if arg == "-h" || arg == "--help" {
                 self.cargo_args.push(arg);
             } else if arg == "-V" || arg == "--version" {
                 self.cargo_args.push(arg);
-            } else if arg == COLOR[0..COLOR.len() - 1] {
-                *color = passed_args.next().context(
-                    "the argument '--color <WHEN>' requires a value but none was supplied",
-                )?;
-                Self::validate_color(&color)?; // TODO: don't revalidate?
+            } else if arg == COLOR[0..COLOR.len() - 1] { // TODO: cleanup
             } else if let Some(color_value) = arg.strip_prefix(COLOR) {
-                *color = color_value.to_owned();
-                Self::validate_color(&color)?;
             } else if arg == MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1] {
-                let format = passed_args.next().context(
-                    "the argument '--message-format <FMT>' requires a value but none was supplied",
-                )?;
-                Self::validate_message_format(&format)?;
-                if format.starts_with(JSON_FORMAT) {
-                    self.json_message_format = true; // TODO: don't set them again?
-                } else if format == SHORT_FORMAT {
-                    self.short_message_format = true;
-                }
             } else if let Some(format) = arg.strip_prefix(MESSAGE_FORMAT) {
-                Self::validate_message_format(&format)?;
-                if format.starts_with(JSON_FORMAT) {
-                    self.json_message_format = true;
-                } else if format == SHORT_FORMAT {
-                    self.short_message_format = true;
-                }
             } else if arg == PROGRAM_ARGS_DELIMITER {
                 *program_args_started = true;
                 break;
