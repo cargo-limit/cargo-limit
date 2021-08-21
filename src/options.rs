@@ -1,8 +1,8 @@
 use crate::cargo_toml::CargoToml;
-use anyhow::{format_err, Context, Error, Result};
+use anyhow::{format_err, Context, Result};
 use const_format::concatcp;
 use itertools::Either;
-use std::{env, iter, iter::Peekable, path::Path, str::FromStr, time::Duration};
+use std::{env, iter, path::Path, str::FromStr, time::Duration};
 
 const PROGRAM_ARGS_DELIMITER: &str = "--";
 
@@ -118,7 +118,7 @@ impl Options {
         args: impl Iterator<Item = String>,
         workspace_root: &Path, // TODO: should not be here?
     ) -> Result<Self> {
-        let mut passed_args = args.skip(1).peekable(); // TODO: remove peekable
+        let mut passed_args = args.skip(1);
         let cargo_command = passed_args
             .next()
             .ok_or_else(|| format_err!("cargo command not found"))?;
@@ -139,7 +139,6 @@ impl Options {
 
         self.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
         self.process_color_and_program_args(
-            color,
             passed_args,
             cargo_command,
             program_args_started,
@@ -269,9 +268,9 @@ impl Options {
         Ok(())
     }
 
+    // TODO: naming
     fn process_color_and_program_args(
         &mut self,
-        color: String,
         passed_args: impl Iterator<Item = String>,
         cargo_command: &str,
         program_args_started: bool,
@@ -366,7 +365,7 @@ impl Options {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
 
     const CARGO_BIN: &str = "/path/to/bin/cargo";
     const STUB_MINIMAL: &str = "minimal";
