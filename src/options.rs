@@ -1,7 +1,8 @@
 use crate::cargo_toml::CargoToml;
 use anyhow::{format_err, Context, Error, Result};
 use const_format::concatcp;
-use std::{env, iter::Peekable, path::Path, str::FromStr, time::Duration};
+use itertools::Either;
+use std::{env, iter, iter::Peekable, path::Path, str::FromStr, time::Duration};
 
 const PROGRAM_ARGS_DELIMITER: &str = "--";
 
@@ -75,6 +76,13 @@ impl Options {
         self.cargo_args
             .clone()
             .into_iter()
+            .chain({
+                if self.program_args.is_empty() {
+                    Either::Left(iter::empty())
+                } else {
+                    Either::Right(iter::once(PROGRAM_ARGS_DELIMITER.to_string()))
+                }
+            })
             .chain(self.program_args.clone().into_iter())
     }
 
@@ -120,11 +128,16 @@ impl Options {
         assert_eq!(first_letter, "l");
         self.cargo_args.push(cargo_command.to_owned()); // TODO: which means it's not really args
 
+        let xs = passed_args.collect::<Vec<_>>();
+        let mut passed_args = xs.clone().into_iter();
+
         // TODO: program => app
         let mut program_args_started = false;
-        let mut passed_args = Self::put_program_args_after_two_dashes(passed_args);
+        //let mut passed_args = Self::put_program_args_after_two_dashes(passed_args);
 
         let mut color = COLOR_AUTO.to_owned();
+        self.process_wat(xs.into_iter(), &mut color)?;
+
         self.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
         self.process_color_and_program_args(
             color,
@@ -139,7 +152,73 @@ impl Options {
         Ok(self)
     }
 
-    fn put_program_args_after_two_dashes(
+    fn process_wat(
+        &mut self,
+        mut passed_args: impl Iterator<Item = String>,
+        color: &mut String,
+    ) -> Result<()> {
+        while let Some(arg) = passed_args.next() {
+            if arg == "-h" || arg == "--help" {
+                self.help = true;
+            } else if arg == "-V" || arg == "--version" {
+                self.version = true;
+            } else if arg == COLOR[0..COLOR.len() - 1] {
+                *color = passed_args.next().context(
+                    "the argument '--color <WHEN>' requires a value but none was supplied",
+                )?;
+                Self::validate_color(&color)?;
+            } else if let Some(color_value) = arg.strip_prefix(COLOR) {
+                *color = color_value.to_owned();
+                Self::validate_color(&color)?;
+            } else if arg == MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1] {
+                let format = passed_args.next().context(
+                    "the argument '--message-format <FMT>' requires a value but none was supplied",
+                )?;
+                Self::validate_message_format(&format)?;
+                if format.starts_with(JSON_FORMAT) {
+                    self.json_message_format = true;
+                    /*self.cargo_args.push(arg);
+                    self.cargo_args.push(format);*/
+                } else if format == SHORT_FORMAT {
+                    self.short_message_format = true;
+                }
+            } else if let Some(format) = arg.strip_prefix(MESSAGE_FORMAT) {
+                Self::validate_message_format(&format)?;
+                if format.starts_with(JSON_FORMAT) {
+                    self.json_message_format = true;
+                    //self.cargo_args.push(arg);
+                } else if format == SHORT_FORMAT {
+                    self.short_message_format = true;
+                }
+            } else if arg == PROGRAM_ARGS_DELIMITER {
+                //*program_args_started = true;
+                //dbg!("break at args delimiter");
+                break;
+            } else {
+                //self.cargo_args.push(arg);
+            }
+        }
+
+        if !self.short_message_format && !self.json_message_format {
+            let message_format_arg = if color == COLOR_AUTO {
+                if self.terminal_supports_colors {
+                    MESSAGE_FORMAT_JSON_WITH_COLORS
+                } else {
+                    MESSAGE_FORMAT_JSON
+                }
+            } else if color == COLOR_ALWAYS {
+                MESSAGE_FORMAT_JSON_WITH_COLORS
+            } else if color == COLOR_NEVER {
+                MESSAGE_FORMAT_JSON
+            } else {
+                unreachable!()
+            };
+            self.cargo_args.push(message_format_arg.to_owned());
+        }
+        Ok(())
+    }
+
+    /*fn put_program_args_after_two_dashes(
         passed_args: impl Iterator<Item = String>,
     ) -> impl Iterator<Item = String> {
         // https://github.com/alopatindev/cargo-limit/issues/6
@@ -176,7 +255,7 @@ impl Options {
         }
 
         cargo_args.into_iter().chain(program_args)
-    }
+    }*/
 
     fn process_main_args(
         &mut self,
@@ -249,7 +328,10 @@ impl Options {
     ) -> Result<()> {
         if self.short_message_format {
             self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
-        } else if !self.json_message_format {
+        }
+
+        // TODO: move?
+        /*if !self.short_message_format && !self.json_message_format {
             let message_format_arg = if color == COLOR_AUTO {
                 if self.terminal_supports_colors {
                     MESSAGE_FORMAT_JSON_WITH_COLORS
@@ -264,16 +346,16 @@ impl Options {
                 unreachable!()
             };
             self.cargo_args.push(message_format_arg.to_owned());
-        }
+        }*/
 
         let mut program_color_is_set = false;
         if program_args_started {
             self.process_program_args(passed_args, &mut program_color_is_set);
         }
 
-        if !program_args_started {
+        /*if !program_args_started {
             self.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
-        }
+        }*/
 
         let is_test = cargo_command == "test";
         let is_bench = cargo_command == "bench";
@@ -302,7 +384,7 @@ impl Options {
         passed_args: impl Iterator<Item = String>,
         program_color_is_set: &mut bool,
     ) {
-        self.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
+        //self.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
         for arg in passed_args {
             if arg == COLOR[0..COLOR.len() - 1] || arg.starts_with(COLOR) {
                 *program_color_is_set = true;
@@ -367,11 +449,7 @@ mod tests {
     fn smoke() -> Result<()> {
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--", "program-argument"],
-            vec![
-                "run",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["program-argument"],
             STUB_MINIMAL,
         )?;
@@ -380,9 +458,8 @@ mod tests {
             vec![CARGO_BIN, "lrun", "-vvv", "--", "-c", "program-config.yml"],
             vec![
                 "run",
+                "--message-format=json-diagnostic-rendered-ansi",
                 "-vvv",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
             ],
             vec!["-c", "program-config.yml"],
             STUB_MINIMAL,
@@ -399,9 +476,8 @@ mod tests {
             ],
             vec![
                 "run",
-                "-p=program",
                 "--message-format=json-diagnostic-rendered-ansi",
-                "--",
+                "-p=program",
             ],
             vec!["-c", "program-config.yml"],
             STUB_MINIMAL,
@@ -419,10 +495,9 @@ mod tests {
             ],
             vec![
                 "run",
+                "--message-format=json-diagnostic-rendered-ansi",
                 "-p",
                 "program",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
             ],
             vec!["-c", "program-config.yml"],
             STUB_MINIMAL,
@@ -432,9 +507,8 @@ mod tests {
             vec![CARGO_BIN, "lclippy", "--help"],
             vec![
                 "clippy",
-                "--help",
                 "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
-                "--",
+                "--help",
             ],
             vec![],
             Options {
@@ -448,9 +522,8 @@ mod tests {
             vec![CARGO_BIN, "lclippy", "--version"],
             vec![
                 "clippy",
-                "--version",
                 "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
-                "--",
+                "--version",
             ],
             vec![],
             Options {
@@ -464,9 +537,8 @@ mod tests {
             vec![CARGO_BIN, "lclippy", "-V"],
             vec![
                 "clippy",
-                "-V",
                 "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
-                "--",
+                "-V",
             ],
             vec![],
             Options {
@@ -478,11 +550,7 @@ mod tests {
 
         assert_cargo_args(
             vec![CARGO_BIN, "ltest", "--", "--help"],
-            vec![
-                "test",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--help", "--color=always"],
             STUB_MINIMAL,
         )?;
@@ -491,9 +559,8 @@ mod tests {
             vec![CARGO_BIN, "lrun", "--verbose"],
             vec![
                 "run",
-                "--verbose",
                 "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
-                "--",
+                "--verbose",
             ],
             vec![],
             STUB_MINIMAL,
@@ -503,9 +570,8 @@ mod tests {
             vec![CARGO_BIN, "lrun", "-v"],
             vec![
                 "run",
-                "-v",
                 "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
-                "--",
+                "-v",
             ],
             vec![],
             STUB_MINIMAL,
@@ -515,9 +581,8 @@ mod tests {
             vec![CARGO_BIN, "lrun", "-vv"],
             vec![
                 "run",
-                "-vv",
                 "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
-                "--",
+                "-vv",
             ],
             vec![],
             STUB_MINIMAL,
@@ -527,29 +592,44 @@ mod tests {
             vec![CARGO_BIN, "lrun", "-v", "-v"],
             vec![
                 "run",
-                "-v",
-                "-v",
                 "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
-                "--",
+                "-v",
+                "-v",
             ],
             vec![],
             STUB_MINIMAL,
         )?;
 
-        // FIXME
-        /*assert_cargo_args(
+        assert_cargo_args(
             vec![CARGO_BIN, "lrun", "-v", "-v", "program-arg"],
             vec![
                 "run",
+                "--message-format=json-diagnostic-rendered-ansi",
                 "-v",
                 "-v",
-                "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
-                "--",
+                "program-arg",
             ],
-            vec!["program-arg"],
+            vec![],
             STUB_MINIMAL,
-        )?;*/
+        )?;
 
+        Ok(())
+    }
+
+    #[test]
+    fn wat() -> Result<()> {
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "-v", "-v", "program-arg"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "-v",
+                "-v",
+                "program-arg",
+            ],
+            vec![],
+            STUB_MINIMAL,
+        )?;
         Ok(())
     }
 
@@ -557,7 +637,7 @@ mod tests {
     fn test_with_message_format() -> Result<()> {
         assert_options(
             vec![CARGO_BIN, "ltest", "--message-format=json"],
-            vec!["test", "--message-format=json", "--"],
+            vec!["test", "--message-format=json"],
             vec!["--color=always"],
             Options {
                 json_message_format: true,
@@ -568,7 +648,7 @@ mod tests {
 
         assert_options(
             vec![CARGO_BIN, "ltest", "--message-format=short"],
-            vec!["test", "--message-format=json-diagnostic-short", "--"],
+            vec!["test", "--message-format=json-diagnostic-short"],
             vec!["--color=always"],
             Options {
                 short_message_format: true,
@@ -585,29 +665,21 @@ mod tests {
         // TODO: colors (both for app and run), other options, harness
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--color=always"],
-            vec![
-                "run",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec![],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--color=never"],
-            vec!["run", "--message-format=json", "--"],
+            vec!["run", "--message-format=json"],
             vec![],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--", "--color=always"],
-            vec![
-                "run",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--color=always"],
             STUB_MINIMAL,
         )?;
@@ -619,11 +691,7 @@ mod tests {
     fn colored_testing_and_compiling_1() -> Result<()> {
         assert_cargo_args(
             vec![CARGO_BIN, "ltest"],
-            vec![
-                "test",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--color=always"],
             STUB_MINIMAL,
         )?;
@@ -634,11 +702,7 @@ mod tests {
     fn colored_testing_and_compiling_2() -> Result<()> {
         assert_cargo_args(
             vec![CARGO_BIN, "ltest", "--color=always"],
-            vec![
-                "test",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--color=always"],
             STUB_MINIMAL,
         )?;
@@ -649,11 +713,7 @@ mod tests {
     fn colored_testing_and_compiling_3() -> Result<()> {
         assert_cargo_args(
             vec![CARGO_BIN, "ltest", "--", "--color=always"],
-            vec![
-                "test",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--color=always"],
             STUB_MINIMAL,
         )?;
@@ -665,7 +725,7 @@ mod tests {
     fn colored_testing_and_monochrome_compiling_1() -> Result<()> {
         assert_cargo_args(
             vec![CARGO_BIN, "ltest", "--color=never"],
-            vec!["test", "--message-format=json", "--"],
+            vec!["test", "--message-format=json"],
             vec!["--color=always"],
             STUB_MINIMAL,
         )?;
@@ -676,11 +736,7 @@ mod tests {
     fn monochrome_testing_and_colored_compiling_1() -> Result<()> {
         assert_cargo_args(
             vec![CARGO_BIN, "ltest", "--", "--color=never"],
-            vec![
-                "test",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--color=never"],
             STUB_MINIMAL,
         )?;
@@ -691,33 +747,21 @@ mod tests {
     fn custom_runners_should_not_have_color_args() -> Result<()> {
         assert_cargo_args(
             vec![CARGO_BIN, "ltest"],
-            vec![
-                "test",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec![],
             STUB_CUSTOM_TEST_RUNNER,
         )?;
 
         assert_cargo_args(
             vec![CARGO_BIN, "ltest", "--", "--runner-arg"],
-            vec![
-                "test",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--runner-arg"],
             STUB_CUSTOM_TEST_RUNNER,
         )?;
 
         assert_cargo_args(
             vec![CARGO_BIN, "lbench"],
-            vec![
-                "bench",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["bench", "--message-format=json-diagnostic-rendered-ansi"],
             vec![],
             STUB_CUSTOM_BENCH_RUNNER,
         )?;
@@ -726,9 +770,8 @@ mod tests {
             vec![CARGO_BIN, "lbench", "--help"],
             vec![
                 "bench",
-                "--help",
                 "--message-format=json-diagnostic-rendered-ansi",
-                "--",
+                "--help",
             ],
             vec![],
             Options {
@@ -745,33 +788,21 @@ mod tests {
     fn double_two_dashes() -> Result<()> {
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--", "--"],
-            vec![
-                "run",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--"],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--", "--", "1"],
-            vec![
-                "run",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--", "1"],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--", "-", "1", "2", "3"],
-            vec![
-                "run",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
+            vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["-", "1", "2", "3"],
             STUB_MINIMAL,
         )?;
@@ -786,20 +817,16 @@ mod tests {
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
-                "--",
+                "program-argument",
             ],
-            vec!["program-argument"],
+            vec![],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "-"],
-            vec![
-                "run",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
-            vec!["-"],
+            vec!["run", "--message-format=json-diagnostic-rendered-ansi", "-"],
+            vec![],
             STUB_MINIMAL,
         )?;
 
@@ -808,9 +835,11 @@ mod tests {
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
-                "--",
+                "1",
+                "2",
+                "3",
             ],
-            vec!["1", "2", "3"],
+            vec![],
             STUB_MINIMAL,
         )?;
 
@@ -819,24 +848,26 @@ mod tests {
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
-                "--",
+                "-",
+                "1",
+                "2",
+                "3",
             ],
-            vec!["-", "1", "2", "3"],
+            vec![],
             STUB_MINIMAL,
         )?;
 
-        // FIXME
-        /*assert_cargo_args(
+        assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--verbose", "program-argument"],
             vec![
                 "run",
-                "--verbose",
                 "--message-format=json-diagnostic-rendered-ansi",
-                "--",
+                "--verbose",
+                "program-argument",
             ],
-            vec!["program-argument"],
+            vec![],
             STUB_MINIMAL,
-        )?;*/
+        )?;
 
         Ok(())
     }
