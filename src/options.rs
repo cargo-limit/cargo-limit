@@ -126,17 +126,18 @@ impl Options {
             .split_at(1);
         assert_eq!(first_letter, "l");
         self.cargo_args.push(cargo_command.to_owned()); // TODO: which means it's not really args
+                                                        // TODO: cargo_command => cargo_subcommand
 
         let xs = passed_args.collect::<Vec<_>>();
         let mut passed_args = xs.clone().into_iter();
 
-        // TODO: program => app
-        let mut program_args_started = false;
-
         let mut color = COLOR_AUTO.to_owned();
         self.process_wat(xs.into_iter(), &mut color)?;
 
+        // TODO: program => app
+        let mut program_args_started = false;
         self.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
+
         self.process_color_and_program_args(
             passed_args,
             cargo_command,
@@ -149,6 +150,7 @@ impl Options {
         Ok(self)
     }
 
+    // TODO: naming
     fn process_wat(
         &mut self,
         mut passed_args: impl Iterator<Item = String>,
