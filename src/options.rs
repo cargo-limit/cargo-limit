@@ -198,7 +198,9 @@ impl Options {
 
     // TODO: naming
     fn parse_col(&mut self, color: &str) {
-        if !self.short_message_format && !self.json_message_format {
+        if self.short_message_format {
+            self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
+        } else if !self.json_message_format {
             let message_format_arg = if color == COLOR_AUTO {
                 if self.terminal_supports_colors {
                     MESSAGE_FORMAT_JSON_WITH_COLORS
@@ -213,10 +215,6 @@ impl Options {
                 unreachable!()
             };
             self.cargo_args.push(message_format_arg.to_owned());
-        }
-
-        if self.short_message_format {
-            self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
         }
     }
 
