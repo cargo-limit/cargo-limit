@@ -145,17 +145,23 @@ impl Options {
         // https://github.com/alopatindev/cargo-limit/issues/6
         dbg!("put_program_args_after_two_dashes");
 
+        let mut program_args_might_be_before_two_dashes = true;
         let mut program_args_started = false;
         let mut cargo_args = Vec::new();
         let mut program_args = Vec::new();
 
-        for arg in passed_args {
+        for (i, arg) in passed_args.enumerate() {
             dbg!(&arg);
             if program_args_started {
                 program_args.push(arg)
             } else {
+                let starts_with_dash = arg.starts_with('-');
+                if i == 0 && (arg.len() > 1 && starts_with_dash) {
+                    program_args_might_be_before_two_dashes = false;
+                }
                 let is_program_args_delimiter = arg == PROGRAM_ARGS_DELIMITER;
-                let is_program_arg = arg == "-" || !arg.starts_with('-');
+                let is_program_arg =
+                    program_args_might_be_before_two_dashes && (arg == "-" || !starts_with_dash);
                 if is_program_args_delimiter || is_program_arg {
                     program_args_started = true;
                     cargo_args.push(PROGRAM_ARGS_DELIMITER.to_string());
