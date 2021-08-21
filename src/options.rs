@@ -128,11 +128,11 @@ impl Options {
         self.cargo_args.push(cargo_command.to_owned()); // TODO: which means it's not really args
                                                         // TODO: cargo_command => cargo_subcommand
 
-        let xs = passed_args.collect::<Vec<_>>();
-        let mut passed_args = xs.clone().into_iter();
+        let args_for_first_pass = passed_args.collect::<Vec<_>>();
+        let mut passed_args = args_for_first_pass.clone().into_iter();
 
         let mut color = COLOR_AUTO.to_owned();
-        self.process_wat(xs.into_iter(), &mut color)?;
+        self.process_wat(args_for_first_pass.into_iter(), &mut color)?;
 
         // TODO: program => app
         let mut program_args_started = false;
