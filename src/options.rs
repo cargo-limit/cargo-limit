@@ -205,21 +205,18 @@ impl Options {
             MESSAGE_FORMAT_JSON_SHORT
         } else if self.json_message_format {
             MESSAGE_FORMAT_JSON
-        } else {
-            let message_format_arg = if color == COLOR_AUTO {
-                if self.terminal_supports_colors {
-                    MESSAGE_FORMAT_JSON_WITH_COLORS
-                } else {
-                    MESSAGE_FORMAT_JSON
-                }
-            } else if color == COLOR_ALWAYS {
+        } else if color == COLOR_AUTO {
+            if self.terminal_supports_colors {
                 MESSAGE_FORMAT_JSON_WITH_COLORS
-            } else if color == COLOR_NEVER {
-                MESSAGE_FORMAT_JSON
             } else {
-                unreachable!()
-            };
-            message_format_arg
+                MESSAGE_FORMAT_JSON
+            }
+        } else if color == COLOR_ALWAYS {
+            MESSAGE_FORMAT_JSON_WITH_COLORS
+        } else if color == COLOR_NEVER {
+            MESSAGE_FORMAT_JSON
+        } else {
+            unreachable!()
         }
     }
 
