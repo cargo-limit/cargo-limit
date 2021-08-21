@@ -806,7 +806,9 @@ mod tests {
     ) -> Result<()> {
         let options = Options::process_args(
             Options::default(),
-            iter::once(CARGO_BIN.to_string()).chain(input.into_iter().map(|i| i.to_string())),
+            iter::once(CARGO_BIN)
+                .chain(input.into_iter())
+                .map(|i| i.to_string()),
             &Path::new("tests/stubs").join(Path::new(stub)),
         )?;
         let expected = Options {
