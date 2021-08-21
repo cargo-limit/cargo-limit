@@ -579,7 +579,6 @@ mod tests {
             STUB_CUSTOM_TEST_RUNNER,
         )?;
 
-        // TODO
         assert_cargo_args(
             vec![CARGO_BIN, "lbench"],
             vec![
@@ -591,16 +590,21 @@ mod tests {
             STUB_CUSTOM_BENCH_RUNNER,
         )?;
 
-        /*assert_cargo_args(
-            vec![CARGO_BIN, "lbench", "--runner-arg"],
+        assert_options(
+            vec![CARGO_BIN, "lbench", "--help"],
             vec![
                 "bench",
+                "--help",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--",
             ],
-            vec!["--runner-arg"],
+            vec![],
+            Options {
+                help: true,
+                ..Options::default()
+            },
             STUB_CUSTOM_BENCH_RUNNER,
-        )?;*/
+        )?;
 
         Ok(())
     }
