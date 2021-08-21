@@ -580,7 +580,7 @@ mod tests {
         )?;
 
         // TODO
-        /*assert_cargo_args(
+        assert_cargo_args(
             vec![CARGO_BIN, "lbench"],
             vec![
                 "bench",
@@ -591,7 +591,7 @@ mod tests {
             STUB_CUSTOM_BENCH_RUNNER,
         )?;
 
-        assert_cargo_args(
+        /*assert_cargo_args(
             vec![CARGO_BIN, "lbench", "--runner-arg"],
             vec![
                 "bench",
