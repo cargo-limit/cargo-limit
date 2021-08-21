@@ -129,7 +129,7 @@ impl Options {
             false
         };*/
         // TODO: program => app
-        //let passed_args = Self::put_program_args_after_two_dashes(passed_args);
+        let mut passed_args = Self::put_program_args_after_two_dashes(passed_args);
 
         let mut color = COLOR_AUTO.to_owned();
         self.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
@@ -146,14 +146,37 @@ impl Options {
         Ok(self)
     }
 
-    /*fn put_program_args_after_two_dashes(passed_args: impl Iterator<Item = String>) -> impl Iterator<Item = String> {
+    fn put_program_args_after_two_dashes(
+        passed_args: impl Iterator<Item = String>,
+    ) -> impl Iterator<Item = String> {
+        dbg!("put_program_args_after_two_dashes");
+
+        let mut program_args_started = false;
         let mut cargo_args = Vec::new();
         let mut program_args = Vec::new();
-        for i in passed_args {
+
+        for arg in passed_args {
+            dbg!(&arg);
+            if program_args_started {
+                program_args.push(arg)
+            } else {
+                let is_program_args_delimiter = arg == PROGRAM_ARGS_DELIMITER;
+                let is_program_arg = arg == "-" || !arg.starts_with('-');
+                if is_program_args_delimiter || is_program_arg {
+                    program_args_started = true;
+                    cargo_args.push(PROGRAM_ARGS_DELIMITER.to_string());
+                    if is_program_arg {
+                        program_args.push(arg)
+                    }
+                } else {
+                    cargo_args.push(arg)
+                }
+            }
+            dbg!(&cargo_args, &program_args);
         }
-        // TODO: extract dashes delimiter constant
-        cargo.into_iter().chain(once(PROGRAM_ARGS_DELIMITER.to_string()))
-    }*/
+
+        cargo_args.into_iter().chain(program_args)
+    }
 
     fn process_main_args(
         &mut self,
@@ -350,6 +373,18 @@ mod tests {
                 "--",
             ],
             vec!["program-argument"],
+            STUB_MINIMAL,
+        )?;
+
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "-vvv", "--", "-c", "program-config.yml"],
+            vec![
+                "run",
+                "-vvv",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["-c", "program-config.yml"],
             STUB_MINIMAL,
         )?;
 
@@ -700,10 +735,7 @@ mod tests {
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--",
             ],
-            vec![
-                "program-argument",
-                // "--color=always", // TODO?
-            ],
+            vec!["program-argument"],
             STUB_MINIMAL,
         )?;
 
