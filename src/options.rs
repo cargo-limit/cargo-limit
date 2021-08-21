@@ -343,17 +343,6 @@ mod tests {
     #[test]
     fn process_args() -> Result<()> {
         assert_cargo_args(
-            vec![CARGO_BIN, "ltest"],
-            vec![
-                "test",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
-            vec!["--color=always"],
-            STUB_MINIMAL,
-        )?;
-
-        assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--", "program-argument"],
             vec![
                 "run",
@@ -428,6 +417,11 @@ mod tests {
             STUB_MINIMAL,
         )?;
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_with_message_format() -> Result<()> {
         assert_options(
             vec![CARGO_BIN, "ltest", "--message-format=json"],
             vec!["test", "--message-format=json", "--"],
@@ -563,7 +557,7 @@ mod tests {
 
     #[ignore]
     #[test]
-    fn process_program_args_without_two_dashes_splitter() -> Result<()> {
+    fn program_args_without_two_dashes_splitter() -> Result<()> {
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "program-argument"],
             vec![
