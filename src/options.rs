@@ -214,6 +214,10 @@ impl Options {
             };
             self.cargo_args.push(message_format_arg.to_owned());
         }
+
+        if self.short_message_format {
+            self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
+        }
     }
 
     // TODO: naming
@@ -276,10 +280,6 @@ impl Options {
         program_args_started: bool,
         workspace_root: &Path,
     ) -> Result<()> {
-        if self.short_message_format {
-            self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
-        }
-
         let mut program_color_is_set = false;
         if program_args_started {
             self.process_program_args(passed_args, &mut program_color_is_set);
@@ -541,7 +541,6 @@ mod tests {
             STUB_MINIMAL,
         )?;
 
-        // FIXME
         assert_options(
             vec![
                 CARGO_BIN,
