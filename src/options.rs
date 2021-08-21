@@ -122,8 +122,7 @@ impl Options {
         let cargo_subcommand = passed_args
             .next()
             .ok_or_else(|| format_err!("cargo subcommand not found"))?;
-        let (first_letter, cargo_subcommand) = cargo_subcommand // TODO: either don't crash or crash everywhere
-            .split_at(1);
+        let (first_letter, cargo_subcommand) = try_split_at(&cargo_subcommand, 1)?;
         assert_eq!(first_letter, "l");
         self.cargo_args.push(cargo_subcommand.to_owned());
 
@@ -825,5 +824,13 @@ mod tests {
 
         assert_eq!(options, expected);
         Ok(())
+    }
+}
+
+fn try_split_at(input: &str, index: usize) -> Result<(&str, &str)> {
+    if index > input.len() {
+        Err(format_err!("cannot split '{}' at {}", input, index))
+    } else {
+        Ok(input.split_at(index))
     }
 }
