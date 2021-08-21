@@ -61,7 +61,7 @@ impl Default for Options {
             ascending_messages_order: false,
             show_warnings_if_errors_exist: false,
             show_dependencies_warnings: false,
-            open_in_external_application: "".to_string(),
+            open_in_external_application: "".to_string(), // TODO: to_owned => to_string everywhere? or the opposite
             open_in_external_application_on_warnings: false,
             help: false,
             version: false,
@@ -229,12 +229,11 @@ impl Options {
         program_args_started: &mut bool,
     ) -> Result<()> {
         while let Some(arg) = passed_args.next() {
+            // TODO: use options' flags?
             if arg == "-h" || arg == "--help" {
-                self.help = true;
-                self.cargo_args.push(arg); // TODO: should we even do this here?
+                self.cargo_args.push(arg);
             } else if arg == "-V" || arg == "--version" {
-                self.version = true;
-                self.cargo_args.push(arg); // TODO: should we even do this here?
+                self.cargo_args.push(arg);
             } else if arg == COLOR[0..COLOR.len() - 1] {
                 *color = passed_args.next().context(
                     "the argument '--color <WHEN>' requires a value but none was supplied",
