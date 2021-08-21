@@ -336,6 +336,9 @@ mod tests {
     use pretty_assertions::{assert_eq, assert_ne};
 
     const CARGO_BIN: &str = "/path/to/bin/cargo";
+    const STUB_MINIMAL: &str = "minimal";
+    const STUB_CUSTOM_TEST_RUNNER: &str = "custom_test_runner";
+    const STUB_CUSTOM_BENCH_RUNNER: &str = "custom_bench_runner";
 
     #[test]
     fn process_args() -> Result<()> {
@@ -347,6 +350,7 @@ mod tests {
                 "--",
             ],
             vec!["--color=always"],
+            STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
@@ -357,6 +361,7 @@ mod tests {
                 "--",
             ],
             vec!["program-argument"],
+            STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
@@ -377,6 +382,7 @@ mod tests {
                 "--",
             ],
             vec!["-c", "program-config.yml"],
+            STUB_MINIMAL,
         )?;
 
         assert_options(
@@ -392,6 +398,7 @@ mod tests {
                 help: true,
                 ..Options::default()
             },
+            STUB_MINIMAL,
         )?;
 
         assert_options(
@@ -407,6 +414,7 @@ mod tests {
                 version: true,
                 ..Options::default()
             },
+            STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
@@ -417,6 +425,7 @@ mod tests {
                 "--",
             ],
             vec!["--help", "--color=always"],
+            STUB_MINIMAL,
         )?;
 
         assert_options(
@@ -427,6 +436,7 @@ mod tests {
                 json_message_format: true,
                 ..Options::default()
             },
+            STUB_MINIMAL,
         )?;
 
         assert_options(
@@ -437,13 +447,14 @@ mod tests {
                 short_message_format: true,
                 ..Options::default()
             },
+            STUB_MINIMAL,
         )?;
 
         Ok(())
     }
 
     #[test]
-    fn process_color_args() -> Result<()> {
+    fn process_run_with_color_args() -> Result<()> {
         // TODO: colors (both for app and run), other options, harness
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--color=always"],
@@ -453,12 +464,14 @@ mod tests {
                 "--",
             ],
             vec![],
+            STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--color=never"],
             vec!["run", "--message-format=json", "--"],
             vec![],
+            STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
@@ -469,6 +482,42 @@ mod tests {
                 "--",
             ],
             vec!["--color=always"],
+            STUB_MINIMAL,
+        )?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn process_test_with_color_args() -> Result<()> {
+        // TODO: colors (both for app and run), other options, harness
+        assert_cargo_args(
+            vec![CARGO_BIN, "ltest", "--color=always"],
+            vec![
+                "test",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["--color=always"],
+            STUB_MINIMAL,
+        )?;
+
+        assert_cargo_args(
+            vec![CARGO_BIN, "ltest", "--color=never"],
+            vec!["test", "--message-format=json", "--"],
+            vec!["--color=always"],
+            STUB_MINIMAL,
+        )?;
+
+        assert_cargo_args(
+            vec![CARGO_BIN, "ltest", "--", "--color=always"],
+            vec![
+                "test",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["--color=always"],
+            STUB_MINIMAL,
         )?;
 
         Ok(())
@@ -485,6 +534,7 @@ mod tests {
                 "--",
             ],
             vec!["program-argument"],
+            STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
@@ -495,6 +545,7 @@ mod tests {
                 "--",
             ],
             vec!["-"],
+            STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
@@ -509,6 +560,7 @@ mod tests {
                 "program-argument",
                 // "--color=always", // TODO?
             ],
+            STUB_MINIMAL,
         )?;
 
         Ok(())
@@ -518,12 +570,14 @@ mod tests {
         input: Vec<&str>,
         expected_cargo_args: Vec<&str>,
         expected_program_args: Vec<&str>,
+        stub: &str,
     ) -> Result<()> {
         assert_options(
             input,
             expected_cargo_args,
             expected_program_args,
             Default::default(),
+            stub,
         )
     }
 
@@ -532,11 +586,12 @@ mod tests {
         expected_cargo_args: Vec<&str>,
         expected_program_args: Vec<&str>,
         expected_options: Options,
+        stub: &str,
     ) -> Result<()> {
         let options = Options::process_args(
             Options::default(),
             input.into_iter().map(|i| i.to_string()),
-            Path::new("tests/stubs/minimal"), // TODO
+            &Path::new("tests/stubs").join(Path::new(stub)),
         )?;
         let expected = Options {
             cargo_args: expected_cargo_args
