@@ -133,7 +133,7 @@ impl Options {
 
         let mut app_args_started = false;
         let mut passed_args = passed_args.into_iter();
-        self.consume_remaining_args(&mut passed_args, &mut app_args_started)?;
+        self.consume_remaining_cargo_args(&mut passed_args, &mut app_args_started)?;
 
         let mut app_color_is_set = false;
         if app_args_started {
@@ -212,7 +212,7 @@ impl Options {
         }
     }
 
-    fn consume_remaining_args(
+    fn consume_remaining_cargo_args(
         &mut self,
         passed_args: &mut impl Iterator<Item = String>,
         app_args_started: &mut bool,
