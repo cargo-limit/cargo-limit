@@ -4,7 +4,7 @@ use const_format::concatcp;
 use itertools::Either;
 use std::{env, iter, path::Path, str::FromStr, time::Duration};
 
-const PROGRAM_ARGS_DELIMITER: &str = "--";
+const APP_ARGS_DELIMITER: &str = "--";
 
 const MESSAGE_FORMAT: &str = "--message-format=";
 const MESSAGE_FORMAT_JSON: &str = concatcp!(MESSAGE_FORMAT, JSON_FORMAT);
@@ -76,7 +76,7 @@ impl Options {
         let delimiter = if self.args_after_app_args_delimiter.is_empty() {
             Either::Left(iter::empty())
         } else {
-            Either::Right(iter::once(PROGRAM_ARGS_DELIMITER.to_string()))
+            Either::Right(iter::once(APP_ARGS_DELIMITER.to_string()))
         };
         self.cargo_args
             .clone()
@@ -183,7 +183,7 @@ impl Options {
                 } else if format == SHORT_FORMAT {
                     self.short_message_format = true;
                 }
-            } else if arg == PROGRAM_ARGS_DELIMITER {
+            } else if arg == APP_ARGS_DELIMITER {
                 break;
             }
         }
@@ -228,7 +228,7 @@ impl Options {
             } else if let Some(_) = arg.strip_prefix(COLOR) {
             } else if arg == MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1] {
             } else if let Some(_) = arg.strip_prefix(MESSAGE_FORMAT) {
-            } else if arg == PROGRAM_ARGS_DELIMITER {
+            } else if arg == APP_ARGS_DELIMITER {
                 *app_args_started = true;
                 break;
             } else {
