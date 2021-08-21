@@ -198,9 +198,12 @@ impl Options {
 
     // TODO: naming
     fn parse_col(&mut self, color: &str) {
+        // TODO: push once
         if self.short_message_format {
             self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
-        } else if !self.json_message_format {
+        } else if self.json_message_format {
+            self.cargo_args.push(MESSAGE_FORMAT_JSON.to_owned());
+        } else {
             let message_format_arg = if color == COLOR_AUTO {
                 if self.terminal_supports_colors {
                     MESSAGE_FORMAT_JSON_WITH_COLORS
@@ -228,10 +231,10 @@ impl Options {
         while let Some(arg) = passed_args.next() {
             if arg == "-h" || arg == "--help" {
                 self.help = true;
-                self.cargo_args.push(arg);
+                self.cargo_args.push(arg); // TODO: should we even do this here?
             } else if arg == "-V" || arg == "--version" {
                 self.version = true;
-                self.cargo_args.push(arg);
+                self.cargo_args.push(arg); // TODO: should we even do this here?
             } else if arg == COLOR[0..COLOR.len() - 1] {
                 *color = passed_args.next().context(
                     "the argument '--color <WHEN>' requires a value but none was supplied",
@@ -247,8 +250,6 @@ impl Options {
                 Self::validate_message_format(&format)?;
                 if format.starts_with(JSON_FORMAT) {
                     self.json_message_format = true;
-                    self.cargo_args.push(arg);
-                    self.cargo_args.push(format);
                 } else if format == SHORT_FORMAT {
                     self.short_message_format = true;
                 }
@@ -256,7 +257,6 @@ impl Options {
                 Self::validate_message_format(&format)?;
                 if format.starts_with(JSON_FORMAT) {
                     self.json_message_format = true;
-                    self.cargo_args.push(arg);
                 } else if format == SHORT_FORMAT {
                     self.short_message_format = true;
                 }
@@ -264,7 +264,7 @@ impl Options {
                 *program_args_started = true;
                 break;
             } else {
-                self.cargo_args.push(arg);
+                self.cargo_args.push(arg); // TODO: should we even do this here?
             }
         }
         Ok(())
@@ -583,7 +583,6 @@ mod tests {
             STUB_MINIMAL,
         )?;
 
-        // FIXME
         assert_options(
             vec![
                 CARGO_BIN,
