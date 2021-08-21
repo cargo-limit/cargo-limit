@@ -563,7 +563,7 @@ mod tests {
             STUB_MINIMAL,
         )?;
 
-        assert_options(
+        assert_cargo_args(
             vec![
                 CARGO_BIN,
                 "lrun",
@@ -580,9 +580,6 @@ mod tests {
                 "program-arg",
             ],
             vec![],
-            Options {
-                ..Options::default()
-            },
             STUB_MINIMAL,
         )?;
 
