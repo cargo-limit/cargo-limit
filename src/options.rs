@@ -805,23 +805,21 @@ mod tests {
         stub: &str,
     ) -> Result<()> {
         fn to_string<'item>(
-            iter: impl Iterator<Item = &'item str> + 'item,
+            iter: impl IntoIterator<Item = &'item str> + 'item,
         ) -> impl Iterator<Item = String> + 'item {
-            iter.map(|i| i.to_string())
+            iter.into_iter().map(|i| i.to_string())
         }
 
         let options = Options::process_args(
             Options::default(),
-            to_string(iter::once(CARGO_BIN).chain(input.into_iter())),
+            to_string(iter::once(CARGO_BIN).chain(input)),
             &Path::new("tests/stubs").join(Path::new(stub)),
         )?;
 
         let expected = Options {
-            cargo_args: to_string(expected_cargo_args.into_iter()).collect(),
-            args_after_app_args_delimiter: to_string(
-                expected_args_after_app_args_delimiter.into_iter(),
-            )
-            .collect(),
+            cargo_args: to_string(expected_cargo_args).collect(),
+            args_after_app_args_delimiter: to_string(expected_args_after_app_args_delimiter)
+                .collect(),
             ..expected_options
         };
 
