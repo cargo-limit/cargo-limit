@@ -608,7 +608,44 @@ mod tests {
         Ok(())
     }
 
-    #[ignore]
+    #[test]
+    fn double_two_dashes() -> Result<()> {
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "--", "--"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["--"],
+            STUB_MINIMAL,
+        )?;
+
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "--", "--", "1"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["--", "1"],
+            STUB_MINIMAL,
+        )?;
+
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "--", "-", "1", "2", "3"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["-", "1", "2", "3"],
+            STUB_MINIMAL,
+        )?;
+
+        Ok(())
+    }
+
     #[test]
     fn program_args_without_two_dashes_splitter() -> Result<()> {
         assert_cargo_args(
@@ -630,6 +667,28 @@ mod tests {
                 "--",
             ],
             vec!["-"],
+            STUB_MINIMAL,
+        )?;
+
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "1", "2", "3"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["1", "2", "3"],
+            STUB_MINIMAL,
+        )?;
+
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "-", "1", "2", "3"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["-", "1", "2", "3"],
             STUB_MINIMAL,
         )?;
 
