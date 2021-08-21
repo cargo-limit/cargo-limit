@@ -99,8 +99,8 @@ fn open_in_external_application_for_affected_files(
     spans_in_consistent_order: Vec<DiagnosticSpan>,
     parsed_args: &Options,
 ) -> Result<()> {
-    let program = &parsed_args.open_in_external_application;
-    if !program.is_empty() {
+    let app = &parsed_args.open_in_external_application;
+    if !app.is_empty() {
         let mut args = Vec::new();
         for span in spans_in_consistent_order.into_iter() {
             args.push(format!(
@@ -109,11 +109,8 @@ fn open_in_external_application_for_affected_files(
             ));
         }
         if !args.is_empty() {
-            let error_text = failed_to_execute_error_text(program);
-            let output = Command::new(program)
-                .args(args)
-                .output()
-                .context(error_text)?;
+            let error_text = failed_to_execute_error_text(app);
+            let output = Command::new(app).args(args).output().context(error_text)?;
             buffers.write_all_to_stderr(&output.stdout)?;
             buffers.write_all_to_stderr(&output.stderr)?;
         }
@@ -121,8 +118,8 @@ fn open_in_external_application_for_affected_files(
     Ok(())
 }
 
-fn failed_to_execute_error_text<T: fmt::Debug>(program: T) -> String {
-    format!("failed to execute {:?}", program)
+fn failed_to_execute_error_text<T: fmt::Debug>(app: T) -> String {
+    format!("failed to execute {:?}", app)
 }
 
 #[doc(hidden)]

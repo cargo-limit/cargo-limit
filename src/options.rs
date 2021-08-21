@@ -15,7 +15,7 @@ const JSON_FORMAT: &str = "json";
 const JSON_FORMAT_WITH_COLORS: &str = "json-diagnostic-rendered-ansi";
 const JSON_FORMAT_SHORT: &str = "json-diagnostic-short";
 const SHORT_FORMAT: &str = "short";
-const HUMAN_FORMAT: &str = "human"; // TODO: test it
+const HUMAN_FORMAT: &str = "human";
 const VALID_MESSAGE_FORMATS: &[&str] = &[
     HUMAN_FORMAT,
     SHORT_FORMAT,
@@ -35,7 +35,7 @@ const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 pub struct Options {
     // TODO: getset?
     pub cargo_args: Vec<String>,
-    pub args_after_program_args_delimiter: Vec<String>,
+    pub args_after_app_args_delimiter: Vec<String>,
     pub terminal_supports_colors: bool,
     pub limit_messages: usize,
     pub time_limit_after_error: Duration,
@@ -54,7 +54,7 @@ impl Default for Options {
     fn default() -> Self {
         Self {
             cargo_args: Vec::new(),
-            args_after_program_args_delimiter: Vec::new(),
+            args_after_app_args_delimiter: Vec::new(),
             terminal_supports_colors: true,
             limit_messages: 0,
             time_limit_after_error: Duration::from_secs(1),
@@ -73,7 +73,7 @@ impl Default for Options {
 
 impl Options {
     pub fn all_args(&self) -> impl Iterator<Item = String> {
-        let delimiter = if self.args_after_program_args_delimiter.is_empty() {
+        let delimiter = if self.args_after_app_args_delimiter.is_empty() {
             Either::Left(iter::empty())
         } else {
             Either::Right(iter::once(PROGRAM_ARGS_DELIMITER.to_string()))
@@ -82,7 +82,7 @@ impl Options {
             .clone()
             .into_iter()
             .chain(delimiter)
-            .chain(self.args_after_program_args_delimiter.clone())
+            .chain(self.args_after_app_args_delimiter.clone())
     }
 
     pub fn from_args_and_os(workspace_root: &Path) -> Result<Self> {
@@ -132,21 +132,17 @@ impl Options {
         self.parse_options(passed_args.clone().into_iter(), &mut color)?;
         self.cargo_args.push(self.message_format(color).to_owned());
 
-        // TODO: program => app
-        let mut program_args_started = false;
+        // TODO: app => app
+        let mut app_args_started = false;
         let mut passed_args = passed_args.into_iter();
-        self.consume_remaining_args(&mut passed_args, &mut program_args_started)?;
+        self.consume_remaining_args(&mut passed_args, &mut app_args_started)?;
 
-        let mut program_color_is_set = false;
-        if program_args_started {
-            self.process_args_after_program_args_delimiter(passed_args, &mut program_color_is_set);
+        let mut app_color_is_set = false;
+        if app_args_started {
+            self.process_args_after_app_args_delimiter(passed_args, &mut app_color_is_set);
         }
 
-        self.process_color_and_program_args(
-            cargo_subcommand,
-            program_color_is_set,
-            workspace_root,
-        )?;
+        self.process_color_and_app_args(cargo_subcommand, app_color_is_set, workspace_root)?;
 
         Ok(self)
     }
@@ -221,7 +217,7 @@ impl Options {
     fn consume_remaining_args(
         &mut self,
         passed_args: &mut impl Iterator<Item = String>,
-        program_args_started: &mut bool,
+        app_args_started: &mut bool,
     ) -> Result<()> {
         while let Some(arg) = passed_args.next() {
             if arg == "-h" || arg == "--help" {
@@ -233,7 +229,7 @@ impl Options {
             } else if arg == MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1] {
             } else if let Some(_) = arg.strip_prefix(MESSAGE_FORMAT) {
             } else if arg == PROGRAM_ARGS_DELIMITER {
-                *program_args_started = true;
+                *app_args_started = true;
                 break;
             } else {
                 self.cargo_args.push(arg); // TODO: should we even do this here?
@@ -243,16 +239,16 @@ impl Options {
     }
 
     // TODO: naming
-    fn process_color_and_program_args(
+    fn process_color_and_app_args(
         &mut self,
         cargo_subcommand: &str,
-        program_color_is_set: bool, // TODO: too many args, flags are evil here
+        app_color_is_set: bool, // TODO: too many args, flags are evil here
         workspace_root: &Path,
     ) -> Result<()> {
         let is_test = cargo_subcommand == "test";
         let is_bench = cargo_subcommand == "bench";
         let command_supports_color_arg = is_test || is_bench;
-        if command_supports_color_arg && !program_color_is_set && self.terminal_supports_colors {
+        if command_supports_color_arg && !app_color_is_set && self.terminal_supports_colors {
             let cargo_toml = CargoToml::parse(workspace_root)?;
             let all_items_have_harness = if is_test {
                 cargo_toml.all_tests_have_harness()
@@ -262,8 +258,8 @@ impl Options {
                 unreachable!()
             };
             if all_items_have_harness {
-                // Workaround for programs that can't understand that terminal supports colors.
-                // To fix that properly we need to run programs in pty.
+                // Workaround for apps that can't understand that terminal supports colors.
+                // To fix that properly we need to run apps in pty.
                 // https://github.com/alopatindev/cargo-limit/issues/4#issuecomment-833692334
                 self.add_color_arg(COLOR_ALWAYS);
             }
@@ -271,16 +267,16 @@ impl Options {
         Ok(())
     }
 
-    fn process_args_after_program_args_delimiter(
+    fn process_args_after_app_args_delimiter(
         &mut self,
         passed_args: impl Iterator<Item = String>,
-        program_color_is_set: &mut bool,
+        app_color_is_set: &mut bool,
     ) {
         for arg in passed_args {
             if arg == COLOR[0..COLOR.len() - 1] || arg.starts_with(COLOR) {
-                *program_color_is_set = true;
+                *app_color_is_set = true;
             }
-            self.args_after_program_args_delimiter.push(arg);
+            self.args_after_app_args_delimiter.push(arg);
         }
     }
 
@@ -321,7 +317,7 @@ impl Options {
     }
 
     fn add_color_arg(&mut self, value: &str) {
-        self.args_after_program_args_delimiter
+        self.args_after_app_args_delimiter
             .push(format!("{}{}", COLOR, value));
     }
 }
@@ -339,58 +335,43 @@ mod tests {
     #[test]
     fn smoke() -> Result<()> {
         assert_cargo_args(
-            vec![CARGO_BIN, "lrun", "--", "program-argument"],
+            vec![CARGO_BIN, "lrun", "--", "app-argument"],
             vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
-            vec!["program-argument"],
+            vec!["app-argument"],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
-            vec![CARGO_BIN, "lrun", "-vvv", "--", "-c", "program-config.yml"],
+            vec![CARGO_BIN, "lrun", "-vvv", "--", "-c", "app-config.yml"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "-vvv",
             ],
-            vec!["-c", "program-config.yml"],
+            vec!["-c", "app-config.yml"],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
-            vec![
-                CARGO_BIN,
-                "lrun",
-                "-p=program",
-                "--",
-                "-c",
-                "program-config.yml",
-            ],
+            vec![CARGO_BIN, "lrun", "-p=app", "--", "-c", "app-config.yml"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
-                "-p=program",
+                "-p=app",
             ],
-            vec!["-c", "program-config.yml"],
+            vec!["-c", "app-config.yml"],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
-            vec![
-                CARGO_BIN,
-                "lrun",
-                "-p",
-                "program",
-                "--",
-                "-c",
-                "program-config.yml",
-            ],
+            vec![CARGO_BIN, "lrun", "-p", "app", "--", "-c", "app-config.yml"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "-p",
-                "program",
+                "app",
             ],
-            vec!["-c", "program-config.yml"],
+            vec!["-c", "app-config.yml"],
             STUB_MINIMAL,
         )?;
 
@@ -492,13 +473,13 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec![CARGO_BIN, "lrun", "-v", "-v", "program-arg"],
+            vec![CARGO_BIN, "lrun", "-v", "-v", "app-arg"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "-v",
                 "-v",
-                "program-arg",
+                "app-arg",
             ],
             vec![],
             STUB_MINIMAL,
@@ -511,14 +492,14 @@ mod tests {
                 "-v",
                 "--message-format=short",
                 "-v",
-                "program-arg",
+                "app-arg",
             ],
             vec![
                 "run",
                 "--message-format=json-diagnostic-short",
                 "-v",
                 "-v",
-                "program-arg",
+                "app-arg",
             ],
             vec![],
             Options {
@@ -535,14 +516,14 @@ mod tests {
                 "-v",
                 "-v",
                 "--message-format=human",
-                "program-arg",
+                "app-arg",
             ],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "-v",
                 "-v",
-                "program-arg",
+                "app-arg",
             ],
             vec![],
             STUB_MINIMAL,
@@ -555,9 +536,9 @@ mod tests {
                 "-v",
                 "-v",
                 "--message-format=json",
-                "program-arg",
+                "app-arg",
             ],
-            vec!["run", "--message-format=json", "-v", "-v", "program-arg"],
+            vec!["run", "--message-format=json", "-v", "-v", "app-arg"],
             vec![],
             Options {
                 json_message_format: true,
@@ -572,13 +553,13 @@ mod tests {
     #[test]
     fn wat() -> Result<()> {
         assert_cargo_args(
-            vec![CARGO_BIN, "lrun", "-v", "-v", "program-arg"],
+            vec![CARGO_BIN, "lrun", "-v", "-v", "app-arg"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "-v",
                 "-v",
-                "program-arg",
+                "app-arg",
             ],
             vec![],
             STUB_MINIMAL,
@@ -763,13 +744,13 @@ mod tests {
     }
 
     #[test]
-    fn program_args_without_two_dashes_splitter() -> Result<()> {
+    fn app_args_without_two_dashes_splitter() -> Result<()> {
         assert_cargo_args(
-            vec![CARGO_BIN, "lrun", "program-argument"],
+            vec![CARGO_BIN, "lrun", "app-argument"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
-                "program-argument",
+                "app-argument",
             ],
             vec![],
             STUB_MINIMAL,
@@ -810,12 +791,12 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec![CARGO_BIN, "lrun", "--verbose", "program-argument"],
+            vec![CARGO_BIN, "lrun", "--verbose", "app-argument"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--verbose",
-                "program-argument",
+                "app-argument",
             ],
             vec![],
             STUB_MINIMAL,
@@ -827,13 +808,13 @@ mod tests {
     fn assert_cargo_args(
         input: Vec<&str>,
         expected_cargo_args: Vec<&str>,
-        expected_args_after_program_args_delimiter: Vec<&str>,
+        expected_args_after_app_args_delimiter: Vec<&str>,
         stub: &str,
     ) -> Result<()> {
         assert_options(
             input,
             expected_cargo_args,
-            expected_args_after_program_args_delimiter,
+            expected_args_after_app_args_delimiter,
             Default::default(),
             stub,
         )
@@ -842,7 +823,7 @@ mod tests {
     fn assert_options(
         input: Vec<&str>,
         expected_cargo_args: Vec<&str>,
-        expected_args_after_program_args_delimiter: Vec<&str>,
+        expected_args_after_app_args_delimiter: Vec<&str>,
         expected_options: Options,
         stub: &str,
     ) -> Result<()> {
@@ -857,7 +838,7 @@ mod tests {
                 .into_iter()
                 .map(|i| i.to_string()) // TODO: extract
                 .collect(),
-            args_after_program_args_delimiter: expected_args_after_program_args_delimiter
+            args_after_app_args_delimiter: expected_args_after_app_args_delimiter
                 .into_iter()
                 .map(|i| i.to_string())
                 .collect(),
