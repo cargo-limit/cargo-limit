@@ -133,13 +133,11 @@ impl Options {
 
         let mut color = COLOR_AUTO.to_owned();
         self.parse_options(args_for_first_pass.into_iter(), &mut color)?;
-
-        self.parse_colors(&color);
+        self.parse_colors(color);
 
         // TODO: program => app
         let mut program_args_started = false;
-        self.process_main_args(&mut color, &mut passed_args, &mut program_args_started)?;
-
+        self.process_main_args(&mut passed_args, &mut program_args_started)?;
         self.process_color_and_program_args(
             passed_args,
             cargo_command,
@@ -196,12 +194,11 @@ impl Options {
         Ok(())
     }
 
-    fn parse_colors(&mut self, color: &str) {
-        // TODO: push once
-        if self.short_message_format {
-            self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
+    fn parse_colors(&mut self, color: String) {
+        let message_format_arg = if self.short_message_format {
+            MESSAGE_FORMAT_JSON_SHORT.to_owned()
         } else if self.json_message_format {
-            self.cargo_args.push(MESSAGE_FORMAT_JSON.to_owned());
+            MESSAGE_FORMAT_JSON.to_owned()
         } else {
             let message_format_arg = if color == COLOR_AUTO {
                 if self.terminal_supports_colors {
@@ -216,14 +213,14 @@ impl Options {
             } else {
                 unreachable!()
             };
-            self.cargo_args.push(message_format_arg.to_owned());
-        }
+            message_format_arg.to_owned()
+        };
+        self.cargo_args.push(message_format_arg.to_owned());
     }
 
     // TODO: naming
     fn process_main_args(
         &mut self,
-        color: &mut String,
         passed_args: &mut impl Iterator<Item = String>,
         program_args_started: &mut bool,
     ) -> Result<()> {
