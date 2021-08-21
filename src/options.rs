@@ -119,14 +119,13 @@ impl Options {
         workspace_root: &Path, // TODO: should not be here?
     ) -> Result<Self> {
         let mut passed_args = args.skip(1);
-        let cargo_command = passed_args
+        let cargo_subcommand = passed_args
             .next()
-            .ok_or_else(|| format_err!("cargo command not found"))?;
-        let (first_letter, cargo_command) = cargo_command // TODO: either don't crash or crash everywhere
+            .ok_or_else(|| format_err!("cargo subcommand not found"))?;
+        let (first_letter, cargo_subcommand) = cargo_subcommand // TODO: either don't crash or crash everywhere
             .split_at(1);
         assert_eq!(first_letter, "l");
-        self.cargo_args.push(cargo_command.to_owned()); // TODO: which means it's not really args
-                                                        // TODO: cargo_command => cargo_subcommand
+        self.cargo_args.push(cargo_subcommand.to_owned());
 
         let mut color = COLOR_AUTO.to_owned();
         let passed_args = passed_args.collect::<Vec<_>>();
@@ -143,7 +142,11 @@ impl Options {
             self.process_args_after_program_args_delimiter(passed_args, &mut program_color_is_set);
         }
 
-        self.process_color_and_program_args(cargo_command, program_color_is_set, workspace_root)?;
+        self.process_color_and_program_args(
+            cargo_subcommand,
+            program_color_is_set,
+            workspace_root,
+        )?;
 
         Ok(self)
     }
@@ -242,12 +245,12 @@ impl Options {
     // TODO: naming
     fn process_color_and_program_args(
         &mut self,
-        cargo_command: &str,
+        cargo_subcommand: &str,
         program_color_is_set: bool, // TODO: too many args, flags are evil here
         workspace_root: &Path,
     ) -> Result<()> {
-        let is_test = cargo_command == "test";
-        let is_bench = cargo_command == "bench";
+        let is_test = cargo_subcommand == "test";
+        let is_bench = cargo_subcommand == "bench";
         let command_supports_color_arg = is_test || is_bench;
         if command_supports_color_arg && !program_color_is_set && self.terminal_supports_colors {
             let cargo_toml = CargoToml::parse(workspace_root)?;
