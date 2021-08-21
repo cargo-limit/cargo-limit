@@ -132,7 +132,6 @@ impl Options {
 
         // TODO: program => app
         let mut program_args_started = false;
-        //let mut passed_args = Self::put_program_args_after_two_dashes(passed_args);
 
         let mut color = COLOR_AUTO.to_owned();
         self.process_wat(xs.into_iter(), &mut color)?;
@@ -175,8 +174,6 @@ impl Options {
                 Self::validate_message_format(&format)?;
                 if format.starts_with(JSON_FORMAT) {
                     self.json_message_format = true;
-                    /*self.cargo_args.push(arg);
-                    self.cargo_args.push(format);*/
                 } else if format == SHORT_FORMAT {
                     self.short_message_format = true;
                 }
@@ -184,16 +181,11 @@ impl Options {
                 Self::validate_message_format(&format)?;
                 if format.starts_with(JSON_FORMAT) {
                     self.json_message_format = true;
-                    //self.cargo_args.push(arg);
                 } else if format == SHORT_FORMAT {
                     self.short_message_format = true;
                 }
             } else if arg == PROGRAM_ARGS_DELIMITER {
-                //*program_args_started = true;
-                //dbg!("break at args delimiter");
                 break;
-            } else {
-                //self.cargo_args.push(arg);
             }
         }
 
@@ -300,6 +292,7 @@ impl Options {
             if all_items_have_harness {
                 // Workaround for programs that can't understand that terminal supports colors.
                 // To fix that properly we need to run programs in pty.
+                // https://github.com/alopatindev/cargo-limit/issues/4#issuecomment-833692334
                 self.add_color_arg(COLOR_ALWAYS);
             }
         }
