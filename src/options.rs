@@ -540,6 +540,50 @@ mod tests {
             STUB_MINIMAL,
         )?;
 
+        // FIXME
+        assert_options(
+            vec![
+                CARGO_BIN,
+                "lrun",
+                "-v",
+                "--message-format=short",
+                "-v",
+                "program-arg",
+            ],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-short",
+                "-v",
+                "-v",
+                "program-arg",
+            ],
+            vec![],
+            Options {
+                short_message_format: true,
+                ..Options::default()
+            },
+            STUB_MINIMAL,
+        )?;
+
+        // FIXME
+        assert_options(
+            vec![
+                CARGO_BIN,
+                "lrun",
+                "-v",
+                "-v",
+                "--message-format=json",
+                "program-arg",
+            ],
+            vec!["run", "--message-format=json", "-v", "-v", "program-arg"],
+            vec![],
+            Options {
+                json_message_format: true,
+                ..Options::default()
+            },
+            STUB_MINIMAL,
+        )?;
+
         Ok(())
     }
 
