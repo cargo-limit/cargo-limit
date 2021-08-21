@@ -120,15 +120,8 @@ impl Options {
         assert_eq!(first_letter, "l");
         self.cargo_args.push(cargo_command.to_owned()); // TODO: which means it's not really args
 
-        let mut program_args_started = false;
-        /*let mut program_args_started =
-        if let Some(first_argument_after_cargo_command) = passed_args.peek() {
-            // https://github.com/alopatindev/cargo-limit/issues/6
-            !first_argument_after_cargo_command.starts_with('-')
-        } else {
-            false
-        };*/
         // TODO: program => app
+        let mut program_args_started = false;
         let mut passed_args = Self::put_program_args_after_two_dashes(passed_args);
 
         let mut color = COLOR_AUTO.to_owned();
@@ -149,6 +142,7 @@ impl Options {
     fn put_program_args_after_two_dashes(
         passed_args: impl Iterator<Item = String>,
     ) -> impl Iterator<Item = String> {
+        // https://github.com/alopatindev/cargo-limit/issues/6
         dbg!("put_program_args_after_two_dashes");
 
         let mut program_args_started = false;
@@ -381,6 +375,25 @@ mod tests {
             vec![
                 "run",
                 "-vvv",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["-c", "program-config.yml"],
+            STUB_MINIMAL,
+        )?;
+
+        assert_cargo_args(
+            vec![
+                CARGO_BIN,
+                "lrun",
+                "-p=program",
+                "--",
+                "-c",
+                "program-config.yml",
+            ],
+            vec![
+                "run",
+                "-p=program",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "--",
             ],
