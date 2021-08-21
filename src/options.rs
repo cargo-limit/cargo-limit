@@ -129,10 +129,12 @@ impl Options {
                                                         // TODO: cargo_command => cargo_subcommand
 
         let args_for_first_pass = passed_args.collect::<Vec<_>>();
-        let mut passed_args = args_for_first_pass.clone().into_iter();
+        let mut passed_args = args_for_first_pass.clone().into_iter(); // TODO: naming
 
         let mut color = COLOR_AUTO.to_owned();
         self.process_wat(args_for_first_pass.into_iter(), &mut color)?;
+
+        self.parse_col(&color);
 
         // TODO: program => app
         let mut program_args_started = false;
@@ -191,6 +193,10 @@ impl Options {
             }
         }
 
+        Ok(())
+    }
+
+    fn parse_col(&mut self, color: &str) {
         if !self.short_message_format && !self.json_message_format {
             let message_format_arg = if color == COLOR_AUTO {
                 if self.terminal_supports_colors {
@@ -207,7 +213,6 @@ impl Options {
             };
             self.cargo_args.push(message_format_arg.to_owned());
         }
-        Ok(())
     }
 
     // TODO: naming
