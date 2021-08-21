@@ -35,7 +35,7 @@ const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 pub struct Options {
     // TODO: getset?
     pub cargo_args: Vec<String>,
-    pub program_args: Vec<String>,
+    pub args_after_program_args_delimiter: Vec<String>,
     pub terminal_supports_colors: bool,
     pub limit_messages: usize,
     pub time_limit_after_error: Duration,
@@ -54,7 +54,7 @@ impl Default for Options {
     fn default() -> Self {
         Self {
             cargo_args: Vec::new(),
-            program_args: Vec::new(),
+            args_after_program_args_delimiter: Vec::new(),
             terminal_supports_colors: true,
             limit_messages: 0,
             time_limit_after_error: Duration::from_secs(1),
@@ -77,13 +77,13 @@ impl Options {
             .clone()
             .into_iter()
             .chain({
-                if self.program_args.is_empty() {
+                if self.args_after_program_args_delimiter.is_empty() {
                     Either::Left(iter::empty())
                 } else {
                     Either::Right(iter::once(PROGRAM_ARGS_DELIMITER.to_string()))
                 }
             })
-            .chain(self.program_args.clone().into_iter())
+            .chain(self.args_after_program_args_delimiter.clone().into_iter())
     }
 
     pub fn from_args_and_os(workspace_root: &Path) -> Result<Self> {
@@ -389,7 +389,7 @@ impl Options {
             if arg == COLOR[0..COLOR.len() - 1] || arg.starts_with(COLOR) {
                 *program_color_is_set = true;
             }
-            self.program_args.push(arg);
+            self.args_after_program_args_delimiter.push(arg);
         }
     }
 
@@ -431,7 +431,8 @@ impl Options {
 
     fn add_color_arg(&mut self, value: &str) {
         //self.cargo_args.push(format!("{}{}", COLOR, value));
-        self.program_args.push(format!("{}{}", COLOR, value));
+        self.args_after_program_args_delimiter
+            .push(format!("{}{}", COLOR, value));
     }
 }
 
@@ -875,13 +876,13 @@ mod tests {
     fn assert_cargo_args(
         input: Vec<&str>,
         expected_cargo_args: Vec<&str>,
-        expected_program_args: Vec<&str>,
+        expected_args_after_program_args_delimiter: Vec<&str>,
         stub: &str,
     ) -> Result<()> {
         assert_options(
             input,
             expected_cargo_args,
-            expected_program_args,
+            expected_args_after_program_args_delimiter,
             Default::default(),
             stub,
         )
@@ -890,7 +891,7 @@ mod tests {
     fn assert_options(
         input: Vec<&str>,
         expected_cargo_args: Vec<&str>,
-        expected_program_args: Vec<&str>,
+        expected_args_after_program_args_delimiter: Vec<&str>,
         expected_options: Options,
         stub: &str,
     ) -> Result<()> {
@@ -905,7 +906,7 @@ mod tests {
                 .into_iter()
                 .map(|i| i.to_string()) // TODO: extract
                 .collect(),
-            program_args: expected_program_args
+            args_after_program_args_delimiter: expected_args_after_program_args_delimiter
                 .into_iter()
                 .map(|i| i.to_string())
                 .collect(),
