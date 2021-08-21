@@ -140,15 +140,10 @@ impl Options {
 
         let mut program_color_is_set = false;
         if program_args_started {
-            self.process_program_args(passed_args, &mut program_color_is_set);
+            self.process_args_after_program_args_delimiter(passed_args, &mut program_color_is_set);
         }
 
-        self.process_color_and_program_args(
-            cargo_command,
-            program_args_started,
-            program_color_is_set,
-            workspace_root,
-        )?;
+        self.process_color_and_program_args(cargo_command, program_color_is_set, workspace_root)?;
 
         Ok(self)
     }
@@ -248,7 +243,6 @@ impl Options {
     fn process_color_and_program_args(
         &mut self,
         cargo_command: &str,
-        program_args_started: bool,
         program_color_is_set: bool, // TODO: too many args, flags are evil here
         workspace_root: &Path,
     ) -> Result<()> {
@@ -274,8 +268,7 @@ impl Options {
         Ok(())
     }
 
-    // TODO: naming?
-    fn process_program_args(
+    fn process_args_after_program_args_delimiter(
         &mut self,
         passed_args: impl Iterator<Item = String>,
         program_color_is_set: &mut bool,
