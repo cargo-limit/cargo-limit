@@ -60,7 +60,7 @@ impl Default for Options {
             ascending_messages_order: false,
             show_warnings_if_errors_exist: false,
             show_dependencies_warnings: false,
-            open_in_external_app: "".to_string(), // TODO: to_owned => to_string everywhere? or the opposite
+            open_in_external_app: "".to_owned(),
             open_in_external_app_on_warnings: false,
             help: false,
             version: false,
@@ -75,7 +75,7 @@ impl Options {
         let delimiter = if self.args_after_app_args_delimiter.is_empty() {
             Either::Left(iter::empty())
         } else {
-            Either::Right(iter::once(APP_ARGS_DELIMITER.to_string()))
+            Either::Right(iter::once(APP_ARGS_DELIMITER.to_owned()))
         };
         self.cargo_args
             .clone()
@@ -805,7 +805,7 @@ mod tests {
         fn to_string<'item>(
             iter: impl IntoIterator<Item = &'item str> + 'item,
         ) -> impl Iterator<Item = String> + 'item {
-            iter.into_iter().map(|i| i.to_string())
+            iter.into_iter().map(|i| i.to_owned())
         }
 
         let options = Options::process_args(
