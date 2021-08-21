@@ -84,7 +84,7 @@ impl Options {
             .chain(self.args_after_app_args_delimiter.clone())
     }
 
-    pub fn from_args_and_os(workspace_root: &Path) -> Result<Self> {
+    pub fn from_os_env(workspace_root: &Path) -> Result<Self> {
         Self::from_vars_and_atty()?.process_args(&mut env::args(), workspace_root)
     }
 
