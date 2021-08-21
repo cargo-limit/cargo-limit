@@ -117,7 +117,7 @@ impl Options {
     fn process_args(
         mut self,
         args: impl Iterator<Item = String>,
-        workspace_root: &Path, // TODO: should not be here?
+        workspace_root: &Path,
     ) -> Result<Self> {
         let mut passed_args = args.skip(1);
         let cargo_subcommand = passed_args
