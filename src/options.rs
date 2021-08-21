@@ -33,9 +33,8 @@ const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 
 #[derive(Debug, PartialEq)]
 pub struct Options {
-    // TODO: getset?
-    pub cargo_args: Vec<String>,
-    pub args_after_app_args_delimiter: Vec<String>,
+    cargo_args: Vec<String>,
+    args_after_app_args_delimiter: Vec<String>,
     pub terminal_supports_colors: bool,
     pub limit_messages: usize,
     pub time_limit_after_error: Duration,
