@@ -91,13 +91,14 @@ impl Options {
     fn from_vars_and_atty() -> Result<Self> {
         let mut result = Self::default();
         result.terminal_supports_colors = atty::is(atty::Stream::Stderr);
-        Self::parse_var("CARGO_MSG_LIMIT", &mut result.limit_messages)?;
+
         {
-            // TODO
             let mut seconds = result.time_limit_after_error.as_secs();
             Self::parse_var("CARGO_TIME_LIMIT", &mut seconds)?;
             result.time_limit_after_error = Duration::from_secs(seconds);
         }
+
+        Self::parse_var("CARGO_MSG_LIMIT", &mut result.limit_messages)?;
         Self::parse_var("CARGO_ASC", &mut result.ascending_messages_order)?;
         Self::parse_var(
             "CARGO_FORCE_WARN",
@@ -109,6 +110,7 @@ impl Options {
             "CARGO_OPEN_WARN",
             &mut result.open_in_external_app_on_warnings,
         )?;
+
         Ok(result)
     }
 
