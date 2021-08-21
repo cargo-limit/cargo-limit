@@ -563,6 +563,29 @@ mod tests {
             STUB_MINIMAL,
         )?;
 
+        assert_options(
+            vec![
+                CARGO_BIN,
+                "lrun",
+                "-v",
+                "-v",
+                "--message-format=human",
+                "program-arg",
+            ],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "-v",
+                "-v",
+                "program-arg",
+            ],
+            vec![],
+            Options {
+                ..Options::default()
+            },
+            STUB_MINIMAL,
+        )?;
+
         // FIXME
         assert_options(
             vec![
