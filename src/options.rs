@@ -349,40 +349,6 @@ mod tests {
             vec!["--color=always"],
         )?;
 
-        // TODO: +with test
-        //        assert_cargo_args(
-        //            vec![CARGO_BIN, "lrun", "program-argument"],
-        //            vec![
-        //                "run",
-        //                "--message-format=json-diagnostic-rendered-ansi",
-        //                "--",
-        //            ],
-        //            vec!["program-argument"],
-        //        )?;
-
-        // TODO
-        //        assert_cargo_args(
-        //            vec![CARGO_BIN, "lrun", "-"],
-        //            vec![
-        //                "run",
-        //                "--message-format=json-diagnostic-rendered-ansi",
-        //                "--",
-        //            ],
-        //            vec!["-"],
-        //        )?;
-
-        //        assert_cargo_args(
-        //            vec![CARGO_BIN, "lrun", "--verbose", "program-argument"],
-        //            vec![
-        //                "run",
-        //                "--verbose",
-        //                "--message-format=json-diagnostic-rendered-ansi",
-        //                "--",
-        //                "program-argument",
-        //                // "--color=always", // TODO?
-        //            ],
-        //        )?;
-
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--", "program-argument"],
             vec![
@@ -391,33 +357,6 @@ mod tests {
                 "--",
             ],
             vec!["program-argument"],
-        )?;
-
-        // TODO: colors (both for app and run), other options, harness
-        assert_cargo_args(
-            vec![CARGO_BIN, "lrun", "--color=always"],
-            vec![
-                "run",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
-            vec![],
-        )?;
-
-        assert_cargo_args(
-            vec![CARGO_BIN, "lrun", "--color=never"],
-            vec!["run", "--message-format=json", "--"],
-            vec![],
-        )?;
-
-        assert_cargo_args(
-            vec![CARGO_BIN, "lrun", "--", "--color=always"],
-            vec![
-                "run",
-                "--message-format=json-diagnostic-rendered-ansi",
-                "--",
-            ],
-            vec!["--color=always"],
         )?;
 
         assert_cargo_args(
@@ -499,6 +438,77 @@ mod tests {
                 ..Options::default()
             },
         )?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn process_color_args() -> Result<()> {
+        // TODO: colors (both for app and run), other options, harness
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "--color=always"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec![],
+        )?;
+
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "--color=never"],
+            vec!["run", "--message-format=json", "--"],
+            vec![],
+        )?;
+
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "--", "--color=always"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["--color=always"],
+        )?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn process_program_args_without_two_dashes_splitter() -> Result<()> {
+        // TODO: +with test
+        //        assert_cargo_args(
+        //            vec![CARGO_BIN, "lrun", "program-argument"],
+        //            vec![
+        //                "run",
+        //                "--message-format=json-diagnostic-rendered-ansi",
+        //                "--",
+        //            ],
+        //            vec!["program-argument"],
+        //        )?;
+
+        // TODO
+        //        assert_cargo_args(
+        //            vec![CARGO_BIN, "lrun", "-"],
+        //            vec![
+        //                "run",
+        //                "--message-format=json-diagnostic-rendered-ansi",
+        //                "--",
+        //            ],
+        //            vec!["-"],
+        //        )?;
+
+        //        assert_cargo_args(
+        //            vec![CARGO_BIN, "lrun", "--verbose", "program-argument"],
+        //            vec![
+        //                "run",
+        //                "--verbose",
+        //                "--message-format=json-diagnostic-rendered-ansi",
+        //                "--",
+        //                "program-argument",
+        //                // "--color=always", // TODO?
+        //            ],
+        //        )?;
 
         Ok(())
     }
