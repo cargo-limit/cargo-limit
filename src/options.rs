@@ -127,11 +127,16 @@ impl Options {
 
         let mut color = COLOR_AUTO.to_owned();
         let mut app_args_started = false;
-        let mut xs = Vec::new(); // TODO: naming
-        self.parse_options(&mut passed_args, &mut color, &mut xs, &mut app_args_started)?;
-        self.cargo_args.push(self.message_format(color).to_owned());
+        let mut args_before_app_args_delimiter = Vec::new();
 
-        self.cargo_args.extend(xs);
+        self.parse_options(
+            &mut passed_args,
+            &mut color,
+            &mut args_before_app_args_delimiter,
+            &mut app_args_started,
+        )?;
+        self.cargo_args.push(self.message_format(color).to_owned());
+        self.cargo_args.extend(args_before_app_args_delimiter);
 
         let mut app_color_is_set = false;
         if app_args_started {
