@@ -132,9 +132,9 @@ impl Options {
         let mut passed_args = args_for_first_pass.clone().into_iter(); // TODO: naming
 
         let mut color = COLOR_AUTO.to_owned();
-        self.process_wat(args_for_first_pass.into_iter(), &mut color)?;
+        self.parse_options(args_for_first_pass.into_iter(), &mut color)?;
 
-        self.parse_col(&color);
+        self.parse_colors(&color);
 
         // TODO: program => app
         let mut program_args_started = false;
@@ -152,8 +152,7 @@ impl Options {
         Ok(self)
     }
 
-    // TODO: naming
-    fn process_wat(
+    fn parse_options(
         &mut self,
         mut passed_args: impl Iterator<Item = String>,
         color: &mut String,
@@ -196,8 +195,7 @@ impl Options {
         Ok(())
     }
 
-    // TODO: naming
-    fn parse_col(&mut self, color: &str) {
+    fn parse_colors(&mut self, color: &str) {
         // TODO: push once
         if self.short_message_format {
             self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
@@ -238,7 +236,7 @@ impl Options {
                 *color = passed_args.next().context(
                     "the argument '--color <WHEN>' requires a value but none was supplied",
                 )?;
-                Self::validate_color(&color)?;
+                Self::validate_color(&color)?; // TODO: don't revalidate?
             } else if let Some(color_value) = arg.strip_prefix(COLOR) {
                 *color = color_value.to_owned();
                 Self::validate_color(&color)?;
@@ -248,7 +246,7 @@ impl Options {
                 )?;
                 Self::validate_message_format(&format)?;
                 if format.starts_with(JSON_FORMAT) {
-                    self.json_message_format = true;
+                    self.json_message_format = true; // TODO: don't set them again?
                 } else if format == SHORT_FORMAT {
                     self.short_message_format = true;
                 }
