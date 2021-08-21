@@ -15,7 +15,7 @@ const JSON_FORMAT: &str = "json";
 const JSON_FORMAT_WITH_COLORS: &str = "json-diagnostic-rendered-ansi";
 const JSON_FORMAT_SHORT: &str = "json-diagnostic-short";
 const SHORT_FORMAT: &str = "short";
-const HUMAN_FORMAT: &str = "human";
+const HUMAN_FORMAT: &str = "human"; // TODO: test it
 const VALID_MESSAGE_FORMATS: &[&str] = &[
     HUMAN_FORMAT,
     SHORT_FORMAT,
@@ -82,7 +82,7 @@ impl Options {
             .clone()
             .into_iter()
             .chain(delimiter)
-            .chain(self.args_after_program_args_delimiter.clone().into_iter())
+            .chain(self.args_after_program_args_delimiter.clone())
     }
 
     pub fn from_args_and_os(workspace_root: &Path) -> Result<Self> {
@@ -196,6 +196,7 @@ impl Options {
         Ok(())
     }
 
+    // TODO: naming
     fn parse_col(&mut self, color: &str) {
         if !self.short_message_format && !self.json_message_format {
             let message_format_arg = if color == COLOR_AUTO {
