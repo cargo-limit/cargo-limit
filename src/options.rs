@@ -35,7 +35,7 @@ const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 pub struct Options {
     cargo_args: Vec<String>,
     args_after_app_args_delimiter: Vec<String>,
-    pub terminal_supports_colors: bool,
+    terminal_supports_colors: bool,
     pub limit_messages: usize,
     pub time_limit_after_error: Duration,
     pub ascending_messages_order: bool,
@@ -46,7 +46,7 @@ pub struct Options {
     pub help: bool,
     pub version: bool,
     pub json_message_format: bool,
-    pub short_message_format: bool,
+    short_message_format: bool,
 }
 
 impl Default for Options {
