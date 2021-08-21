@@ -136,11 +136,17 @@ impl Options {
         // TODO: program => app
         let mut program_args_started = false;
         let mut passed_args = passed_args.into_iter();
-        self.process_main_args(&mut passed_args, &mut program_args_started)?;
+        self.consume_remaining_args(&mut passed_args, &mut program_args_started)?;
+
+        let mut program_color_is_set = false;
+        if program_args_started {
+            self.process_program_args(passed_args, &mut program_color_is_set);
+        }
+
         self.process_color_and_program_args(
-            passed_args,
             cargo_command,
             program_args_started,
+            program_color_is_set,
             workspace_root,
         )?;
 
@@ -214,8 +220,7 @@ impl Options {
         }
     }
 
-    // TODO: naming
-    fn process_main_args(
+    fn consume_remaining_args(
         &mut self,
         passed_args: &mut impl Iterator<Item = String>,
         program_args_started: &mut bool,
@@ -242,16 +247,11 @@ impl Options {
     // TODO: naming
     fn process_color_and_program_args(
         &mut self,
-        passed_args: impl Iterator<Item = String>,
         cargo_command: &str,
         program_args_started: bool,
+        program_color_is_set: bool, // TODO: too many args, flags are evil here
         workspace_root: &Path,
     ) -> Result<()> {
-        let mut program_color_is_set = false;
-        if program_args_started {
-            self.process_program_args(passed_args, &mut program_color_is_set);
-        }
-
         let is_test = cargo_command == "test";
         let is_bench = cargo_command == "bench";
         let command_supports_color_arg = is_test || is_bench;
