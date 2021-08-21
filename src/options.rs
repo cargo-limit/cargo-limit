@@ -474,41 +474,42 @@ mod tests {
         Ok(())
     }
 
+    #[ignore]
     #[test]
     fn process_program_args_without_two_dashes_splitter() -> Result<()> {
-        // TODO: +with test
-        //        assert_cargo_args(
-        //            vec![CARGO_BIN, "lrun", "program-argument"],
-        //            vec![
-        //                "run",
-        //                "--message-format=json-diagnostic-rendered-ansi",
-        //                "--",
-        //            ],
-        //            vec!["program-argument"],
-        //        )?;
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "program-argument"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["program-argument"],
+        )?;
 
-        // TODO
-        //        assert_cargo_args(
-        //            vec![CARGO_BIN, "lrun", "-"],
-        //            vec![
-        //                "run",
-        //                "--message-format=json-diagnostic-rendered-ansi",
-        //                "--",
-        //            ],
-        //            vec!["-"],
-        //        )?;
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "-"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["-"],
+        )?;
 
-        //        assert_cargo_args(
-        //            vec![CARGO_BIN, "lrun", "--verbose", "program-argument"],
-        //            vec![
-        //                "run",
-        //                "--verbose",
-        //                "--message-format=json-diagnostic-rendered-ansi",
-        //                "--",
-        //                "program-argument",
-        //                // "--color=always", // TODO?
-        //            ],
-        //        )?;
+        assert_cargo_args(
+            vec![CARGO_BIN, "lrun", "--verbose", "program-argument"],
+            vec![
+                "run",
+                "--verbose",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec![
+                "program-argument",
+                // "--color=always", // TODO?
+            ],
+        )?;
 
         Ok(())
     }
