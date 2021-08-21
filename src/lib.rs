@@ -25,7 +25,7 @@ const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
 #[doc(hidden)]
 pub fn run_cargo_filtered() -> Result<i32> {
     let workspace_root = MetadataCommand::new().exec()?.workspace_root;
-    let parsed_args = Options::from_args_and_os(&workspace_root)?;
+    let parsed_args = Options::from_args_and_os(&workspace_root)?; // TODO: args => options
     let cargo_path = env::var(CARGO_ENV_VAR)
         .map(PathBuf::from)
         .ok()
@@ -33,7 +33,7 @@ pub fn run_cargo_filtered() -> Result<i32> {
 
     let error_text = failed_to_execute_error_text(&cargo_path);
     let mut child = Command::new(cargo_path)
-        .args(parsed_args.cargo_args.clone())
+        .args(parsed_args.all_args())
         .stdout(Stdio::piped())
         .spawn()
         .context(error_text)?;

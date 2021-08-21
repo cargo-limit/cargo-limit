@@ -141,6 +141,8 @@ impl Options {
             workspace_root,
         )?;
 
+        dbg!(&self);
+
         Ok(self)
     }
 
@@ -416,6 +418,26 @@ mod tests {
                 "--",
             ],
             vec!["--color=always"],
+        )?;
+
+        assert_cargo_args(
+            vec![
+                cargo_bin,
+                "lrun",
+                "-p",
+                "program",
+                "--",
+                "-c",
+                "program-config.yml",
+            ],
+            vec![
+                "run",
+                "-p",
+                "program",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["-c", "program-config.yml"],
         )?;
 
         assert_options(
