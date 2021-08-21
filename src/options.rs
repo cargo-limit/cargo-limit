@@ -126,13 +126,12 @@ impl Options {
         self.cargo_args.push(cargo_subcommand.to_owned());
 
         let mut color = COLOR_AUTO.to_owned();
-        let passed_args = passed_args.collect::<Vec<_>>();
-        self.parse_options(passed_args.clone().into_iter(), &mut color)?;
+        let mut app_args_started = false;
+        let mut xs = Vec::new(); // TODO: naming
+        self.parse_options(&mut passed_args, &mut color, &mut xs, &mut app_args_started)?;
         self.cargo_args.push(self.message_format(color).to_owned());
 
-        let mut app_args_started = false;
-        let mut passed_args = passed_args.into_iter();
-        self.consume_remaining_cargo_args(&mut passed_args, &mut app_args_started)?;
+        self.cargo_args.extend(xs);
 
         let mut app_color_is_set = false;
         if app_args_started {
@@ -146,15 +145,19 @@ impl Options {
 
     fn parse_options(
         &mut self,
-        mut passed_args: impl Iterator<Item = String>,
+        passed_args: &mut impl Iterator<Item = String>,
         color: &mut String,
+        xs: &mut Vec<String>,
+        app_args_started: &mut bool,
     ) -> Result<()> {
         while let Some(arg) = passed_args.next() {
-            // TODO: extract consts
+            // TODO: extract consts?
             if arg == "-h" || arg == "--help" {
                 self.help = true;
+                xs.push(arg);
             } else if arg == "-V" || arg == "--version" {
                 self.version = true;
+                xs.push(arg);
             } else if arg == COLOR[0..COLOR.len() - 1] {
                 *color = passed_args.next().context(
                     "the argument '--color <WHEN>' requires a value but none was supplied",
@@ -181,7 +184,10 @@ impl Options {
                     self.short_message_format = true;
                 }
             } else if arg == APP_ARGS_DELIMITER {
+                *app_args_started = true;
                 break;
+            } else {
+                xs.push(arg);
             }
         }
 
@@ -209,30 +215,6 @@ impl Options {
             };
             message_format_arg
         }
-    }
-
-    fn consume_remaining_cargo_args(
-        &mut self,
-        passed_args: &mut impl Iterator<Item = String>,
-        app_args_started: &mut bool,
-    ) -> Result<()> {
-        while let Some(arg) = passed_args.next() {
-            if arg == "-h" || arg == "--help" {
-                self.cargo_args.push(arg);
-            } else if arg == "-V" || arg == "--version" {
-                self.cargo_args.push(arg);
-            } else if arg == COLOR[0..COLOR.len() - 1] { // TODO: cleanup
-            } else if let Some(_) = arg.strip_prefix(COLOR) {
-            } else if arg == MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1] {
-            } else if let Some(_) = arg.strip_prefix(MESSAGE_FORMAT) {
-            } else if arg == APP_ARGS_DELIMITER {
-                *app_args_started = true;
-                break;
-            } else {
-                self.cargo_args.push(arg); // TODO: should we even do this here?
-            }
-        }
-        Ok(())
     }
 
     fn process_custom_runners(
