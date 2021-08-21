@@ -73,17 +73,15 @@ impl Default for Options {
 
 impl Options {
     pub fn all_args(&self) -> impl Iterator<Item = String> {
+        let delimiter = if self.args_after_program_args_delimiter.is_empty() {
+            Either::Left(iter::empty())
+        } else {
+            Either::Right(iter::once(PROGRAM_ARGS_DELIMITER.to_string()))
+        };
         self.cargo_args
             .clone()
             .into_iter()
-            .chain({
-                // TODO
-                if self.args_after_program_args_delimiter.is_empty() {
-                    Either::Left(iter::empty())
-                } else {
-                    Either::Right(iter::once(PROGRAM_ARGS_DELIMITER.to_string()))
-                }
-            })
+            .chain(delimiter)
             .chain(self.args_after_program_args_delimiter.clone().into_iter())
     }
 
