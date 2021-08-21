@@ -284,7 +284,7 @@ impl Options {
         if let Ok(new_value) = env::var(key) {
             *value = new_value
                 .parse()
-                .context(format!("invalid {} value", key))?; // TODO: with_context
+                .with_context(|| format!("invalid {} value", key))?;
         }
         Ok(())
     }
