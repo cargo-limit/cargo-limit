@@ -804,24 +804,27 @@ mod tests {
         expected_options: Options,
         stub: &str,
     ) -> Result<()> {
+        fn to_string<'item>(
+            iter: impl Iterator<Item = &'item str> + 'item,
+        ) -> impl Iterator<Item = String> + 'item {
+            iter.map(|i| i.to_string())
+        }
+
         let options = Options::process_args(
             Options::default(),
-            iter::once(CARGO_BIN)
-                .chain(input.into_iter())
-                .map(|i| i.to_string()),
+            to_string(iter::once(CARGO_BIN).chain(input.into_iter())),
             &Path::new("tests/stubs").join(Path::new(stub)),
         )?;
+
         let expected = Options {
-            cargo_args: expected_cargo_args
-                .into_iter()
-                .map(|i| i.to_string()) // TODO: extract
-                .collect(),
-            args_after_app_args_delimiter: expected_args_after_app_args_delimiter
-                .into_iter()
-                .map(|i| i.to_string())
-                .collect(),
+            cargo_args: to_string(expected_cargo_args.into_iter()).collect(),
+            args_after_app_args_delimiter: to_string(
+                expected_args_after_app_args_delimiter.into_iter(),
+            )
+            .collect(),
             ..expected_options
         };
+
         assert_eq!(options, expected);
         Ok(())
     }
