@@ -83,23 +83,19 @@ fn parse_and_process_messages(
             }
         }
 
-        open_in_external_application_for_affected_files(
-            buffers,
-            spans_in_consistent_order,
-            parsed_args,
-        )?;
+        open_in_external_app_for_affected_files(buffers, spans_in_consistent_order, parsed_args)?;
     }
 
     buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
     Ok(())
 }
 
-fn open_in_external_application_for_affected_files(
+fn open_in_external_app_for_affected_files(
     buffers: &mut Buffers,
     spans_in_consistent_order: Vec<DiagnosticSpan>,
     parsed_args: &Options,
 ) -> Result<()> {
-    let app = &parsed_args.open_in_external_application;
+    let app = &parsed_args.open_in_external_app;
     if !app.is_empty() {
         let mut args = Vec::new();
         for span in spans_in_consistent_order.into_iter() {

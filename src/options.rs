@@ -42,8 +42,8 @@ pub struct Options {
     pub ascending_messages_order: bool,
     pub show_warnings_if_errors_exist: bool,
     pub show_dependencies_warnings: bool,
-    pub open_in_external_application: String,
-    pub open_in_external_application_on_warnings: bool,
+    pub open_in_external_app: String,
+    pub open_in_external_app_on_warnings: bool,
     pub help: bool,
     pub version: bool,
     pub json_message_format: bool,
@@ -61,8 +61,8 @@ impl Default for Options {
             ascending_messages_order: false,
             show_warnings_if_errors_exist: false,
             show_dependencies_warnings: false,
-            open_in_external_application: "".to_string(), // TODO: to_owned => to_string everywhere? or the opposite
-            open_in_external_application_on_warnings: false,
+            open_in_external_app: "".to_string(), // TODO: to_owned => to_string everywhere? or the opposite
+            open_in_external_app_on_warnings: false,
             help: false,
             version: false,
             json_message_format: false,
@@ -105,10 +105,10 @@ impl Options {
             &mut result.show_warnings_if_errors_exist,
         )?;
         Self::parse_var("CARGO_DEPS_WARN", &mut result.show_dependencies_warnings)?;
-        Self::parse_var("CARGO_OPEN", &mut result.open_in_external_application)?;
+        Self::parse_var("CARGO_OPEN", &mut result.open_in_external_app)?;
         Self::parse_var(
             "CARGO_OPEN_WARN",
-            &mut result.open_in_external_application_on_warnings,
+            &mut result.open_in_external_app_on_warnings,
         )?;
         Ok(result)
     }
@@ -132,7 +132,6 @@ impl Options {
         self.parse_options(passed_args.clone().into_iter(), &mut color)?;
         self.cargo_args.push(self.message_format(color).to_owned());
 
-        // TODO: app => app
         let mut app_args_started = false;
         let mut passed_args = passed_args.into_iter();
         self.consume_remaining_args(&mut passed_args, &mut app_args_started)?;
