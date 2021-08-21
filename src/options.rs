@@ -77,6 +77,7 @@ impl Options {
             .clone()
             .into_iter()
             .chain({
+                // TODO
                 if self.args_after_program_args_delimiter.is_empty() {
                     Either::Left(iter::empty())
                 } else {
@@ -218,45 +219,7 @@ impl Options {
         Ok(())
     }
 
-    /*fn put_program_args_after_two_dashes(
-        passed_args: impl Iterator<Item = String>,
-    ) -> impl Iterator<Item = String> {
-        // https://github.com/alopatindev/cargo-limit/issues/6
-        dbg!("put_program_args_after_two_dashes");
-
-        let mut program_args_might_be_before_two_dashes = true;
-        let mut program_args_started = false;
-        let mut cargo_args = Vec::new();
-        let mut program_args = Vec::new();
-
-        for (i, arg) in passed_args.enumerate() {
-            dbg!(&arg);
-            if program_args_started {
-                program_args.push(arg)
-            } else {
-                let starts_with_dash = arg.starts_with('-');
-                if i == 0 && (arg.len() > 1 && starts_with_dash) {
-                    program_args_might_be_before_two_dashes = false;
-                }
-                let is_program_args_delimiter = arg == PROGRAM_ARGS_DELIMITER;
-                let is_program_arg =
-                    program_args_might_be_before_two_dashes && (arg == "-" || !starts_with_dash);
-                if is_program_args_delimiter || is_program_arg {
-                    program_args_started = true;
-                    cargo_args.push(PROGRAM_ARGS_DELIMITER.to_string());
-                    if is_program_arg {
-                        program_args.push(arg)
-                    }
-                } else {
-                    cargo_args.push(arg)
-                }
-            }
-            dbg!(&cargo_args, &program_args);
-        }
-
-        cargo_args.into_iter().chain(program_args)
-    }*/
-
+    // TODO: naming
     fn process_main_args(
         &mut self,
         color: &mut String,
@@ -264,16 +227,10 @@ impl Options {
         program_args_started: &mut bool,
     ) -> Result<()> {
         while let Some(arg) = passed_args.next() {
-            /*if !arg.starts_with('-') {
-                *program_args_started = true;
-                break;
-            }*/
-
             if arg == "-h" || arg == "--help" {
                 self.help = true;
                 self.cargo_args.push(arg);
             } else if arg == "-V" || arg == "--version" {
-                //dbg!("version");
                 self.version = true;
                 self.cargo_args.push(arg);
             } else if arg == COLOR[0..COLOR.len() - 1] {
@@ -306,15 +263,11 @@ impl Options {
                 }
             } else if arg == PROGRAM_ARGS_DELIMITER {
                 *program_args_started = true;
-                //dbg!("break at args delimiter");
                 break;
             } else {
                 self.cargo_args.push(arg);
             }
         }
-
-        //dbg!(&self.cargo_args);
-
         Ok(())
     }
 
@@ -330,32 +283,10 @@ impl Options {
             self.cargo_args.push(MESSAGE_FORMAT_JSON_SHORT.to_owned());
         }
 
-        // TODO: move?
-        /*if !self.short_message_format && !self.json_message_format {
-            let message_format_arg = if color == COLOR_AUTO {
-                if self.terminal_supports_colors {
-                    MESSAGE_FORMAT_JSON_WITH_COLORS
-                } else {
-                    MESSAGE_FORMAT_JSON
-                }
-            } else if color == COLOR_ALWAYS {
-                MESSAGE_FORMAT_JSON_WITH_COLORS
-            } else if color == COLOR_NEVER {
-                MESSAGE_FORMAT_JSON
-            } else {
-                unreachable!()
-            };
-            self.cargo_args.push(message_format_arg.to_owned());
-        }*/
-
         let mut program_color_is_set = false;
         if program_args_started {
             self.process_program_args(passed_args, &mut program_color_is_set);
         }
-
-        /*if !program_args_started {
-            self.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
-        }*/
 
         let is_test = cargo_command == "test";
         let is_bench = cargo_command == "bench";
@@ -375,16 +306,15 @@ impl Options {
                 self.add_color_arg(COLOR_ALWAYS);
             }
         }
-        //dbg!(&self.cargo_args);
         Ok(())
     }
 
+    // TODO: naming?
     fn process_program_args(
         &mut self,
         passed_args: impl Iterator<Item = String>,
         program_color_is_set: &mut bool,
     ) {
-        //self.cargo_args.push(PROGRAM_ARGS_DELIMITER.to_owned());
         for arg in passed_args {
             if arg == COLOR[0..COLOR.len() - 1] || arg.starts_with(COLOR) {
                 *program_color_is_set = true;
@@ -430,7 +360,6 @@ impl Options {
     }
 
     fn add_color_arg(&mut self, value: &str) {
-        //self.cargo_args.push(format!("{}{}", COLOR, value));
         self.args_after_program_args_delimiter
             .push(format!("{}{}", COLOR, value));
     }
@@ -508,7 +437,7 @@ mod tests {
             vec![CARGO_BIN, "lclippy", "--help"],
             vec![
                 "clippy",
-                "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
+                "--message-format=json-diagnostic-rendered-ansi",
                 "--help",
             ],
             vec![],
@@ -523,7 +452,7 @@ mod tests {
             vec![CARGO_BIN, "lclippy", "--version"],
             vec![
                 "clippy",
-                "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
+                "--message-format=json-diagnostic-rendered-ansi",
                 "--version",
             ],
             vec![],
@@ -538,7 +467,7 @@ mod tests {
             vec![CARGO_BIN, "lclippy", "-V"],
             vec![
                 "clippy",
-                "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
+                "--message-format=json-diagnostic-rendered-ansi",
                 "-V",
             ],
             vec![],
@@ -560,7 +489,7 @@ mod tests {
             vec![CARGO_BIN, "lrun", "--verbose"],
             vec![
                 "run",
-                "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
+                "--message-format=json-diagnostic-rendered-ansi",
                 "--verbose",
             ],
             vec![],
@@ -571,7 +500,7 @@ mod tests {
             vec![CARGO_BIN, "lrun", "-v"],
             vec![
                 "run",
-                "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
+                "--message-format=json-diagnostic-rendered-ansi",
                 "-v",
             ],
             vec![],
@@ -582,7 +511,7 @@ mod tests {
             vec![CARGO_BIN, "lrun", "-vv"],
             vec![
                 "run",
-                "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
+                "--message-format=json-diagnostic-rendered-ansi",
                 "-vv",
             ],
             vec![],
@@ -593,7 +522,7 @@ mod tests {
             vec![CARGO_BIN, "lrun", "-v", "-v"],
             vec![
                 "run",
-                "--message-format=json-diagnostic-rendered-ansi", // TODO: that's weird
+                "--message-format=json-diagnostic-rendered-ansi",
                 "-v",
                 "-v",
             ],
@@ -663,7 +592,6 @@ mod tests {
 
     #[test]
     fn run_with_color_args() -> Result<()> {
-        // TODO: colors (both for app and run), other options, harness
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--color=always"],
             vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
