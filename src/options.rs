@@ -555,6 +555,56 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn custom_runners_should_not_have_color_args() -> Result<()> {
+        assert_cargo_args(
+            vec![CARGO_BIN, "ltest"],
+            vec![
+                "test",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec![],
+            STUB_CUSTOM_TEST_RUNNER,
+        )?;
+
+        assert_cargo_args(
+            vec![CARGO_BIN, "ltest", "--", "--runner-arg"],
+            vec![
+                "test",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["--runner-arg"],
+            STUB_CUSTOM_TEST_RUNNER,
+        )?;
+
+        // TODO
+        /*assert_cargo_args(
+            vec![CARGO_BIN, "lbench"],
+            vec![
+                "bench",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec![],
+            STUB_CUSTOM_BENCH_RUNNER,
+        )?;
+
+        assert_cargo_args(
+            vec![CARGO_BIN, "lbench", "--runner-arg"],
+            vec![
+                "bench",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["--runner-arg"],
+            STUB_CUSTOM_BENCH_RUNNER,
+        )?;*/
+
+        Ok(())
+    }
+
     #[ignore]
     #[test]
     fn program_args_without_two_dashes_splitter() -> Result<()> {
