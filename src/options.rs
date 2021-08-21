@@ -499,7 +499,6 @@ mod tests {
 
     #[test]
     fn colored_testing_and_compiling_2() -> Result<()> {
-        // TODO: colors (both for app and run), other options, harness
         assert_cargo_args(
             vec![CARGO_BIN, "ltest", "--color=always"],
             vec![
