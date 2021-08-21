@@ -90,7 +90,7 @@ impl Options {
 
     fn from_vars_and_atty() -> Result<Self> {
         let mut result = Self::default();
-        result.terminal_supports_colors = atty::is(atty::Stream::Stderr);
+        result.detect_terminal_color_support();
 
         {
             let mut seconds = result.time_limit_after_error.as_secs();
@@ -112,6 +112,10 @@ impl Options {
         )?;
 
         Ok(result)
+    }
+
+    fn detect_terminal_color_support(&mut self) {
+        self.terminal_supports_colors = atty::is(atty::Stream::Stderr);
     }
 
     fn process_args(
