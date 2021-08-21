@@ -152,17 +152,16 @@ impl Options {
         &mut self,
         passed_args: &mut impl Iterator<Item = String>,
         color: &mut String,
-        xs: &mut Vec<String>,
+        args_before_app_args_delimiter: &mut Vec<String>,
         app_args_started: &mut bool,
     ) -> Result<()> {
         while let Some(arg) = passed_args.next() {
-            // TODO: extract consts?
             if arg == "-h" || arg == "--help" {
                 self.help = true;
-                xs.push(arg);
+                args_before_app_args_delimiter.push(arg);
             } else if arg == "-V" || arg == "--version" {
                 self.version = true;
-                xs.push(arg);
+                args_before_app_args_delimiter.push(arg);
             } else if arg == COLOR[0..COLOR.len() - 1] {
                 *color = passed_args.next().context(
                     "the argument '--color <WHEN>' requires a value but none was supplied",
@@ -192,7 +191,7 @@ impl Options {
                 *app_args_started = true;
                 break;
             } else {
-                xs.push(arg);
+                args_before_app_args_delimiter.push(arg);
             }
         }
 
