@@ -341,7 +341,7 @@ mod tests {
     const STUB_CUSTOM_BENCH_RUNNER: &str = "custom_bench_runner";
 
     #[test]
-    fn process_args() -> Result<()> {
+    fn program_args() -> Result<()> {
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--", "program-argument"],
             vec![
@@ -448,7 +448,7 @@ mod tests {
     }
 
     #[test]
-    fn process_run_with_color_args() -> Result<()> {
+    fn run_with_color_args() -> Result<()> {
         // TODO: colors (both for app and run), other options, harness
         assert_cargo_args(
             vec![CARGO_BIN, "lrun", "--color=always"],
