@@ -32,7 +32,6 @@ pub fn run_cargo_filtered() -> Result<i32> {
         .unwrap_or_else(|| PathBuf::from(CARGO_EXECUTABLE));
 
     let error_text = failed_to_execute_error_text(&cargo_path);
-    dbg!(parsed_args.all_args().collect::<Vec<_>>());
     let mut child = Command::new(cargo_path)
         .args(parsed_args.all_args())
         .stdout(Stdio::piped())

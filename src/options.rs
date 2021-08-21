@@ -144,8 +144,6 @@ impl Options {
             workspace_root,
         )?;
 
-        dbg!(&self);
-
         Ok(self)
     }
 
