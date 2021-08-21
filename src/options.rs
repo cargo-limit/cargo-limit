@@ -141,7 +141,7 @@ impl Options {
             self.process_args_after_app_args_delimiter(passed_args, &mut app_color_is_set);
         }
 
-        self.process_color_and_app_args(cargo_subcommand, app_color_is_set, workspace_root)?;
+        self.process_custom_runners(cargo_subcommand, app_color_is_set, workspace_root)?;
 
         Ok(self)
     }
@@ -237,8 +237,7 @@ impl Options {
         Ok(())
     }
 
-    // TODO: naming
-    fn process_color_and_app_args(
+    fn process_custom_runners(
         &mut self,
         cargo_subcommand: &str,
         app_color_is_set: bool, // TODO: too many args, flags are evil here
