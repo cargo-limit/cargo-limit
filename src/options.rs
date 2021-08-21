@@ -229,9 +229,9 @@ impl Options {
             } else if arg == "-V" || arg == "--version" {
                 self.cargo_args.push(arg);
             } else if arg == COLOR[0..COLOR.len() - 1] { // TODO: cleanup
-            } else if let Some(color_value) = arg.strip_prefix(COLOR) {
+            } else if let Some(_) = arg.strip_prefix(COLOR) {
             } else if arg == MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1] {
-            } else if let Some(format) = arg.strip_prefix(MESSAGE_FORMAT) {
+            } else if let Some(_) = arg.strip_prefix(MESSAGE_FORMAT) {
             } else if arg == PROGRAM_ARGS_DELIMITER {
                 *program_args_started = true;
                 break;
