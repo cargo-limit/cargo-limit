@@ -489,7 +489,7 @@ mod tests {
     }
 
     #[test]
-    fn process_test_with_color_args() -> Result<()> {
+    fn tests_and_compiler_with_colors_1() -> Result<()> {
         // TODO: colors (both for app and run), other options, harness
         assert_cargo_args(
             vec![CARGO_BIN, "ltest", "--color=always"],
@@ -501,14 +501,11 @@ mod tests {
             vec!["--color=always"],
             STUB_MINIMAL,
         )?;
+        Ok(())
+    }
 
-        assert_cargo_args(
-            vec![CARGO_BIN, "ltest", "--color=never"],
-            vec!["test", "--message-format=json", "--"],
-            vec!["--color=always"],
-            STUB_MINIMAL,
-        )?;
-
+    #[test]
+    fn tests_and_compiler_with_colors_2() -> Result<()> {
         assert_cargo_args(
             vec![CARGO_BIN, "ltest", "--", "--color=always"],
             vec![
@@ -520,6 +517,32 @@ mod tests {
             STUB_MINIMAL,
         )?;
 
+        Ok(())
+    }
+
+    #[test]
+    fn tests_with_colors_and_compiler_without_colors_1() -> Result<()> {
+        assert_cargo_args(
+            vec![CARGO_BIN, "ltest", "--color=never"],
+            vec!["test", "--message-format=json", "--"],
+            vec!["--color=always"],
+            STUB_MINIMAL,
+        )?;
+        Ok(())
+    }
+
+    #[test]
+    fn tests_without_colors_and_compiler_with_colors() -> Result<()> {
+        assert_cargo_args(
+            vec![CARGO_BIN, "ltest", "--", "--color=never"],
+            vec![
+                "test",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--",
+            ],
+            vec!["--color=never"],
+            STUB_MINIMAL,
+        )?;
         Ok(())
     }
 
