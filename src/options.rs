@@ -125,25 +125,8 @@ impl Options {
         mut args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
-        let first_arg = args
-            .next()
-            .ok_or_else(|| format_err!("invalid arguments"))?;
-
-        let executable = if first_arg.starts_with(EXECUTABLE_PREFIX) {
-            first_arg
-        } else {
-            let executable = std::path::PathBuf::from(first_arg)
-                .into_iter()
-                .last()
-                .and_then(|executable| executable.to_str().map(|i| i.to_owned()))
-                .ok_or_else(|| format_err!("invalid arguments"))?;
-            let _ = args.next();
-            executable
-        };
-
-        let (_prefix, cargo_subcommand) = try_split_at(&executable, EXECUTABLE_PREFIX.len())?;
-
-        self.cargo_args.push(cargo_subcommand.to_owned());
+        let cargo_subcommand = Self::parse_subcommand(&mut args)?;
+        self.cargo_args.push(cargo_subcommand.clone());
 
         let mut color = COLOR_AUTO.to_owned();
         let mut app_args_started = false;
@@ -166,6 +149,28 @@ impl Options {
         self.process_custom_runners(cargo_subcommand, app_color_is_set, workspace_root)?;
 
         Ok(self)
+    }
+
+    fn parse_subcommand(mut args: impl Iterator<Item = String>) -> Result<String> {
+        let first_arg = args
+            .next()
+            .ok_or_else(|| format_err!("invalid arguments"))?;
+
+        let executable = if first_arg.starts_with(EXECUTABLE_PREFIX) {
+            first_arg
+        } else {
+            let executable = std::path::PathBuf::from(first_arg)
+                .into_iter()
+                .last()
+                .and_then(|executable| executable.to_str().map(|i| i.to_owned()))
+                .ok_or_else(|| format_err!("invalid arguments"))?;
+            let _ = args.next();
+            executable
+        };
+
+        // TODO: naming?
+        let (_prefix, cargo_subcommand) = try_split_at(&executable, EXECUTABLE_PREFIX.len())?;
+        Ok(cargo_subcommand.to_owned())
     }
 
     fn parse_options(
@@ -240,7 +245,7 @@ impl Options {
 
     fn process_custom_runners(
         &mut self,
-        cargo_subcommand: &str,
+        cargo_subcommand: String,
         app_color_is_set: bool,
         workspace_root: &Path,
     ) -> Result<()> {
