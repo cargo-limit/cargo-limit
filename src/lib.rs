@@ -15,7 +15,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-const CARGO_EXECUTABLE: &str = "cargo";
+pub(crate) const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 
@@ -23,9 +23,9 @@ const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     include_str!("../additional_environment_variables.txt");
 
 #[doc(hidden)]
-pub fn run_cargo_filtered() -> Result<i32> {
+pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     let workspace_root = MetadataCommand::new().exec()?.workspace_root;
-    let parsed_args = Options::from_args_and_vars(&workspace_root)?;
+    let parsed_args = Options::from_os_env(current_exe, &workspace_root)?;
     let cargo_path = env::var(CARGO_ENV_VAR)
         .map(PathBuf::from)
         .ok()
@@ -33,7 +33,7 @@ pub fn run_cargo_filtered() -> Result<i32> {
 
     let error_text = failed_to_execute_error_text(&cargo_path);
     let mut child = Command::new(cargo_path)
-        .args(parsed_args.cargo_args.clone())
+        .args(parsed_args.all_args())
         .stdout(Stdio::piped())
         .spawn()
         .context(error_text)?;
@@ -83,24 +83,20 @@ fn parse_and_process_messages(
             }
         }
 
-        open_in_external_application_for_affected_files(
-            buffers,
-            spans_in_consistent_order,
-            parsed_args,
-        )?;
+        open_in_external_app_for_affected_files(buffers, spans_in_consistent_order, parsed_args)?;
     }
 
     buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
     Ok(())
 }
 
-fn open_in_external_application_for_affected_files(
+fn open_in_external_app_for_affected_files(
     buffers: &mut Buffers,
     spans_in_consistent_order: Vec<DiagnosticSpan>,
     parsed_args: &Options,
 ) -> Result<()> {
-    let program = &parsed_args.open_in_external_application;
-    if !program.is_empty() {
+    let app = &parsed_args.open_in_external_app;
+    if !app.is_empty() {
         let mut args = Vec::new();
         for span in spans_in_consistent_order.into_iter() {
             args.push(format!(
@@ -109,11 +105,8 @@ fn open_in_external_application_for_affected_files(
             ));
         }
         if !args.is_empty() {
-            let error_text = failed_to_execute_error_text(program);
-            let output = Command::new(program)
-                .args(args)
-                .output()
-                .context(error_text)?;
+            let error_text = failed_to_execute_error_text(app);
+            let output = Command::new(app).args(args).output().context(error_text)?;
             buffers.write_all_to_stderr(&output.stdout)?;
             buffers.write_all_to_stderr(&output.stderr)?;
         }
@@ -121,8 +114,8 @@ fn open_in_external_application_for_affected_files(
     Ok(())
 }
 
-fn failed_to_execute_error_text<T: fmt::Debug>(program: T) -> String {
-    format!("failed to execute {:?}", program)
+fn failed_to_execute_error_text<T: fmt::Debug>(app: T) -> String {
+    format!("failed to execute {:?}", app)
 }
 
 #[doc(hidden)]
@@ -130,7 +123,12 @@ fn failed_to_execute_error_text<T: fmt::Debug>(program: T) -> String {
 macro_rules! run_command {
     () => {
         fn main() -> anyhow::Result<()> {
-            std::process::exit(cargo_limit::run_cargo_filtered()?);
+            let current_exe = std::env::current_exe()?
+                .file_stem()
+                .ok_or_else(|| anyhow::format_err!("invalid executable"))?
+                .to_string_lossy()
+                .to_string();
+            std::process::exit(cargo_limit::run_cargo_filtered(current_exe)?);
         }
     };
 }

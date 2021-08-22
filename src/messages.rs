@@ -82,7 +82,7 @@ pub fn process_messages(
     }
     .collect::<Vec<_>>();
 
-    let spans_in_consistent_order = extract_spans_for_external_application(&messages, parsed_args);
+    let spans_in_consistent_order = extract_spans_for_external_app(&messages, parsed_args);
 
     let messages = messages.into_iter();
     let messages = {
@@ -162,14 +162,14 @@ fn filter_and_order_messages(
         .flat_map(|(_paths, messages)| messages.into_iter())
 }
 
-fn extract_spans_for_external_application(
+fn extract_spans_for_external_app(
     messages: &[CompilerMessage],
     parsed_args: &Options,
 ) -> Vec<DiagnosticSpan> {
-    let spans_for_external_application = messages
+    let spans_for_external_app = messages
         .iter()
         .filter(|message| {
-            if parsed_args.open_in_external_application_on_warnings {
+            if parsed_args.open_in_external_app_on_warnings {
                 true
             } else {
                 matches!(
@@ -190,7 +190,7 @@ fn extract_spans_for_external_application(
 
     let mut spans_in_consistent_order = Vec::new();
     let mut used_file_names = HashSet::new();
-    for span in spans_for_external_application {
+    for span in spans_for_external_app {
         if !used_file_names.contains(&span.file_name) {
             used_file_names.insert(span.file_name.clone());
             spans_in_consistent_order.push(span);
