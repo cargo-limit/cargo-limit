@@ -4,6 +4,8 @@ use const_format::concatcp;
 use itertools::Either;
 use std::{env, iter, path::Path, str::FromStr, time::Duration};
 
+const EXECUTABLE_PREFIX: &str = "cargo-l";
+
 const APP_ARGS_DELIMITER: &str = "--";
 
 const MESSAGE_FORMAT: &str = "--message-format=";
@@ -127,7 +129,7 @@ impl Options {
             .next()
             .ok_or_else(|| format_err!("invalid arguments"))?;
 
-        let executable = if first_arg.starts_with("cargo-l") {
+        let executable = if first_arg.starts_with(EXECUTABLE_PREFIX) {
             first_arg
         } else {
             let executable = std::path::PathBuf::from(first_arg)
@@ -139,8 +141,7 @@ impl Options {
             executable
         };
 
-        // TODO: const
-        let (_prefix, cargo_subcommand) = try_split_at(&executable, "cargo-l".len())?;
+        let (_prefix, cargo_subcommand) = try_split_at(&executable, EXECUTABLE_PREFIX.len())?;
 
         self.cargo_args.push(cargo_subcommand.to_owned());
         let mut passed_args = args; // TODO
