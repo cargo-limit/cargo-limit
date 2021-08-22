@@ -157,6 +157,7 @@ impl Options {
         args: impl Iterator<Item = String>,
         current_exe: String,
     ) -> Result<(String, Vec<String>)> {
+        let current_exe = current_exe.to_lowercase();
         let (_, subcommand) = current_exe
             .split_once(EXECUTABLE_PREFIX)
             .ok_or_else(|| format_err!("invalid arguments"))?;
@@ -865,6 +866,7 @@ mod tests {
     fn parse_subcommand() -> Result<()> {
         assert_parse_subcommand(vec!["cargo-lrun"], "run", vec![])?;
         assert_parse_subcommand(vec!["cargo-lrun.exe"], "run", vec![])?;
+        assert_parse_subcommand(vec!["CARGO-LRUN.EXE"], "run", vec![])?;
         assert_parse_subcommand(
             vec!["cargo-lrun", "app-arg-1", "app-arg-2"],
             "run",
