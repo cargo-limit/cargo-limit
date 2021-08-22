@@ -15,7 +15,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-const CARGO_EXECUTABLE: &str = "cargo";
+pub(crate) const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 const NO_EXIT_CODE: i32 = 127;
 

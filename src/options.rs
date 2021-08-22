@@ -1,4 +1,4 @@
-use crate::cargo_toml::CargoToml;
+use crate::{cargo_toml::CargoToml, CARGO_EXECUTABLE};
 use anyhow::{format_err, Context, Result};
 use const_format::concatcp;
 use itertools::Either;
@@ -9,7 +9,7 @@ use std::{
     time::Duration,
 };
 
-const EXECUTABLE_PREFIX: &str = "cargo-l";
+const EXECUTABLE_PREFIX: &str = concatcp!(CARGO_EXECUTABLE, "-l");
 
 const APP_ARGS_DELIMITER: &str = "--";
 
@@ -158,7 +158,6 @@ impl Options {
         Ok(self)
     }
 
-    // TODO: &mut impl
     fn parse_subcommand(
         args: impl Iterator<Item = String>,
         current_exe: String,
@@ -176,7 +175,7 @@ impl Options {
                 .and_then(|arg| Path::new(arg).file_stem().map(|i| i.clone()))
                 .map(|i| i.to_string_lossy().to_owned());
             if let Some(executable) = executable {
-                if executable == "cargo"
+                if executable == CARGO_EXECUTABLE
                     || executable == current_exe
                     || executable == format!("l{}", subcommand)
                 {
