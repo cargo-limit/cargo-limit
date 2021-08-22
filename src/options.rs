@@ -905,53 +905,56 @@ mod tests {
 
     #[test]
     fn parse_subcommand() -> Result<()> {
-        let mut args = to_string(vec![].into_iter());
+        assert_parse_subcommand(vec!["cargo-lrun"], "run", vec![])?;
+        assert_parse_subcommand(
+            vec!["cargo-lrun", "app-arg-1", "app-arg-2"],
+            "run",
+            vec!["app-arg-1", "app-arg-2"],
+        )?;
+        assert_parse_subcommand(
+            vec!["relative/path/to/cargo-lrun", "app-arg"],
+            "run",
+            vec!["app-arg"],
+        )?;
+        assert_parse_subcommand(
+            vec!["/full/path/to/cargo-lrun", "app-arg"],
+            "run",
+            vec!["app-arg"],
+        )?;
+
+        assert_parse_subcommand(
+            vec!["cargo-lrun", "cargo-lrun", "app-arg"],
+            "run",
+            vec!["app-arg"],
+        )?;
+
+        assert_parse_subcommand(
+            vec!["cargo-lrun", "cargo-lrun", "cargo-lrun", "app-arg"],
+            "run",
+            vec!["app-arg"],
+        )?;
+
+        assert_parse_subcommand(
+            vec!["cargo-lrun", "cargo-ltest", "app-arg"],
+            "run",
+            vec!["cargo-ltest", "app-arg"],
+        )?;
+
+        Ok(())
+    }
+
+    fn assert_parse_subcommand(
+        input: Vec<&str>,
+        expected_subcommand: &str,
+        expected_remaining_args: Vec<&str>,
+    ) -> Result<()> {
+        let subcommand = input[0].to_owned(); // TODO
+        let mut args = to_string(input.into_iter().skip(1));
+        let expected_remaining_args = to_string(expected_remaining_args).collect();
         assert_eq!(
-            Options::parse_subcommand(&mut args, "cargo-lrun".to_owned())?,
-            (("run".to_owned(), vec![]))
+            Options::parse_subcommand(&mut args, subcommand)?,
+            ((expected_subcommand.to_owned(), expected_remaining_args))
         );
-
-        let mut args = to_string(vec!["app-arg"].into_iter());
-        assert_eq!(
-            Options::parse_subcommand(&mut args, "cargo-lrun".to_owned())?,
-            (("run".to_owned(), to_string(vec!["app-arg"]).collect()))
-        );
-
-        //        let mut args = to_string(vec!["/path/to/cargo", "lrun"].into_iter());
-        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-        //        assert!(args.collect::<Vec<_>>().is_empty());
-        //
-        //        let mut args = to_string(vec!["/path/to/cargo", "lrun", "app-arg"].into_iter());
-        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-        //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
-        //
-        //        let mut args = to_string(vec!["relative/path/to/cargo", "lrun", "app-arg"].into_iter());
-        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-        //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
-        //
-        //        let mut args = to_string(vec!["relative/path/to/cargo", "lrun"].into_iter());
-        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-        //        assert!(args.collect::<Vec<_>>().is_empty());
-        //
-        //        let mut args = to_string(vec!["/path/to/cargo-lrun"].into_iter());
-        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-        //        assert!(args.collect::<Vec<_>>().is_empty());
-        //
-        //        let mut args = to_string(vec!["/path/to/cargo-lrun", "app-arg"].into_iter());
-        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-        //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
-        //
-        //        // FIXME
-        //        /*let mut args = to_string(vec!["/path/to/cargo-lrun", "lrun"].into_iter());
-        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-        //        assert!(args.collect::<Vec<_>>().is_empty());*/
-        //
-        //        /*let mut args = to_string(vec!["/path/to/cargo-lrun", "lrun", "app-arg"].into_iter());
-        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-        //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);*/
-        //
-        //        // TODO: lrun lrun? /path/to/cargo-lrun /path/to/cargo-lrun?
-
         Ok(())
     }
 
