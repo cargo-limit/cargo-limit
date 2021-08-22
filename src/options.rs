@@ -122,10 +122,10 @@ impl Options {
 
     fn process_args(
         mut self,
-        mut args: impl Iterator<Item = String>,
+        mut passed_args: impl Iterator<Item = String>, // TODO: rename
         workspace_root: &Path,
     ) -> Result<Self> {
-        let first_arg = args
+        let first_arg = passed_args
             .next()
             .ok_or_else(|| format_err!("invalid arguments"))?;
 
@@ -137,14 +137,13 @@ impl Options {
                 .last()
                 .and_then(|i| i.to_str().map(|j| j.to_owned()))
                 .ok_or_else(|| format_err!("invalid arguments"))?;
-            let _ = args.next();
+            let _ = passed_args.next();
             executable
         };
 
         let (_prefix, cargo_subcommand) = try_split_at(&executable, EXECUTABLE_PREFIX.len())?;
 
         self.cargo_args.push(cargo_subcommand.to_owned());
-        let mut passed_args = args; // TODO
 
         let mut color = COLOR_AUTO.to_owned();
         let mut app_args_started = false;
