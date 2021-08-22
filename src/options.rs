@@ -691,6 +691,17 @@ mod tests {
     }
 
     #[test]
+    fn monochrome() -> Result<()> {
+        assert_cargo_args(
+            vec!["cargo-ltest", "--color", "never", "--", "--color=never"],
+            vec!["test", "--message-format=json"],
+            vec!["--color=never"],
+            STUB_MINIMAL,
+        )?;
+        Ok(())
+    }
+
+    #[test]
     fn custom_runners_should_not_have_color_args() -> Result<()> {
         assert_cargo_args(
             vec!["cargo-ltest"],
