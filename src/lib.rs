@@ -23,9 +23,9 @@ const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     include_str!("../additional_environment_variables.txt");
 
 #[doc(hidden)]
-pub fn run_cargo_filtered(module_path: PathBuf) -> Result<i32> {
+pub fn run_cargo_filtered(current_exe: PathBuf) -> Result<i32> {
     let workspace_root = MetadataCommand::new().exec()?.workspace_root;
-    let parsed_args = Options::from_os_env(module_path, &workspace_root)?;
+    let parsed_args = Options::from_os_env(current_exe, &workspace_root)?;
     let cargo_path = env::var(CARGO_ENV_VAR)
         .map(PathBuf::from)
         .ok()
@@ -123,8 +123,8 @@ fn failed_to_execute_error_text<T: fmt::Debug>(app: T) -> String {
 macro_rules! run_command {
     () => {
         fn main() -> anyhow::Result<()> {
-            let module_path = std::env::current_exe()?;
-            std::process::exit(cargo_limit::run_cargo_filtered(module_path)?);
+            let current_exe = std::env::current_exe()?;
+            std::process::exit(cargo_limit::run_cargo_filtered(current_exe)?);
         }
     };
 }

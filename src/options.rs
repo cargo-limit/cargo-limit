@@ -92,8 +92,8 @@ impl Options {
     }
 
     // TODO: naming?
-    pub fn from_os_env(module_path: PathBuf, workspace_root: &Path) -> Result<Self> {
-        Self::from_vars_and_atty()?.process_args(module_path, env::args(), workspace_root)
+    pub fn from_os_env(current_exe: PathBuf, workspace_root: &Path) -> Result<Self> {
+        Self::from_vars_and_atty()?.process_args(current_exe, env::args(), workspace_root)
     }
 
     fn from_vars_and_atty() -> Result<Self> {
@@ -128,11 +128,11 @@ impl Options {
 
     fn process_args(
         mut self,
-        module_path: PathBuf,
+        current_exe: PathBuf,
         mut args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
-        dbg!(module_path);
+        dbg!(current_exe);
         dbg!(std::env::args().collect::<Vec<_>>());
         let subcommand = Self::parse_subcommand(&mut args)?;
         self.cargo_args.push(subcommand.clone());
