@@ -827,45 +827,8 @@ mod tests {
             STUB_MINIMAL,
         )?;
 
-        Ok(())
-    }
+        // TODO: --example, --bin
 
-    fn assert_cargo_args(
-        input: Vec<&str>,
-        expected_cargo_args: Vec<&str>,
-        expected_args_after_app_args_delimiter: Vec<&str>,
-        stub: &str,
-    ) -> Result<()> {
-        assert_options(
-            input,
-            expected_cargo_args,
-            expected_args_after_app_args_delimiter,
-            Default::default(),
-            stub,
-        )
-    }
-
-    fn assert_options(
-        input: Vec<&str>,
-        expected_cargo_args: Vec<&str>,
-        expected_args_after_app_args_delimiter: Vec<&str>,
-        expected_options: Options,
-        stub: &str,
-    ) -> Result<()> {
-        let options = Options::default().process_args(
-            input[0].to_owned(),
-            to_string(input),
-            &Path::new("tests/stubs").join(Path::new(stub)),
-        )?;
-
-        let expected = Options {
-            cargo_args: to_string(expected_cargo_args).collect(),
-            args_after_app_args_delimiter: to_string(expected_args_after_app_args_delimiter)
-                .collect(),
-            ..expected_options
-        };
-
-        assert_eq!(options, expected);
         Ok(())
     }
 
@@ -907,6 +870,45 @@ mod tests {
             vec!["cargo-ltest", "app-arg"],
         )?;
 
+        Ok(())
+    }
+
+    fn assert_cargo_args(
+        input: Vec<&str>,
+        expected_cargo_args: Vec<&str>,
+        expected_args_after_app_args_delimiter: Vec<&str>,
+        stub: &str,
+    ) -> Result<()> {
+        assert_options(
+            input,
+            expected_cargo_args,
+            expected_args_after_app_args_delimiter,
+            Default::default(),
+            stub,
+        )
+    }
+
+    fn assert_options(
+        input: Vec<&str>,
+        expected_cargo_args: Vec<&str>,
+        expected_args_after_app_args_delimiter: Vec<&str>,
+        expected_options: Options,
+        stub: &str,
+    ) -> Result<()> {
+        let options = Options::default().process_args(
+            input[0].to_owned(),
+            to_string(input),
+            &Path::new("tests/stubs").join(Path::new(stub)),
+        )?;
+
+        let expected = Options {
+            cargo_args: to_string(expected_cargo_args).collect(),
+            args_after_app_args_delimiter: to_string(expected_args_after_app_args_delimiter)
+                .collect(),
+            ..expected_options
+        };
+
+        assert_eq!(options, expected);
         Ok(())
     }
 
