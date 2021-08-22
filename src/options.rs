@@ -122,10 +122,10 @@ impl Options {
 
     fn process_args(
         mut self,
-        mut passed_args: impl Iterator<Item = String>, // TODO: rename
+        mut args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
-        let first_arg = passed_args
+        let first_arg = args
             .next()
             .ok_or_else(|| format_err!("invalid arguments"))?;
 
@@ -137,7 +137,7 @@ impl Options {
                 .last()
                 .and_then(|i| i.to_str().map(|j| j.to_owned()))
                 .ok_or_else(|| format_err!("invalid arguments"))?;
-            let _ = passed_args.next();
+            let _ = args.next();
             executable
         };
 
@@ -150,7 +150,7 @@ impl Options {
         let mut args_before_app_args_delimiter = Vec::new();
 
         self.parse_options(
-            &mut passed_args,
+            &mut args,
             &mut color,
             &mut args_before_app_args_delimiter,
             &mut app_args_started,
@@ -160,7 +160,7 @@ impl Options {
 
         let mut app_color_is_set = false;
         if app_args_started {
-            self.process_args_after_app_args_delimiter(passed_args, &mut app_color_is_set);
+            self.process_args_after_app_args_delimiter(args, &mut app_color_is_set);
         }
 
         // TODO: move cargo_subcommand?
