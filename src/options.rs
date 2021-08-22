@@ -135,7 +135,7 @@ impl Options {
             let executable = std::path::PathBuf::from(first_arg)
                 .into_iter()
                 .last()
-                .and_then(|i| i.to_str().map(|j| j.to_owned()))
+                .and_then(|executable| executable.to_str().map(|i| i.to_owned()))
                 .ok_or_else(|| format_err!("invalid arguments"))?;
             let _ = args.next();
             executable
