@@ -122,6 +122,7 @@ fn failed_to_execute_error_text<T: fmt::Debug>(app: T) -> String {
 #[macro_export]
 macro_rules! run_command {
     () => {
+        #[doc(hidden)]
         fn main() -> anyhow::Result<()> {
             let current_exe = std::env::current_exe()?
                 .file_stem()
