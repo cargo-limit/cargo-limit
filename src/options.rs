@@ -125,6 +125,7 @@ impl Options {
         mut args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
+        dbg!(std::env::args().collect::<Vec<_>>());
         let subcommand = Self::parse_subcommand(&mut args)?;
         self.cargo_args.push(subcommand.clone());
 
@@ -151,12 +152,13 @@ impl Options {
         Ok(self)
     }
 
+    // TODO: &mut impl
     fn parse_subcommand(mut args: impl Iterator<Item = String>) -> Result<String> {
         let first_arg = args
             .next()
             .ok_or_else(|| format_err!("invalid arguments"))?;
 
-        let executable = if first_arg.starts_with(EXECUTABLE_PREFIX) {
+        /*let executable = if first_arg.starts_with(EXECUTABLE_PREFIX) {
             first_arg
         } else {
             let executable = std::path::PathBuf::from(first_arg)
@@ -164,12 +166,36 @@ impl Options {
                 .last()
                 .and_then(|executable| executable.to_str().map(|i| i.to_owned()))
                 .ok_or_else(|| format_err!("invalid arguments"))?;
-            let _ = args.next();
+            //let x = args.next();
+            //dbg!(&x);
             executable
+        };*/
+
+        let executable =
+        /*if first_arg.ends_with("/cargo-lcheck") {
+            // TODO: /home/al/.cargo/bin/cargo-lrun
+            dbg!("3");
+        } else*/ if first_arg.contains('/') {
+            dbg!("1");
+            // TODO: cargo lcheck
+            let x = args
+                .next()
+                .ok_or_else(|| format_err!("invalid arguments"))?;
+            dbg!(&x);
+            // TODO: assert first character is l?
+            assert!(x.starts_with('l'));
+            //x
+            let y = &x[1..];
+            dbg!(&y);
+            y.to_owned()
+        } else {
+            dbg!("2");
+            // TODO: cargo-lcheck (works)
+            let (_prefix, subcommand) = try_split_at(&first_arg, EXECUTABLE_PREFIX.len())?;
+            subcommand.to_owned()
         };
 
-        let (_prefix, subcommand) = try_split_at(&executable, EXECUTABLE_PREFIX.len())?;
-        Ok(subcommand.to_owned())
+        Ok(executable.to_owned())
     }
 
     fn parse_options(
@@ -322,6 +348,14 @@ impl Options {
     fn add_color_arg(&mut self, value: &str) {
         self.args_after_app_args_delimiter
             .push(format!("{}{}", COLOR, value));
+    }
+}
+
+fn try_split_at(input: &str, index: usize) -> Result<(&str, &str)> {
+    if index > input.len() {
+        Err(format_err!("cannot split '{}' at {}", input, index))
+    } else {
+        Ok(input.split_at(index))
     }
 }
 
@@ -846,12 +880,6 @@ mod tests {
         expected_options: Options,
         stub: &str,
     ) -> Result<()> {
-        fn to_string<'item>(
-            iter: impl IntoIterator<Item = &'item str> + 'item,
-        ) -> impl Iterator<Item = String> + 'item {
-            iter.into_iter().map(|i| i.to_owned())
-        }
-
         let options = Options::process_args(
             Options::default(),
             to_string(input),
@@ -868,12 +896,47 @@ mod tests {
         assert_eq!(options, expected);
         Ok(())
     }
-}
 
-fn try_split_at(input: &str, index: usize) -> Result<(&str, &str)> {
-    if index > input.len() {
-        Err(format_err!("cannot split '{}' at {}", input, index))
-    } else {
-        Ok(input.split_at(index))
+    #[test]
+    fn parse_subcommand() -> Result<()> {
+        let mut args = to_string(vec!["cargo-lrun"].into_iter());
+        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        assert!(args.collect::<Vec<_>>().is_empty());
+
+        let mut args = to_string(vec!["cargo-lrun", "app-arg"].into_iter());
+        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
+
+        let mut args = to_string(vec!["/path/to/cargo", "lrun"].into_iter());
+        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        assert!(args.collect::<Vec<_>>().is_empty());
+
+        let mut args = to_string(vec!["/path/to/cargo", "lrun", "app-arg"].into_iter());
+        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
+
+        let mut args = to_string(vec!["relative/path/to/cargo", "lrun", "app-arg"].into_iter());
+        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
+
+        let mut args = to_string(vec!["relative/path/to/cargo", "lrun"].into_iter());
+        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        assert!(args.collect::<Vec<_>>().is_empty());
+
+        // FIXME
+        /*let mut args = to_string(vec!["/path/to/cargo-lrun"].into_iter());
+        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        assert!(args.collect::<Vec<_>>().is_empty());
+
+        let mut args = to_string(vec!["/path/to/cargo-lrun", "app-arg"].into_iter());
+        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);*/
+        Ok(())
+    }
+
+    fn to_string<'item>(
+        iter: impl IntoIterator<Item = &'item str> + 'item,
+    ) -> impl Iterator<Item = String> + 'item {
+        iter.into_iter().map(|i| i.to_owned())
     }
 }
