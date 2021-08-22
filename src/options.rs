@@ -542,6 +542,7 @@ mod tests {
 
     // TODO: naming
     // FIXME
+    // TODO: remove unnecessary
     #[test]
     fn wat() -> Result<()> {
         assert_cargo_args(
