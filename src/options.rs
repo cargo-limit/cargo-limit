@@ -669,7 +669,7 @@ mod tests {
     }
 
     #[test]
-    fn colored_testing_and_monochrome_compiling_1() -> Result<()> {
+    fn colored_testing_and_monochrome_compiling() -> Result<()> {
         assert_cargo_args(
             vec!["cargo-ltest", "--color=never"],
             vec!["test", "--message-format=json"],
@@ -680,7 +680,7 @@ mod tests {
     }
 
     #[test]
-    fn monochrome_testing_and_colored_compiling_1() -> Result<()> {
+    fn monochrome_testing_and_colored_compiling() -> Result<()> {
         assert_cargo_args(
             vec!["cargo-ltest", "--", "--color=never"],
             vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
