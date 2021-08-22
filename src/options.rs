@@ -2,12 +2,7 @@ use crate::{cargo_toml::CargoToml, CARGO_EXECUTABLE};
 use anyhow::{format_err, Context, Result};
 use const_format::concatcp;
 use itertools::Either;
-use std::{
-    env, iter,
-    path::{Path, PathBuf},
-    str::FromStr,
-    time::Duration,
-};
+use std::{env, iter, path::Path, str::FromStr, time::Duration};
 
 const EXECUTABLE_PREFIX: &str = concatcp!(CARGO_EXECUTABLE, "-l");
 
@@ -337,14 +332,6 @@ impl Options {
     fn add_color_arg(&mut self, value: &str) {
         self.args_after_app_args_delimiter
             .push(format!("{}{}", COLOR, value));
-    }
-}
-
-fn try_split_at(input: &str, index: usize) -> Result<(&str, &str)> {
-    if index > input.len() {
-        Err(format_err!("cannot split '{}' at {}", input, index))
-    } else {
-        Ok(input.split_at(index))
     }
 }
 
