@@ -827,7 +827,36 @@ mod tests {
             STUB_MINIMAL,
         )?;
 
-        // TODO: --example, --bin
+        assert_cargo_args(
+            vec!["cargo-lrun", "--bin", "app", "app-argument"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--bin",
+                "app",
+                "app-argument",
+            ],
+            vec![],
+            STUB_MINIMAL,
+        )?;
+
+        assert_cargo_args(
+            vec![
+                "cargo-lrun",
+                "--example",
+                "example-app",
+                "--",
+                "app-argument",
+            ],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "--example",
+                "example-app",
+            ],
+            vec!["app-argument"],
+            STUB_MINIMAL,
+        )?;
 
         Ok(())
     }
