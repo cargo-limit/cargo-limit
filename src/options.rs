@@ -165,7 +165,7 @@ impl Options {
             let arg = peekable_args.peek();
             let executable = arg
                 .and_then(|arg| Path::new(arg).file_stem())
-                .map(|i| i.to_string_lossy().to_owned());
+                .map(|i| i.to_string_lossy());
             if let Some(executable) = executable {
                 if executable == CARGO_EXECUTABLE
                     || executable == current_exe
