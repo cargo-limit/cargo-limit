@@ -2,7 +2,12 @@ use crate::cargo_toml::CargoToml;
 use anyhow::{format_err, Context, Result};
 use const_format::concatcp;
 use itertools::Either;
-use std::{env, iter, path::Path, str::FromStr, time::Duration};
+use std::{
+    env, iter,
+    path::{Path, PathBuf},
+    str::FromStr,
+    time::Duration,
+};
 
 const EXECUTABLE_PREFIX: &str = "cargo-l";
 
@@ -86,8 +91,9 @@ impl Options {
             .chain(self.args_after_app_args_delimiter.clone())
     }
 
-    pub fn from_os_env(workspace_root: &Path) -> Result<Self> {
-        Self::from_vars_and_atty()?.process_args(env::args(), workspace_root)
+    // TODO: naming?
+    pub fn from_os_env(module_path: PathBuf, workspace_root: &Path) -> Result<Self> {
+        Self::from_vars_and_atty()?.process_args(module_path, env::args(), workspace_root)
     }
 
     fn from_vars_and_atty() -> Result<Self> {
@@ -122,9 +128,11 @@ impl Options {
 
     fn process_args(
         mut self,
+        module_path: PathBuf,
         mut args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
+        dbg!(module_path);
         dbg!(std::env::args().collect::<Vec<_>>());
         let subcommand = Self::parse_subcommand(&mut args)?;
         self.cargo_args.push(subcommand.clone());
@@ -153,7 +161,9 @@ impl Options {
     }
 
     // TODO: &mut impl
-    fn parse_subcommand(mut args: impl Iterator<Item = String>) -> Result<String> {
+    fn parse_subcommand(args: impl Iterator<Item = String>) -> Result<String> {
+        let mut args = args.peekable();
+
         let first_arg = args
             .next()
             .ok_or_else(|| format_err!("invalid arguments"))?;
@@ -171,11 +181,7 @@ impl Options {
             executable
         };*/
 
-        let executable =
-        /*if first_arg.ends_with("/cargo-lcheck") {
-            // TODO: /home/al/.cargo/bin/cargo-lrun
-            dbg!("3");
-        } else*/ if first_arg.contains('/') {
+        let executable = if first_arg.ends_with("/cargo") {
             dbg!("1");
             // TODO: cargo lcheck
             let x = args
@@ -188,6 +194,22 @@ impl Options {
             let y = &x[1..];
             dbg!(&y);
             y.to_owned()
+        } else if first_arg.contains('/') {
+            // TODO: /home/al/.cargo/bin/cargo-lrun
+            dbg!("3");
+            dbg!(&first_arg);
+            //let index = first_arg.find("/cargo-l").ok_or_else(|| format_err!("invalid arguments"))?;
+            let (_, subcommand) = first_arg
+                .split_once("/cargo-l")
+                .ok_or_else(|| format_err!("invalid arguments"))?;
+            dbg!(&subcommand);
+            if let Some(second_arg) = args.peek() {
+                if second_arg == subcommand {
+                    let xxx = args.next();
+                    dbg!(&xxx);
+                }
+            }
+            subcommand.to_owned()
         } else {
             dbg!("2");
             // TODO: cargo-lcheck (works)
@@ -880,8 +902,8 @@ mod tests {
         expected_options: Options,
         stub: &str,
     ) -> Result<()> {
-        let options = Options::process_args(
-            Options::default(),
+        let options = Options::default().process_args(
+            PathBuf::from(input[0]), // TODO
             to_string(input),
             &Path::new("tests/stubs").join(Path::new(stub)),
         )?;
@@ -923,14 +945,23 @@ mod tests {
         assert_eq!(Options::parse_subcommand(&mut args)?, "run");
         assert!(args.collect::<Vec<_>>().is_empty());
 
-        // FIXME
-        /*let mut args = to_string(vec!["/path/to/cargo-lrun"].into_iter());
+        let mut args = to_string(vec!["/path/to/cargo-lrun"].into_iter());
         assert_eq!(Options::parse_subcommand(&mut args)?, "run");
         assert!(args.collect::<Vec<_>>().is_empty());
 
         let mut args = to_string(vec!["/path/to/cargo-lrun", "app-arg"].into_iter());
         assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
+
+        // FIXME
+        let mut args = to_string(vec!["/path/to/cargo-lrun", "lrun"].into_iter());
+        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        assert!(args.collect::<Vec<_>>().is_empty());
+
+        /*let mut args = to_string(vec!["/path/to/cargo-lrun", "lrun", "app-arg"].into_iter());
+        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
         assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);*/
+
         Ok(())
     }
 
