@@ -120,16 +120,42 @@ impl Options {
 
     fn process_args(
         mut self,
-        args: impl Iterator<Item = String>,
+        mut args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
-        let mut passed_args = args.skip(1);
-        let cargo_subcommand = passed_args
+        dbg!("process_args 1");
+        let first_arg = args
             .next()
-            .ok_or_else(|| format_err!("cargo subcommand not found"))?;
-        let (first_letter, cargo_subcommand) = try_split_at(&cargo_subcommand, 1)?;
-        assert_eq!(first_letter, "l");
+            .ok_or_else(|| format_err!("invalid arguments"))?;
+
+        let executable = if first_arg.starts_with("cargo-l") {
+            first_arg
+        } else {
+            let executable = first_arg;
+            let p = std::path::PathBuf::from(executable);
+            let executable = p
+                .into_iter()
+                .last()
+                .and_then(|i| i.to_str().map(|j| j.to_owned()))
+                .ok_or_else(|| format_err!("invalid arguments"))?;
+            dbg!(&executable);
+            let x = args.next();
+            dbg!(&x);
+            executable
+        };
+
+        // TODO: const
+        let cargo_subcommand = {
+            let cargo_subcommand = executable;
+            dbg!(&cargo_subcommand);
+            let (_prefix, subcommand) = try_split_at(&cargo_subcommand, "cargo-l".len())?;
+            dbg!(&subcommand);
+            subcommand.to_owned()
+        };
+        dbg!(&cargo_subcommand);
+
         self.cargo_args.push(cargo_subcommand.to_owned());
+        let mut passed_args = args; // TODO
 
         let mut color = COLOR_AUTO.to_owned();
         let mut app_args_started = false;
@@ -149,7 +175,8 @@ impl Options {
             self.process_args_after_app_args_delimiter(passed_args, &mut app_color_is_set);
         }
 
-        self.process_custom_runners(cargo_subcommand, app_color_is_set, workspace_root)?;
+        // TODO: move cargo_subcommand?
+        self.process_custom_runners(&cargo_subcommand, app_color_is_set, workspace_root)?;
 
         Ok(self)
     }
