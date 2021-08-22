@@ -123,7 +123,6 @@ impl Options {
         mut args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
-        dbg!("process_args 1");
         let first_arg = args
             .next()
             .ok_or_else(|| format_err!("invalid arguments"))?;
@@ -131,9 +130,7 @@ impl Options {
         let executable = if first_arg.starts_with("cargo-l") {
             first_arg
         } else {
-            let executable = first_arg;
-            let p = std::path::PathBuf::from(executable);
-            let executable = p
+            let executable = std::path::PathBuf::from(first_arg)
                 .into_iter()
                 .last()
                 .and_then(|i| i.to_str().map(|j| j.to_owned()))
@@ -330,7 +327,6 @@ mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
 
-    const CARGO_BIN: &str = "/path/to/bin/cargo";
     const STUB_MINIMAL: &str = "minimal";
     const STUB_CUSTOM_TEST_RUNNER: &str = "custom_test_runner";
     const STUB_CUSTOM_BENCH_RUNNER: &str = "custom_bench_runner";
@@ -338,14 +334,14 @@ mod tests {
     #[test]
     fn smoke() -> Result<()> {
         assert_cargo_args(
-            vec!["lrun", "--", "app-argument"],
+            vec!["cargo-lrun", "--", "app-argument"],
             vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["app-argument"],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "-vvv", "--", "-c", "app-config.yml"],
+            vec!["cargo-lrun", "-vvv", "--", "-c", "app-config.yml"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -356,7 +352,7 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "-p=app", "--", "-c", "app-config.yml"],
+            vec!["cargo-lrun", "-p=app", "--", "-c", "app-config.yml"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -367,7 +363,7 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "-p", "app", "--", "-c", "app-config.yml"],
+            vec!["cargo-lrun", "-p", "app", "--", "-c", "app-config.yml"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -379,7 +375,7 @@ mod tests {
         )?;
 
         assert_options(
-            vec!["lclippy", "--help"],
+            vec!["cargo-lclippy", "--help"],
             vec![
                 "clippy",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -394,7 +390,7 @@ mod tests {
         )?;
 
         assert_options(
-            vec!["lclippy", "--version"],
+            vec!["cargo-lclippy", "--version"],
             vec![
                 "clippy",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -409,7 +405,7 @@ mod tests {
         )?;
 
         assert_options(
-            vec!["lclippy", "-V"],
+            vec!["cargo-lclippy", "-V"],
             vec![
                 "clippy",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -424,14 +420,14 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec!["ltest", "--", "--help"],
+            vec!["cargo-ltest", "--", "--help"],
             vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--help", "--color=always"],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "--verbose"],
+            vec!["cargo-lrun", "--verbose"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -442,7 +438,7 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "-v"],
+            vec!["cargo-lrun", "-v"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -453,7 +449,7 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "-vv"],
+            vec!["cargo-lrun", "-vv"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -464,7 +460,7 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "-v", "-v"],
+            vec!["cargo-lrun", "-v", "-v"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -476,7 +472,7 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "-v", "-v", "app-arg"],
+            vec!["cargo-lrun", "-v", "-v", "app-arg"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -489,7 +485,13 @@ mod tests {
         )?;
 
         assert_options(
-            vec!["lrun", "-v", "--message-format=short", "-v", "app-arg"],
+            vec![
+                "cargo-lrun",
+                "-v",
+                "--message-format=short",
+                "-v",
+                "app-arg",
+            ],
             vec![
                 "run",
                 "--message-format=json-diagnostic-short",
@@ -506,7 +508,13 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "-v", "-v", "--message-format=human", "app-arg"],
+            vec![
+                "cargo-lrun",
+                "-v",
+                "-v",
+                "--message-format=human",
+                "app-arg",
+            ],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -519,7 +527,7 @@ mod tests {
         )?;
 
         assert_options(
-            vec!["lrun", "-v", "-v", "--message-format=json", "app-arg"],
+            vec!["cargo-lrun", "-v", "-v", "--message-format=json", "app-arg"],
             vec!["run", "--message-format=json", "-v", "-v", "app-arg"],
             vec![],
             Options {
@@ -532,10 +540,35 @@ mod tests {
         Ok(())
     }
 
+    // TODO: naming
+    // FIXME
     #[test]
     fn wat() -> Result<()> {
         assert_cargo_args(
-            vec!["lrun", "-v", "-v", "app-arg"],
+            vec!["carog-lrun", "app-arg"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "app-arg",
+            ],
+            vec![],
+            STUB_MINIMAL,
+        )?;
+        assert_cargo_args(
+            vec!["carog-lrun", "-v", "-v", "-v", "app-arg"],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-rendered-ansi",
+                "-v",
+                "-v",
+                "-v",
+                "app-arg",
+            ],
+            vec![],
+            STUB_MINIMAL,
+        )?;
+        assert_cargo_args(
+            vec!["carog-lrun", "-v", "-v", "app-arg"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -552,7 +585,7 @@ mod tests {
     #[test]
     fn test_with_message_format() -> Result<()> {
         assert_options(
-            vec!["ltest", "--message-format=json"],
+            vec!["cargo-ltest", "--message-format=json"],
             vec!["test", "--message-format=json"],
             vec!["--color=always"],
             Options {
@@ -563,7 +596,7 @@ mod tests {
         )?;
 
         assert_options(
-            vec!["ltest", "--message-format=short"],
+            vec!["cargo-ltest", "--message-format=short"],
             vec!["test", "--message-format=json-diagnostic-short"],
             vec!["--color=always"],
             Options {
@@ -579,21 +612,21 @@ mod tests {
     #[test]
     fn run_with_color_args() -> Result<()> {
         assert_cargo_args(
-            vec!["lrun", "--color=always"],
+            vec!["cargo-lrun", "--color=always"],
             vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec![],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "--color=never"],
+            vec!["cargo-lrun", "--color=never"],
             vec!["run", "--message-format=json"],
             vec![],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "--", "--color=always"],
+            vec!["cargo-lrun", "--", "--color=always"],
             vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--color=always"],
             STUB_MINIMAL,
@@ -605,7 +638,7 @@ mod tests {
     #[test]
     fn colored_testing_and_compiling_1() -> Result<()> {
         assert_cargo_args(
-            vec!["ltest"],
+            vec!["cargo-ltest"],
             vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--color=always"],
             STUB_MINIMAL,
@@ -616,7 +649,7 @@ mod tests {
     #[test]
     fn colored_testing_and_compiling_2() -> Result<()> {
         assert_cargo_args(
-            vec!["ltest", "--color=always"],
+            vec!["cargo-ltest", "--color=always"],
             vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--color=always"],
             STUB_MINIMAL,
@@ -627,7 +660,7 @@ mod tests {
     #[test]
     fn colored_testing_and_compiling_3() -> Result<()> {
         assert_cargo_args(
-            vec!["ltest", "--", "--color=always"],
+            vec!["cargo-ltest", "--", "--color=always"],
             vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--color=always"],
             STUB_MINIMAL,
@@ -639,7 +672,7 @@ mod tests {
     #[test]
     fn colored_testing_and_monochrome_compiling_1() -> Result<()> {
         assert_cargo_args(
-            vec!["ltest", "--color=never"],
+            vec!["cargo-ltest", "--color=never"],
             vec!["test", "--message-format=json"],
             vec!["--color=always"],
             STUB_MINIMAL,
@@ -650,7 +683,7 @@ mod tests {
     #[test]
     fn monochrome_testing_and_colored_compiling_1() -> Result<()> {
         assert_cargo_args(
-            vec!["ltest", "--", "--color=never"],
+            vec!["cargo-ltest", "--", "--color=never"],
             vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--color=never"],
             STUB_MINIMAL,
@@ -661,28 +694,28 @@ mod tests {
     #[test]
     fn custom_runners_should_not_have_color_args() -> Result<()> {
         assert_cargo_args(
-            vec!["ltest"],
+            vec!["cargo-ltest"],
             vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec![],
             STUB_CUSTOM_TEST_RUNNER,
         )?;
 
         assert_cargo_args(
-            vec!["ltest", "--", "--runner-arg"],
+            vec!["cargo-ltest", "--", "--runner-arg"],
             vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--runner-arg"],
             STUB_CUSTOM_TEST_RUNNER,
         )?;
 
         assert_cargo_args(
-            vec!["lbench"],
+            vec!["cargo-lbench"],
             vec!["bench", "--message-format=json-diagnostic-rendered-ansi"],
             vec![],
             STUB_CUSTOM_BENCH_RUNNER,
         )?;
 
         assert_options(
-            vec!["lbench", "--help"],
+            vec!["cargo-lbench", "--help"],
             vec![
                 "bench",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -702,21 +735,21 @@ mod tests {
     #[test]
     fn double_two_dashes() -> Result<()> {
         assert_cargo_args(
-            vec!["lrun", "--", "--"],
+            vec!["cargo-lrun", "--", "--"],
             vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--"],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "--", "--", "1"],
+            vec!["cargo-lrun", "--", "--", "1"],
             vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--", "1"],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "--", "-", "1", "2", "3"],
+            vec!["cargo-lrun", "--", "-", "1", "2", "3"],
             vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["-", "1", "2", "3"],
             STUB_MINIMAL,
@@ -728,7 +761,7 @@ mod tests {
     #[test]
     fn app_args_without_two_dashes_splitter() -> Result<()> {
         assert_cargo_args(
-            vec!["lrun", "app-argument"],
+            vec!["cargo-lrun", "app-argument"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -739,14 +772,14 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "-"],
+            vec!["cargo-lrun", "-"],
             vec!["run", "--message-format=json-diagnostic-rendered-ansi", "-"],
             vec![],
             STUB_MINIMAL,
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "1", "2", "3"],
+            vec!["cargo-lrun", "1", "2", "3"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -759,7 +792,7 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "-", "1", "2", "3"],
+            vec!["cargo-lrun", "-", "1", "2", "3"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -773,7 +806,7 @@ mod tests {
         )?;
 
         assert_cargo_args(
-            vec!["lrun", "--verbose", "app-argument"],
+            vec!["cargo-lrun", "--verbose", "app-argument"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -817,7 +850,7 @@ mod tests {
 
         let options = Options::process_args(
             Options::default(),
-            to_string(iter::once(CARGO_BIN).chain(input)),
+            to_string(input),
             &Path::new("tests/stubs").join(Path::new(stub)),
         )?;
 
