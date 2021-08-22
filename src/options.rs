@@ -165,10 +165,7 @@ impl Options {
         let (_, subcommand) = current_exe
             .split_once(EXECUTABLE_PREFIX)
             .ok_or_else(|| format_err!("invalid arguments"))?;
-
         let mut peekable_args = args.peekable();
-
-        let mut i = 0;
         loop {
             let arg = peekable_args.peek();
             let executable = arg
@@ -179,7 +176,6 @@ impl Options {
                     || executable == current_exe
                     || executable == format!("l{}", subcommand)
                 {
-                    i += 1; // TODO: stop at 2? so things like cargo lrun lrun would work? :/ probably no
                     let _ = peekable_args.next();
                 } else {
                     break;
@@ -570,11 +566,8 @@ mod tests {
         Ok(())
     }
 
-    // TODO: naming
-    // FIXME
-    // TODO: remove unnecessary
     #[test]
-    fn wat() -> Result<()> {
+    fn weird_args() -> Result<()> {
         assert_cargo_args(
             vec!["cargo-lrun", "app-arg"],
             vec![
@@ -591,18 +584,6 @@ mod tests {
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
                 "-v",
-                "-v",
-                "-v",
-                "app-arg",
-            ],
-            vec![],
-            STUB_MINIMAL,
-        )?;
-        assert_cargo_args(
-            vec!["cargo-lrun", "-v", "-v", "app-arg"],
-            vec![
-                "run",
-                "--message-format=json-diagnostic-rendered-ansi",
                 "-v",
                 "-v",
                 "app-arg",
