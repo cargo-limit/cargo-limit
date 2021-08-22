@@ -186,7 +186,7 @@ impl Options {
                     || executable == current_exe
                     || executable == format!("l{}", subcommand)
                 {
-                    i += 1;
+                    i += 1; // TODO: stop at 2? so things like cargo lrun lrun would work? :/ probably no
                     let _ = peekable_args.next();
                 } else {
                     break;
@@ -910,13 +910,13 @@ mod tests {
             Options::parse_subcommand(&mut args, "cargo-lrun".to_owned())?,
             (("run".to_owned(), vec![]))
         );
-        //assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-        //assert!(args.collect::<Vec<_>>().is_empty());
 
-        //        let mut args = to_string(vec!["cargo-lrun", "app-arg"].into_iter());
-        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-        //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
-        //
+        let mut args = to_string(vec!["app-arg"].into_iter());
+        assert_eq!(
+            Options::parse_subcommand(&mut args, "cargo-lrun".to_owned())?,
+            (("run".to_owned(), to_string(vec!["app-arg"]).collect()))
+        );
+
         //        let mut args = to_string(vec!["/path/to/cargo", "lrun"].into_iter());
         //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
         //        assert!(args.collect::<Vec<_>>().is_empty());
