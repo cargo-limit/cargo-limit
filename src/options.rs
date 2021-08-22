@@ -125,8 +125,8 @@ impl Options {
         mut args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
-        let cargo_subcommand = Self::parse_subcommand(&mut args)?;
-        self.cargo_args.push(cargo_subcommand.clone());
+        let subcommand = Self::parse_subcommand(&mut args)?;
+        self.cargo_args.push(subcommand.clone());
 
         let mut color = COLOR_AUTO.to_owned();
         let mut app_args_started = false;
@@ -146,7 +146,7 @@ impl Options {
             self.process_args_after_app_args_delimiter(args, &mut app_color_is_set);
         }
 
-        self.process_custom_runners(cargo_subcommand, app_color_is_set, workspace_root)?;
+        self.process_custom_runners(subcommand, app_color_is_set, workspace_root)?;
 
         Ok(self)
     }
@@ -168,9 +168,8 @@ impl Options {
             executable
         };
 
-        // TODO: naming?
-        let (_prefix, cargo_subcommand) = try_split_at(&executable, EXECUTABLE_PREFIX.len())?;
-        Ok(cargo_subcommand.to_owned())
+        let (_prefix, subcommand) = try_split_at(&executable, EXECUTABLE_PREFIX.len())?;
+        Ok(subcommand.to_owned())
     }
 
     fn parse_options(
@@ -245,12 +244,12 @@ impl Options {
 
     fn process_custom_runners(
         &mut self,
-        cargo_subcommand: String,
+        subcommand: String,
         app_color_is_set: bool,
         workspace_root: &Path,
     ) -> Result<()> {
-        let is_test = cargo_subcommand == "test";
-        let is_bench = cargo_subcommand == "bench";
+        let is_test = subcommand == "test";
+        let is_bench = subcommand == "bench";
         let command_supports_color_arg = is_test || is_bench;
         if command_supports_color_arg && !app_color_is_set && self.terminal_supports_colors {
             let cargo_toml = CargoToml::parse(workspace_root)?;
