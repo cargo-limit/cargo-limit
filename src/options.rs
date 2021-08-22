@@ -164,7 +164,7 @@ impl Options {
         current_exe: String,
     ) -> Result<(String, Vec<String>)> {
         let (_, subcommand) = current_exe
-            .split_once("cargo-l") // TODO
+            .split_once(EXECUTABLE_PREFIX)
             .ok_or_else(|| format_err!("invalid arguments"))?;
 
         let mut peekable_args = args.peekable();
