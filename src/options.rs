@@ -163,8 +163,7 @@ impl Options {
             self.process_args_after_app_args_delimiter(args, &mut app_color_is_set);
         }
 
-        // TODO: move cargo_subcommand?
-        self.process_custom_runners(&cargo_subcommand, app_color_is_set, workspace_root)?;
+        self.process_custom_runners(cargo_subcommand, app_color_is_set, workspace_root)?;
 
         Ok(self)
     }
