@@ -87,7 +87,7 @@ impl Options {
     }
 
     pub fn from_os_env(workspace_root: &Path) -> Result<Self> {
-        Self::from_vars_and_atty()?.process_args(&mut env::args(), workspace_root)
+        Self::from_vars_and_atty()?.process_args(env::args(), workspace_root)
     }
 
     fn from_vars_and_atty() -> Result<Self> {
