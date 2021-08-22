@@ -91,7 +91,6 @@ impl Options {
             .chain(self.args_after_app_args_delimiter.clone())
     }
 
-    // TODO: naming?
     pub fn from_os_env(current_exe: String, workspace_root: &Path) -> Result<Self> {
         Self::from_vars_and_atty()?.process_args(current_exe, env::args(), workspace_root)
     }
@@ -132,8 +131,6 @@ impl Options {
         args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
-        dbg!(&current_exe);
-        dbg!(std::env::args().collect::<Vec<_>>());
         let (subcommand, args) = Self::parse_subcommand(args, current_exe)?;
         let mut args = args.into_iter();
         self.cargo_args.push(subcommand.clone());
@@ -166,7 +163,6 @@ impl Options {
         args: impl Iterator<Item = String>,
         current_exe: String,
     ) -> Result<(String, Vec<String>)> {
-        dbg!(&current_exe);
         let (_, subcommand) = current_exe
             .split_once("cargo-l") // TODO
             .ok_or_else(|| format_err!("invalid arguments"))?;
@@ -176,12 +172,10 @@ impl Options {
         let mut i = 0;
         loop {
             let arg = peekable_args.peek();
-            dbg!(&arg);
             let executable = arg
-                .and_then(|arg| Path::new(arg).file_name().map(|i| i.clone()))
+                .and_then(|arg| Path::new(arg).file_stem().map(|i| i.clone()))
                 .map(|i| i.to_string_lossy().to_owned());
             if let Some(executable) = executable {
-                dbg!(&executable);
                 if executable == "cargo"
                     || executable == current_exe
                     || executable == format!("l{}", subcommand)
@@ -206,7 +200,6 @@ impl Options {
         app_args_started: &mut bool,
     ) -> Result<()> {
         while let Some(arg) = passed_args.next() {
-            dbg!(&arg);
             if arg == "-h" || arg == "--help" {
                 self.help = true;
                 args_before_app_args_delimiter.push(arg);
@@ -242,7 +235,6 @@ impl Options {
                 *app_args_started = true;
                 break;
             } else {
-                dbg!(&arg);
                 args_before_app_args_delimiter.push(arg);
             }
         }
@@ -882,13 +874,11 @@ mod tests {
         expected_options: Options,
         stub: &str,
     ) -> Result<()> {
-        dbg!("assert_options 1");
         let options = Options::default().process_args(
-            input[0].to_owned(), // TODO
+            input[0].to_owned(),
             to_string(input),
             &Path::new("tests/stubs").join(Path::new(stub)),
         )?;
-        dbg!("assert_options 2");
 
         let expected = Options {
             cargo_args: to_string(expected_cargo_args).collect(),
@@ -896,16 +886,15 @@ mod tests {
                 .collect(),
             ..expected_options
         };
-        dbg!("assert_options 3");
 
         assert_eq!(options, expected);
-        dbg!("assert_options 4");
         Ok(())
     }
 
     #[test]
     fn parse_subcommand() -> Result<()> {
         assert_parse_subcommand(vec!["cargo-lrun"], "run", vec![])?;
+        assert_parse_subcommand(vec!["cargo-lrun.exe"], "run", vec![])?;
         assert_parse_subcommand(
             vec!["cargo-lrun", "app-arg-1", "app-arg-2"],
             "run",
@@ -948,7 +937,11 @@ mod tests {
         expected_subcommand: &str,
         expected_remaining_args: Vec<&str>,
     ) -> Result<()> {
-        let subcommand = input[0].to_owned(); // TODO
+        let subcommand = Path::new(input[0])
+            .file_stem()
+            .expect("invalid subcommand")
+            .to_string_lossy()
+            .to_string();
         let mut args = to_string(input.into_iter().skip(1));
         let expected_remaining_args = to_string(expected_remaining_args).collect();
         assert_eq!(

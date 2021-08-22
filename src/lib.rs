@@ -124,7 +124,7 @@ macro_rules! run_command {
     () => {
         fn main() -> anyhow::Result<()> {
             let current_exe = std::env::current_exe()?
-                .file_name()
+                .file_stem()
                 .ok_or_else(|| anyhow::format_err!("invalid executable"))?
                 .to_string_lossy()
                 .to_string();
