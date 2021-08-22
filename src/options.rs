@@ -134,7 +134,8 @@ impl Options {
     ) -> Result<Self> {
         dbg!(&current_exe);
         dbg!(std::env::args().collect::<Vec<_>>());
-        let (subcommand, mut args) = Self::parse_subcommand(args, current_exe)?;
+        let (subcommand, args) = Self::parse_subcommand(args, current_exe)?;
+        let mut args = args.into_iter();
         self.cargo_args.push(subcommand.clone());
 
         let mut color = COLOR_AUTO.to_owned();
@@ -164,13 +165,13 @@ impl Options {
     fn parse_subcommand(
         args: impl Iterator<Item = String>,
         current_exe: String,
-    ) -> Result<(String, impl Iterator<Item = String>)> {
+    ) -> Result<(String, Vec<String>)> {
+        dbg!(&current_exe);
         let (_, subcommand) = current_exe
-            .split_once("cargo-l")
+            .split_once("cargo-l") // TODO
             .ok_or_else(|| format_err!("invalid arguments"))?;
 
         let mut peekable_args = args.peekable();
-        dbg!(&current_exe);
 
         let mut i = 0;
         loop {
@@ -194,80 +195,7 @@ impl Options {
                 break;
             }
         }
-        /*while let Some(arg) = peekable_args.peek() {
-            if let Some(executable) = Path::new(arg).iter().last() {
-                if let Some(executable) = executable.file_name() {
-                    if executable == "cargo" || executable == current_exe {
-                        i += 1;
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }*/
-
-        dbg!(i);
-        dbg!(&current_exe);
-
-        //*args = peekable_args.skip(i);
-        //let xs = peekable_args.skip(i);
-
-        //        let first_arg = args
-        //            .next()
-        //            .ok_or_else(|| format_err!("invalid arguments"))?;
-
-        /*let executable = if first_arg.starts_with(EXECUTABLE_PREFIX) {
-            first_arg
-        } else {
-            let executable = std::path::PathBuf::from(first_arg)
-                .into_iter()
-                .last()
-                .and_then(|executable| executable.to_str().map(|i| i.to_owned()))
-                .ok_or_else(|| format_err!("invalid arguments"))?;
-            //let x = args.next();
-            //dbg!(&x);
-            executable
-        };*/
-
-        //        let executable = if first_arg.ends_with("/cargo") {
-        //            dbg!("1");
-        //            // TODO: cargo lcheck
-        //            let x = args
-        //                .next()
-        //                .ok_or_else(|| format_err!("invalid arguments"))?;
-        //            dbg!(&x);
-        //            // TODO: assert first character is l?
-        //            assert!(x.starts_with('l'));
-        //            //x
-        //            let y = &x[1..];
-        //            dbg!(&y);
-        //            y.to_owned()
-        //        } else if first_arg.contains('/') {
-        //            // TODO: /home/al/.cargo/bin/cargo-lrun
-        //            dbg!("3");
-        //            dbg!(&first_arg);
-        //            //let index = first_arg.find("/cargo-l").ok_or_else(|| format_err!("invalid arguments"))?;
-        //            let (_, subcommand) = first_arg
-        //                .split_once("/cargo-l")
-        //                .ok_or_else(|| format_err!("invalid arguments"))?;
-        //            dbg!(&subcommand);
-        //            if let Some(second_arg) = args.peek() {
-        //                dbg!(&second_arg);
-        //                if second_arg == subcommand {
-        //                    let xxx = args.next();
-        //                    dbg!(&xxx);
-        //                }
-        //            }
-        //            subcommand.to_owned()
-        //        } else {
-        //            dbg!("2");
-        //            // TODO: cargo-lcheck (works)
-        //            let (_prefix, subcommand) = try_split_at(&first_arg, EXECUTABLE_PREFIX.len())?;
-        //            subcommand.to_owned()
-        //        };
-
-        //Ok(executable.to_owned())
-        Ok((subcommand.to_owned(), peekable_args))
+        Ok((subcommand.to_owned(), peekable_args.collect()))
     }
 
     fn parse_options(
@@ -657,7 +585,7 @@ mod tests {
     #[test]
     fn wat() -> Result<()> {
         assert_cargo_args(
-            vec!["carog-lrun", "app-arg"],
+            vec!["cargo-lrun", "app-arg"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -667,7 +595,7 @@ mod tests {
             STUB_MINIMAL,
         )?;
         assert_cargo_args(
-            vec!["carog-lrun", "-v", "-v", "-v", "app-arg"],
+            vec!["cargo-lrun", "-v", "-v", "-v", "app-arg"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -680,7 +608,7 @@ mod tests {
             STUB_MINIMAL,
         )?;
         assert_cargo_args(
-            vec!["carog-lrun", "-v", "-v", "app-arg"],
+            vec!["cargo-lrun", "-v", "-v", "app-arg"],
             vec![
                 "run",
                 "--message-format=json-diagnostic-rendered-ansi",
@@ -954,11 +882,13 @@ mod tests {
         expected_options: Options,
         stub: &str,
     ) -> Result<()> {
+        dbg!("assert_options 1");
         let options = Options::default().process_args(
-            PathBuf::from(input[0]), // TODO
+            input[0].to_owned(), // TODO
             to_string(input),
             &Path::new("tests/stubs").join(Path::new(stub)),
         )?;
+        dbg!("assert_options 2");
 
         let expected = Options {
             cargo_args: to_string(expected_cargo_args).collect(),
@@ -966,58 +896,64 @@ mod tests {
                 .collect(),
             ..expected_options
         };
+        dbg!("assert_options 3");
 
         assert_eq!(options, expected);
+        dbg!("assert_options 4");
         Ok(())
     }
 
-    //    #[test]
-    //    fn parse_subcommand() -> Result<()> {
-    //        let mut args = to_string(vec!["cargo-lrun"].into_iter());
-    //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-    //        assert!(args.collect::<Vec<_>>().is_empty());
-    //
-    //        let mut args = to_string(vec!["cargo-lrun", "app-arg"].into_iter());
-    //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-    //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
-    //
-    //        let mut args = to_string(vec!["/path/to/cargo", "lrun"].into_iter());
-    //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-    //        assert!(args.collect::<Vec<_>>().is_empty());
-    //
-    //        let mut args = to_string(vec!["/path/to/cargo", "lrun", "app-arg"].into_iter());
-    //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-    //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
-    //
-    //        let mut args = to_string(vec!["relative/path/to/cargo", "lrun", "app-arg"].into_iter());
-    //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-    //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
-    //
-    //        let mut args = to_string(vec!["relative/path/to/cargo", "lrun"].into_iter());
-    //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-    //        assert!(args.collect::<Vec<_>>().is_empty());
-    //
-    //        let mut args = to_string(vec!["/path/to/cargo-lrun"].into_iter());
-    //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-    //        assert!(args.collect::<Vec<_>>().is_empty());
-    //
-    //        let mut args = to_string(vec!["/path/to/cargo-lrun", "app-arg"].into_iter());
-    //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-    //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
-    //
-    //        // FIXME
-    //        /*let mut args = to_string(vec!["/path/to/cargo-lrun", "lrun"].into_iter());
-    //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-    //        assert!(args.collect::<Vec<_>>().is_empty());*/
-    //
-    //        /*let mut args = to_string(vec!["/path/to/cargo-lrun", "lrun", "app-arg"].into_iter());
-    //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
-    //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);*/
-    //
-    //        // TODO: lrun lrun? /path/to/cargo-lrun /path/to/cargo-lrun?
-    //
-    //        Ok(())
-    //    }
+    #[test]
+    fn parse_subcommand() -> Result<()> {
+        let mut args = to_string(vec![].into_iter());
+        assert_eq!(
+            Options::parse_subcommand(&mut args, "cargo-lrun".to_owned())?,
+            (("run".to_owned(), vec![]))
+        );
+        //assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        //assert!(args.collect::<Vec<_>>().is_empty());
+
+        //        let mut args = to_string(vec!["cargo-lrun", "app-arg"].into_iter());
+        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
+        //
+        //        let mut args = to_string(vec!["/path/to/cargo", "lrun"].into_iter());
+        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        //        assert!(args.collect::<Vec<_>>().is_empty());
+        //
+        //        let mut args = to_string(vec!["/path/to/cargo", "lrun", "app-arg"].into_iter());
+        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
+        //
+        //        let mut args = to_string(vec!["relative/path/to/cargo", "lrun", "app-arg"].into_iter());
+        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
+        //
+        //        let mut args = to_string(vec!["relative/path/to/cargo", "lrun"].into_iter());
+        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        //        assert!(args.collect::<Vec<_>>().is_empty());
+        //
+        //        let mut args = to_string(vec!["/path/to/cargo-lrun"].into_iter());
+        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        //        assert!(args.collect::<Vec<_>>().is_empty());
+        //
+        //        let mut args = to_string(vec!["/path/to/cargo-lrun", "app-arg"].into_iter());
+        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);
+        //
+        //        // FIXME
+        //        /*let mut args = to_string(vec!["/path/to/cargo-lrun", "lrun"].into_iter());
+        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        //        assert!(args.collect::<Vec<_>>().is_empty());*/
+        //
+        //        /*let mut args = to_string(vec!["/path/to/cargo-lrun", "lrun", "app-arg"].into_iter());
+        //        assert_eq!(Options::parse_subcommand(&mut args)?, "run");
+        //        assert_eq!(args.collect::<Vec<_>>(), vec!["app-arg"]);*/
+        //
+        //        // TODO: lrun lrun? /path/to/cargo-lrun /path/to/cargo-lrun?
+
+        Ok(())
+    }
 
     fn to_string<'item>(
         iter: impl IntoIterator<Item = &'item str> + 'item,
