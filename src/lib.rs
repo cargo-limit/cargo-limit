@@ -67,7 +67,7 @@ fn parse_and_process_messages(
         let ProcessedMessages {
             messages,
             spans_in_consistent_order,
-        } = process_messages(parsed_messages, &parsed_args, &workspace_root)?;
+        } = process_messages(parsed_messages, &parsed_args, workspace_root)?;
         let processed_messages = messages.into_iter();
 
         if parsed_args.json_message_format {
@@ -83,7 +83,12 @@ fn parse_and_process_messages(
             }
         }
 
-        open_in_external_app_for_affected_files(buffers, spans_in_consistent_order, parsed_args)?;
+        open_in_external_app_for_affected_files(
+            buffers,
+            spans_in_consistent_order,
+            parsed_args,
+            workspace_root,
+        )?;
     }
 
     buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
@@ -94,14 +99,17 @@ fn open_in_external_app_for_affected_files(
     buffers: &mut Buffers,
     spans_in_consistent_order: Vec<DiagnosticSpan>,
     parsed_args: &Options,
+    workspace_root: &Path,
 ) -> Result<()> {
     let app = &parsed_args.open_in_external_app;
     if !app.is_empty() {
         let mut args = Vec::new();
         for span in spans_in_consistent_order.into_iter() {
+            let full_path = workspace_root.join(span.file_name);
+            let full_path = full_path.to_string_lossy();
             args.push(format!(
                 "{}:{}:{}",
-                span.file_name, span.line_start, span.column_start
+                full_path, span.line_start, span.column_start
             ));
         }
         if !args.is_empty() {
