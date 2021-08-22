@@ -138,21 +138,12 @@ impl Options {
                 .last()
                 .and_then(|i| i.to_str().map(|j| j.to_owned()))
                 .ok_or_else(|| format_err!("invalid arguments"))?;
-            dbg!(&executable);
-            let x = args.next();
-            dbg!(&x);
+            let _ = args.next();
             executable
         };
 
         // TODO: const
-        let cargo_subcommand = {
-            let cargo_subcommand = executable;
-            dbg!(&cargo_subcommand);
-            let (_prefix, subcommand) = try_split_at(&cargo_subcommand, "cargo-l".len())?;
-            dbg!(&subcommand);
-            subcommand.to_owned()
-        };
-        dbg!(&cargo_subcommand);
+        let (_prefix, cargo_subcommand) = try_split_at(&executable, "cargo-l".len())?;
 
         self.cargo_args.push(cargo_subcommand.to_owned());
         let mut passed_args = args; // TODO
