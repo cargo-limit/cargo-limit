@@ -31,6 +31,7 @@ cmd=''
 for ((i=${#files[@]}-1; i>=0; i--)); do
     item="${files[$i]}"
     filename=$(echo "${item}" | cut -d':' -f1)
+    filename=$(printf '%q' "${filename}")
     line=$(echo "${item}" | cut -d':' -f2)
     column=$(echo "${item}" | cut -d':' -f3)
     cmd+="<esc>:tab drop ${filename}<cr>${line}G${column}|"
