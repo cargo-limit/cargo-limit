@@ -31,5 +31,7 @@ fn main() -> Result<(), Error> {
             Err(err) => return Err(err),
         };
     }
+
+    println!("cargo:rerun-if-changed=build.rs");
     Ok(())
 }
