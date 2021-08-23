@@ -19,7 +19,6 @@ fn main() -> Result<(), Error> {
 
     for i in SUBCOMMANDS {
         let file = bin.join(format!("cargo-l{}.rs", i));
-        dbg!(&file);
         match fs::OpenOptions::new()
             .write(true)
             .create_new(true)
