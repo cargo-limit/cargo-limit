@@ -1,3 +1,5 @@
+//! **Documentation is [here](https://github.com/alopatindev/cargo-limit#readme).**
+
 mod cargo_toml;
 mod io;
 mod messages;

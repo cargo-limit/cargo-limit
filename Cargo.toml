@@ -8,6 +8,7 @@ description = "Cargo with less noise: warnings are skipped until errors are fixe
 repository = "https://github.com/alopatindev/cargo-limit"
 keywords = ["cargo", "limit", "filter", "wrapper", "dedup"]
 readme = "README.md"
+documentation = "https://github.com/alopatindev/cargo-limit#readme"
 
 [dependencies]
 anyhow = "1"
