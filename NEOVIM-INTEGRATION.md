@@ -2,7 +2,7 @@
 `cargo-limit` can run an external application, providing it a list of affected files, lines and columns as arguments in the following format:
 
 ```
-path/to/file1.rs:10:5 path/to/file2.rs:4:1
+/full/path/to/file1.rs:10:5 /full/path/to/file2.rs:4:1
 ```
 
 Theoretically this can be used for any text editor or IDE which supports client/server communication. In order to do that you need a wrapper script that parses the list and gives it to the text editor or IDE client.
