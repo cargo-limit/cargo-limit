@@ -128,7 +128,7 @@ fn failed_to_execute_error_text<T: fmt::Debug>(app: T) -> String {
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! run_command {
+macro_rules! run_subcommand {
     () => {
         #[doc(hidden)]
         fn main() -> anyhow::Result<()> {

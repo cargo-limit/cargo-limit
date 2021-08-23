@@ -5,7 +5,7 @@ use std::{
 };
 
 const SUBCOMMANDS: &[&str] = &["bench", "build", "check", "clippy", "fix", "run", "test"];
-const BODY: &str = "cargo_limit::run_command!();";
+const BODY: &str = "cargo_limit::run_subcommand!();";
 
 fn main() -> Result<(), Error> {
     let bin = Path::new("src/bin");
