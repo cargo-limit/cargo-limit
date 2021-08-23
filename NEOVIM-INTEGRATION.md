@@ -17,7 +17,7 @@ Theoretically this can be used for any text editor or IDE which supports client/
 function find_socket_file() {
     project_dir=$(pwd)
     while [ ! -z "${project_dir}" ]; do
-        socket_file="/tmp/nvim-$(echo ${project_dir} | sed 's!/!%!g')"
+        socket_file="/tmp/nvim-${USER}-$(echo ${project_dir} | sed 's!/!%!g')"
         if [ -S "${socket_file}" ]; then
             break
         fi
@@ -37,7 +37,7 @@ for ((i=${#files[@]}-1; i>=0; i--)); do
     cmd+="<esc>:tab drop ${filename}<cr>${line}G${column}|"
 done
 
-NVIM_LISTEN_ADDRESS="$(find_socket_file)" nvr -s --nostart --remote-send "${cmd}"
+nvr -s --nostart --servername "$(find_socket_file)" --remote-send "${cmd}"
 ```
 
 3. Add a file called `vi` to your `$PATH`:
@@ -45,12 +45,9 @@ NVIM_LISTEN_ADDRESS="$(find_socket_file)" nvr -s --nostart --remote-send "${cmd}
 #!/bin/bash
 
 pwd_escaped=$(pwd | sed 's!/!%!g')
-export NVIM_LISTEN_ADDRESS="/tmp/nvim-${pwd_escaped}"
+nvim_named_pipe="/tmp/nvim-${USER}-${pwd_escaped}"
 
-# check if we can connect, otherwise remove the socket
-nvr -s --nostart || rm -f "${NVIM_LISTEN_ADDRESS}"
-
-/usr/bin/nvim -p "$@"
+/usr/bin/nvim --listen "${nvim_named_pipe}" -p "$@"
 ```
 
 4. `chmod +x open-in-nvim vi`
