@@ -39,7 +39,7 @@ nvr -s --nostart --servername "${nvim_listen_address}" --remote-send "${cmd}"
 ```bash
 #!/bin/bash
 
-project_dir=$(cargo metadata --format-version=1 | jq --raw-output '.workspace_root')
+project_dir=$(cargo metadata --quiet --format-version=1 2>>/dev/null | jq --raw-output '.workspace_root')
 project_dir_escaped=$(echo "${project_dir}" | sed 's!/!%!g')
 nvim_listen_address="/tmp/nvim-${USER}-${project_dir_escaped}"
 
