@@ -39,7 +39,6 @@ cargo lcheck
 cargo lclippy
 cargo ldoc
 cargo lfix
-cargo lfmt
 cargo lrun
 cargo lrustc
 cargo lrustdoc

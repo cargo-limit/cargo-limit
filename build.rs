@@ -6,7 +6,7 @@ use std::{
 
 const BODY: &str = "cargo_limit::run_subcommand!();";
 const SUBCOMMANDS: &[&str] = &[
-    "bench", "build", "check", "clippy", "doc", "fix", "fmt", "run", "rustc", "rustdoc", "test",
+    "bench", "build", "check", "clippy", "doc", "fix", "run", "rustc", "rustdoc", "test",
 ];
 
 fn main() -> Result<(), Error> {
