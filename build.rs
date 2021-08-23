@@ -4,8 +4,10 @@ use std::{
     path::Path,
 };
 
-const SUBCOMMANDS: &[&str] = &["bench", "build", "check", "clippy", "fix", "run", "test"];
 const BODY: &str = "cargo_limit::run_subcommand!();";
+const SUBCOMMANDS: &[&str] = &[
+    "bench", "build", "check", "clippy", "doc", "fix", "fmt", "run", "rustc", "rustdoc", "test",
+];
 
 fn main() -> Result<(), Error> {
     let bin = Path::new("src/bin");
