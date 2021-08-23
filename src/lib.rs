@@ -106,12 +106,11 @@ fn open_in_external_app_for_affected_files(
     let app = &parsed_args.open_in_external_app;
     if !app.is_empty() {
         let mut args = Vec::new();
+        args.push(workspace_root.to_string_lossy().to_string());
         for span in spans_in_consistent_order.into_iter() {
-            let full_path = workspace_root.join(span.file_name);
-            let full_path = full_path.to_string_lossy();
             args.push(format!(
                 "{}:{}:{}",
-                full_path, span.line_start, span.column_start
+                span.file_name, span.line_start, span.column_start
             ));
         }
         if !args.is_empty() {

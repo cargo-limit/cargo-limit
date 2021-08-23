@@ -2,7 +2,7 @@
 `cargo-limit` can run an external application, providing it a list of affected files, lines and columns as arguments in the following format:
 
 ```
-/full/path/to/file1.rs:10:5 /full/path/to/file2.rs:4:1
+/full/path/to/project relative/path/to/file1.rs:10:5 relative/path/to/file2.rs:4:1
 ```
 
 Theoretically this can be used for any text editor or IDE which supports client/server communication. In order to do that you need a wrapper script that parses the list and gives it to the text editor or IDE client.
@@ -14,38 +14,32 @@ Theoretically this can be used for any text editor or IDE which supports client/
 ```bash
 #!/bin/bash
 
-function find_socket_file() {
-    project_dir=$(pwd)
-    while [ ! -z "${project_dir}" ]; do
-        socket_file="/tmp/nvim-${USER}-$(echo ${project_dir} | sed 's!/!%!g')"
-        if [ -S "${socket_file}" ]; then
-            break
-        fi
-        project_dir="${project_dir%/*}"
-    done
-    echo "${socket_file}"
-}
+project_dir="$1"
+project_dir_escaped=$(echo "$1" | sed 's!/!%!g')
+nvim_named_pipe="/tmp/nvim-${USER}-${project_dir_escaped}"
 
+shift
 files=( "$@" )
 cmd=''
 for ((i=${#files[@]}-1; i>=0; i--)); do
     item="${files[$i]}"
     filename=$(echo "${item}" | cut -d':' -f1)
-    filename=$(printf '%q' "${filename}")
+    filename=$(printf "${project_dir}/%q" "${filename}")
     line=$(echo "${item}" | cut -d':' -f2)
     column=$(echo "${item}" | cut -d':' -f3)
     cmd+="<esc>:tab drop ${filename}<cr>${line}G${column}|"
 done
 
-nvr -s --nostart --servername "$(find_socket_file)" --remote-send "${cmd}"
+nvr -s --nostart --servername "${nvim_named_pipe}" --remote-send "${cmd}"
 ```
 
 3. Add a file called `vi` to your `$PATH`:
 ```bash
 #!/bin/bash
 
-pwd_escaped=$(pwd | sed 's!/!%!g')
-nvim_named_pipe="/tmp/nvim-${USER}-${pwd_escaped}"
+project_dir=$(realpath $(pwd))
+project_dir_escaped=$(echo "${project_dir}" | sed 's!/!%!g')
+nvim_named_pipe="/tmp/nvim-${USER}-${project_dir_escaped}"
 
 /usr/bin/nvim --listen "${nvim_named_pipe}" -p "$@"
 ```
