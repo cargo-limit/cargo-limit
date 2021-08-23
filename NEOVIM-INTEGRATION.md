@@ -16,7 +16,7 @@ Theoretically this can be used for any text editor or IDE which supports client/
 
 project_dir="$1"
 project_dir_escaped=$(echo "$1" | sed 's!/!%!g')
-nvim_named_pipe="/tmp/nvim-${USER}-${project_dir_escaped}"
+nvim_listen_address="/tmp/nvim-${USER}-${project_dir_escaped}"
 
 shift
 files=( "$@" )
@@ -30,7 +30,7 @@ for ((i=${#files[@]}-1; i>=0; i--)); do
     cmd+="<esc>:tab drop ${filename}<cr>${line}G${column}|"
 done
 
-nvr -s --nostart --servername "${nvim_named_pipe}" --remote-send "${cmd}"
+nvr -s --nostart --servername "${nvim_listen_address}" --remote-send "${cmd}"
 ```
 
 3. Add a file called `vi` to your `$PATH`:
@@ -39,9 +39,9 @@ nvr -s --nostart --servername "${nvim_named_pipe}" --remote-send "${cmd}"
 
 project_dir=$(realpath $(pwd))
 project_dir_escaped=$(echo "${project_dir}" | sed 's!/!%!g')
-nvim_named_pipe="/tmp/nvim-${USER}-${project_dir_escaped}"
+nvim_listen_address="/tmp/nvim-${USER}-${project_dir_escaped}"
 
-/usr/bin/nvim --listen "${nvim_named_pipe}" -p "$@"
+/usr/bin/nvim --listen "${nvim_listen_address}" -p "$@"
 ```
 
 4. `chmod +x open-in-nvim vi`
