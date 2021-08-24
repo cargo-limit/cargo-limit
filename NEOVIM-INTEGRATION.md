@@ -19,7 +19,7 @@ Theoretically this can be used for any text editor or IDE which supports client/
 "TODO: escape windows username?
 "TODO: detect whether cargo installed?
 function! s:on_cargo_metadata_stdout(_job_id, data, _event)
-  let l:stdout = join(a:data, '')
+  let l:stdout = trim(join(a:data, ''))
   if len(l:stdout) > 0
     let l:metadata = json_decode(l:stdout)
     let l:workspace_root = get(l:metadata, 'workspace_root')
