@@ -4,4 +4,4 @@ Additional environment variables:
     CARGO_ASC           Show compiler messages in ascending order (false is default)
     CARGO_FORCE_WARN    Show warnings even if errors still exist (false is default)
     CARGO_DEPS_WARN     Show dependencies' warnings (false is default)
-    CARGO_OPEN          Open affected files in external application ("" is default, which means it's disabled)
+    CARGO_OPEN          Open affected files in external app ("" is default, which means it's disabled)

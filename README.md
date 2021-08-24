@@ -45,7 +45,7 @@ cargo lrustdoc
 cargo ltest
 ```
 
-Or `cargo llrun`, etc., to open external application for warnings as well.
+To open external app for warnings (besides errors) — use `cargo llrun`, etc.
 
 ### Environment variables
 - `CARGO_MSG_LIMIT`
@@ -65,9 +65,9 @@ Or `cargo llrun`, etc., to open external application for warnings as well.
     - show dependencies' warnings
     - `false` is default
 - `CARGO_OPEN`
-    - opens affected files in external application
+    - opens affected files in external app
         - see [neovim integration](NEOVIM-INTEGRATION.md) as example
-    - empty (`""`) means don't run external application
+    - empty (`""`) means don't run external app
     - empty is default
 
 ## Why?
