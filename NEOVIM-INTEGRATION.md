@@ -56,6 +56,6 @@ nvim_listen_address="/tmp/nvim-${USER}-${project_dir_escaped}"
     - optionally set `CARGO_MSG_LIMIT=1` if you want to open at most 1 file automatically
 
 ## Result
-For each file affected by error (or warning as well, if `CARGO_OPEN_WARN=true`) Neovim will:
+For each file affected by error (or warning as well, in case of running `cargo llcheck`) Neovim will:
 - open it in new or existing tab
 - jump to the corresponding line and column
