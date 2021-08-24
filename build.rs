@@ -10,6 +10,8 @@ const SUBCOMMANDS: &[&str] = &[
 ];
 
 fn main() -> Result<(), Error> {
+    println!("cargo:rerun-if-changed=build.rs");
+
     let bin = Path::new("src/bin");
     match fs::create_dir(bin) {
         Ok(_) => (),
@@ -17,7 +19,12 @@ fn main() -> Result<(), Error> {
         err @ Err(_) => return err,
     }
 
-    for i in SUBCOMMANDS {
+    let subcommands = SUBCOMMANDS
+        .iter()
+        .map(|i| i.to_string())
+        .chain(SUBCOMMANDS.iter().map(|i| format!("l{}", i)));
+
+    for i in subcommands {
         let file = bin.join(format!("cargo-l{}.rs", i));
         match fs::OpenOptions::new()
             .write(true)
@@ -32,6 +39,5 @@ fn main() -> Result<(), Error> {
         };
     }
 
-    println!("cargo:rerun-if-changed=build.rs");
     Ok(())
 }

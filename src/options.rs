@@ -108,10 +108,6 @@ impl Options {
         )?;
         Self::parse_var("CARGO_DEPS_WARN", &mut result.show_dependencies_warnings)?;
         Self::parse_var("CARGO_OPEN", &mut result.open_in_external_app)?;
-        Self::parse_var(
-            "CARGO_OPEN_WARN",
-            &mut result.open_in_external_app_on_warnings,
-        )?;
 
         Ok(result)
     }
@@ -126,7 +122,10 @@ impl Options {
         args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
-        let (subcommand, args) = Self::parse_subcommand(args, current_exe)?;
+        let (subcommand, args, open_in_external_app_on_warnings) =
+            Self::parse_subcommand(args, current_exe)?;
+        self.open_in_external_app_on_warnings = open_in_external_app_on_warnings;
+
         let mut args = args.into_iter();
         self.cargo_args.push(subcommand.clone());
 
@@ -156,11 +155,20 @@ impl Options {
     fn parse_subcommand(
         args: impl Iterator<Item = String>,
         current_exe: String,
-    ) -> Result<(String, Vec<String>)> {
+    ) -> Result<(String, Vec<String>, bool)> {
+        // TODO: struct
         let current_exe = current_exe.to_lowercase();
         let (_, subcommand) = current_exe
             .split_once(EXECUTABLE_PREFIX)
             .ok_or_else(|| format_err!("invalid arguments"))?;
+        let (open_in_external_app_on_warnings, subcommand) = if subcommand.starts_with('l') {
+            let (_, subcommand) = subcommand
+                .split_once('l')
+                .ok_or_else(|| format_err!("invalid arguments"))?;
+            (true, subcommand)
+        } else {
+            (false, subcommand)
+        };
         let mut peekable_args = args.peekable();
         loop {
             let arg = peekable_args.peek();
@@ -171,6 +179,7 @@ impl Options {
                 if executable == CARGO_EXECUTABLE
                     || executable == current_exe
                     || executable == format!("l{}", subcommand)
+                    || executable == format!("ll{}", subcommand)
                 {
                     let _ = peekable_args.next();
                 } else {
@@ -180,7 +189,11 @@ impl Options {
                 break;
             }
         }
-        Ok((subcommand.to_owned(), peekable_args.collect()))
+        Ok((
+            subcommand.to_owned(),
+            peekable_args.collect(),
+            open_in_external_app_on_warnings,
+        ))
     }
 
     fn parse_options(
@@ -957,8 +970,13 @@ mod tests {
         let expected_remaining_args = to_string(expected_remaining_args).collect();
         assert_eq!(
             Options::parse_subcommand(&mut args, subcommand)?,
-            ((expected_subcommand.to_owned(), expected_remaining_args))
+            ((
+                expected_subcommand.to_owned(),
+                expected_remaining_args,
+                false
+            ))
         );
+        // TODO: test llrun, etc.
         Ok(())
     }
 
