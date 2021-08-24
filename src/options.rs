@@ -329,6 +329,7 @@ impl ParsedSubcommand {
         } else {
             (false, subcommand)
         };
+
         let mut peekable_args = args.peekable();
         loop {
             let arg = peekable_args.peek();
@@ -349,6 +350,7 @@ impl ParsedSubcommand {
                 break;
             }
         }
+
         Ok(Self {
             subcommand: subcommand.to_owned(),
             open_in_external_app_on_warnings,
