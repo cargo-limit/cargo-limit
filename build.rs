@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 
-const BODY: &str = "cargo_limit::run_subcommand!();";
+const BODY: &str = "fn main() -> anyhow::Result<()> { cargo_limit::run_subcommand() }";
 const SUBCOMMANDS: &[&str] = &[
     "bench", "build", "check", "clippy", "doc", "fix", "run", "rustc", "rustdoc", "test",
 ];
