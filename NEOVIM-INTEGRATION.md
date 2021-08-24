@@ -15,17 +15,20 @@ Theoretically this can be used for any text editor or IDE which supports client/
 ```viml
 "TODO: use s: in plugin
 "TODO: detect OS, set named pipe on windows
-"TODO: socket permissions?
 "TODO: escape paths with spaces and weird characters?
 "TODO: escape windows username?
 "TODO: detect whether cargo installed?
-function! s:on_cargo_metadata_stdout(job_id, data, _event)
+function! s:on_cargo_metadata_stdout(_job_id, data, _event)
   let l:stdout = join(a:data, '')
   if len(l:stdout) > 0
     let l:metadata = json_decode(l:stdout)
     let l:workspace_root = get(l:metadata, 'workspace_root')
     let l:escaped_workspace_root = substitute(workspace_root, '/', '%', 'g')
-    let l:socket_path = '/tmp/nvim-cargo-limit-' . $USER . '-' . l:escaped_workspace_root
+
+    let l:socket_dir = '/tmp/nvim-cargo-limit-' . $USER
+    call mkdir(l:socket_dir, 'p', 0700)
+
+    let l:socket_path = l:socket_dir . '/' . l:escaped_workspace_root
     if !filereadable(l:socket_path)
       call serverstart(l:socket_path)
     endif
@@ -49,7 +52,7 @@ endif
 
 workspace_root="$1"
 workspace_root_escaped=$(echo "$1" | sed 's!/!%!g')
-nvim_listen_address="/tmp/nvim-cargo-limit-${USER}-${workspace_root_escaped}"
+nvim_listen_address="/tmp/nvim-cargo-limit-${USER}/${workspace_root_escaped}"
 
 shift
 files=( "$@" )
