@@ -13,7 +13,8 @@ Theoretically this can be used for any text editor or IDE which supports client/
 ## Installation
 1. Enable the plugin in Neovim [plugin system](https://github.com/junegunn/vim-plug#neovim):
 ```viml
-Plug 'alopatindev/cargo-limit'
+Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit' }
+"Plug 'alopatindev/cargo-limit', { 'do': 'cargo install --force --git https://github.com/alopatindev/cargo-limit' } " for version from git
 ```
 
 Run `nvim +PlugInstall +UpdateRemotePlugins +qa`
