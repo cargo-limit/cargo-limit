@@ -12,7 +12,7 @@ Cargo with less noise:
 - messages are grouped by filenames
 - number of messages can be limited
 - after encountering first error the rest of build time is limited by default
-- files can be [automatically opened](NEOVIM-INTEGRATION.md) in your text editor on affected lines
+- files can be [automatically opened](#neovim-integration) in your text editor on affected lines
 
 This tool is especially useful in combination with [cargo-watch](https://crates.io/crates/cargo-watch).
 
@@ -30,8 +30,26 @@ cargo install cargo-limit
 cargo install --force --git https://github.com/alopatindev/cargo-limit
 ```
 
+## Neovim integration
+Enable the plugin in your `~/.config/nvim/init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
+```viml
+Plug 'alopatindev/cargo-limit'
+```
+Install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
+
+### Testing
+1. Open two terminals
+2. `cd your/project/directory` in both of them
+3. In one terminal open `nvim`
+4. In another run `cargo lrun`
+5. In case of compiling error `nvim` will open new or existing tab with the file on affected line
+6. Use `cargo llrun` (`llcheck`, etc.) to make Neovim react on warnings besides errors as well.
+
+### Other text editors/IDEs integration
+TODO
+
 ## Usage
-Run any of these in your project:
+Run any of these in your project directory:
 ```
 cargo lbench
 cargo lbuild
@@ -44,8 +62,6 @@ cargo lrustc
 cargo lrustdoc
 cargo ltest
 ```
-
-To open external app for warnings (besides errors) — use `cargo llrun`, etc.
 
 ### Environment variables
 - `CARGO_MSG_LIMIT`
@@ -68,102 +84,10 @@ To open external app for warnings (besides errors) — use `cargo llrun`, etc.
     - opens affected files in external app
         - see [neovim integration](NEOVIM-INTEGRATION.md) as example
     - empty (`""`) means don't run external app
-    - empty is default
+    - `"_cargo-limit-open-in-nvim"` is default
 
-## Why?
-Initially it was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189). Consider a program:
-```rust
-fn f() -> Result<(), ()> {
-    Ok(())
-}
-
-fn main() {
-    let mut i: u32 = 0;
-    i -= 1;
-    f();
-    println!("Hello world");
-}
-```
-
-It's counterproductive to read this kind of compiler noise in attempt to run the program:
-```
-$ cargo run
-   Compiling hello v0.1.0 (/tmp/hello)
-warning: variable `i` is assigned to, but never used
- --> src/main.rs:6:9
-  |
-6 |     let mut i: u32 = 0;
-  |         ^^^^^
-  |
-  = note: `#[warn(unused_variables)]` on by default
-  = note: consider using `_i` instead
-
-warning: value assigned to `i` is never read
- --> src/main.rs:7:5
-  |
-7 |     i -= 1;
-  |     ^
-  |
-  = note: `#[warn(unused_assignments)]` on by default
-  = help: maybe it is overwritten before being read?
-
-warning: unused `std::result::Result` that must be used
- --> src/main.rs:8:5
-  |
-8 |     f();
-  |     ^^^^
-  |
-  = note: `#[warn(unused_must_use)]` on by default
-  = note: this `Result` may be an `Err` variant, which should be handled
-
-error: this arithmetic operation will overflow
- --> src/main.rs:7:5
-  |
-7 |     i -= 1;
-  |     ^^^^^^ attempt to compute `0_u32 - 1_u32` which would overflow
-  |
-  = note: `#[deny(arithmetic_overflow)]` on by default
-
-error: aborting due to previous error; 3 warnings emitted
-
-error: could not compile `hello`.
-
-To learn more, run the command again with --verbose.
-```
-
-All we want on this development iteration is to focus on this error:
-```
-$ cargo lrun
-   Compiling hello v0.1.0 (/tmp/hello)
-error: this arithmetic operation will overflow
- --> src/main.rs:7:5
-  |
-7 |     i -= 1;
-  |     ^^^^^^ attempt to compute `0_u32 - 1_u32` which would overflow
-  |
-  = note: `#[deny(arithmetic_overflow)]` on by default
-
-error: could not compile `hello`.
-
-To learn more, run the command again with --verbose.
-```
-
-After fixing it we probably want to see the first warning(s):
-```
-$ sed -i '/.*i -= 1;/d' src/main.rs
-$ CARGO_MSG_LIMIT=1 cargo lrun
-    Finished dev [unoptimized + debuginfo] target(s) in 0.00s
-warning: unused variable: `i`
- --> src/main.rs:6:9
-  |
-6 |     let mut i: u32 = 0;
-  |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_i`
-  |
-  = note: `#[warn(unused_variables)]` on by default
-
-     Running `target/debug/hello`
-Hello world
-```
+## Why "limit"?
+Initially it was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189).
 
 ## License
 MIT/Apache-2.0

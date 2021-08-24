@@ -1,3 +1,5 @@
+TODO: change filename to IDE-INTEGRATION.md, refer from readme
+
 # Neovim integration
 `cargo-limit` can run an external app, providing it a list of affected files, lines and columns as arguments in the following format:
 
@@ -11,13 +13,12 @@ TODO: use stdin instead of args?
 Theoretically this can be used for any text editor or IDE which supports client/server communication. In order to do that you need a wrapper script that parses the list and gives it to the text editor or IDE client.
 
 ## Installation
-1. Enable the plugin in Neovim [plugin system](https://github.com/junegunn/vim-plug#neovim):
+For Neovim integration enable the plugin in your `~/.config/nvim/init.vim`, for instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
 ```viml
-Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit' }
-"Plug 'alopatindev/cargo-limit', { 'do': 'cargo install --force --git https://github.com/alopatindev/cargo-limit' } " for version from git
+Plug 'alopatindev/cargo-limit'
 ```
 
-Run `nvim +PlugInstall +UpdateRemotePlugins +qa`
+Run `nvim +PlugInstall +UpdateRemotePlugins +qa` to install it.
 
 2. Run `pip3 install --user neovim-remote` and check that `nvr --version` runs without errors (`$HOME/.local/bin` should be listed in your `$PATH`) (TODO: remove)
 
