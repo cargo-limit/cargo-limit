@@ -1,6 +1,4 @@
-"TODO: use s: in plugin
 "TODO: detect OS, set named pipe on windows
-"TODO: socket permissions? put it to dir with specific permissions /tmp/nvim-username/%home...
 "TODO: escape paths with spaces and weird characters?
 "TODO: escape windows username?
 "TODO: detect whether cargo installed?
