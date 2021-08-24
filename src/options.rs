@@ -564,6 +564,17 @@ mod tests {
             STUB_MINIMAL,
         )?;
 
+        assert_options(
+            vec!["cargo-llrun"],
+            vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
+            vec![],
+            Options {
+                open_in_external_app_on_warnings: true,
+                ..Options::default()
+            },
+            STUB_MINIMAL,
+        )?;
+
         Ok(())
     }
 
@@ -976,7 +987,6 @@ mod tests {
                 false
             ))
         );
-        // TODO: test llrun, etc.
         Ok(())
     }
 
