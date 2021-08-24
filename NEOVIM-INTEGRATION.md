@@ -11,6 +11,7 @@ Theoretically this can be used for any text editor or IDE which supports client/
 1. Add to your `~/.config/nvim/init.vim`:
 ```viml
 "TODO: use local vars
+"TODO: detect whether cargo installed
 let rust_project_dir = trim(system('cargo metadata --quiet --format-version=1 2>>/dev/null | jq --raw-output ".workspace_root"'))
 if len(rust_project_dir) > 0
   "TODO: escape paths with spaces and weird characters
@@ -59,7 +60,6 @@ nvr -s --nostart --servername "${nvim_listen_address}" --remote-send "${cmd}"
 7. Open two terminals
 - run `cd to/your/project ; vi` in one of them
 - run `cd to/your/project ; cargo lcheck` in the other
-    - optionally set `CARGO_MSG_LIMIT=1` if you want to open at most 1 file automatically
 
 ## Result
 For each file affected by error (or warning as well, in case of running `cargo llcheck`) Neovim will:
