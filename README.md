@@ -45,6 +45,8 @@ cargo lrustdoc
 cargo ltest
 ```
 
+To open external app for warnings (besides errors) — use `cargo llrun`, etc.
+
 ### Environment variables
 - `CARGO_MSG_LIMIT`
     - limit compiler messages number
@@ -63,13 +65,10 @@ cargo ltest
     - show dependencies' warnings
     - `false` is default
 - `CARGO_OPEN`
-    - opens affected files in external application
+    - opens affected files in external app
         - see [neovim integration](NEOVIM-INTEGRATION.md) as example
-    - empty (`""`) means don't run external application
+    - empty (`""`) means don't run external app
     - empty is default
-- `CARGO_OPEN_WARN`
-    - open warnings (besides errors) in external application
-    - `false` is default
 
 ## Why?
 Initially it was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189). Consider a program:

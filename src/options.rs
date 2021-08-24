@@ -51,6 +51,13 @@ pub struct Options {
     short_message_format: bool,
 }
 
+#[derive(Debug, PartialEq)]
+struct ParsedSubcommand {
+    subcommand: String,
+    open_in_external_app_on_warnings: bool,
+    remaining_args: Vec<String>,
+}
+
 impl Default for Options {
     fn default() -> Self {
         Self {
@@ -108,10 +115,6 @@ impl Options {
         )?;
         Self::parse_var("CARGO_DEPS_WARN", &mut result.show_dependencies_warnings)?;
         Self::parse_var("CARGO_OPEN", &mut result.open_in_external_app)?;
-        Self::parse_var(
-            "CARGO_OPEN_WARN",
-            &mut result.open_in_external_app_on_warnings,
-        )?;
 
         Ok(result)
     }
@@ -126,8 +129,14 @@ impl Options {
         args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
-        let (subcommand, args) = Self::parse_subcommand(args, current_exe)?;
-        let mut args = args.into_iter();
+        let ParsedSubcommand {
+            subcommand,
+            open_in_external_app_on_warnings,
+            remaining_args,
+        } = ParsedSubcommand::parse(args, current_exe)?;
+        self.open_in_external_app_on_warnings = open_in_external_app_on_warnings;
+
+        let mut args = remaining_args.into_iter();
         self.cargo_args.push(subcommand.clone());
 
         let mut color = COLOR_AUTO.to_owned();
@@ -151,36 +160,6 @@ impl Options {
         self.process_custom_runners(subcommand, app_color_is_set, workspace_root)?;
 
         Ok(self)
-    }
-
-    fn parse_subcommand(
-        args: impl Iterator<Item = String>,
-        current_exe: String,
-    ) -> Result<(String, Vec<String>)> {
-        let current_exe = current_exe.to_lowercase();
-        let (_, subcommand) = current_exe
-            .split_once(EXECUTABLE_PREFIX)
-            .ok_or_else(|| format_err!("invalid arguments"))?;
-        let mut peekable_args = args.peekable();
-        loop {
-            let arg = peekable_args.peek();
-            let executable = arg
-                .and_then(|arg| Path::new(arg).file_stem())
-                .map(|i| i.to_string_lossy());
-            if let Some(executable) = executable {
-                if executable == CARGO_EXECUTABLE
-                    || executable == current_exe
-                    || executable == format!("l{}", subcommand)
-                {
-                    let _ = peekable_args.next();
-                } else {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-        Ok((subcommand.to_owned(), peekable_args.collect()))
     }
 
     fn parse_options(
@@ -333,6 +312,50 @@ impl Options {
     fn add_color_arg(&mut self, value: &str) {
         self.args_after_app_args_delimiter
             .push(format!("{}{}", COLOR, value));
+    }
+}
+
+impl ParsedSubcommand {
+    fn parse(args: impl Iterator<Item = String>, current_exe: String) -> Result<Self> {
+        let current_exe = current_exe.to_lowercase();
+        let (_, subcommand) = current_exe
+            .split_once(EXECUTABLE_PREFIX)
+            .ok_or_else(|| format_err!("invalid arguments"))?;
+        let (open_in_external_app_on_warnings, subcommand) = if subcommand.starts_with('l') {
+            let (_, subcommand) = subcommand
+                .split_once('l')
+                .ok_or_else(|| format_err!("invalid arguments"))?;
+            (true, subcommand)
+        } else {
+            (false, subcommand)
+        };
+
+        let mut peekable_args = args.peekable();
+        loop {
+            let arg = peekable_args.peek();
+            let executable = arg
+                .and_then(|arg| Path::new(arg).file_stem())
+                .map(|i| i.to_string_lossy());
+            if let Some(executable) = executable {
+                if executable == CARGO_EXECUTABLE
+                    || executable == current_exe
+                    || executable == format!("l{}", subcommand)
+                    || executable == format!("ll{}", subcommand)
+                {
+                    let _ = peekable_args.next();
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(Self {
+            subcommand: subcommand.to_owned(),
+            open_in_external_app_on_warnings,
+            remaining_args: peekable_args.collect(),
+        })
     }
 }
 
@@ -546,6 +569,17 @@ mod tests {
             vec![],
             Options {
                 json_message_format: true,
+                ..Options::default()
+            },
+            STUB_MINIMAL,
+        )?;
+
+        assert_options(
+            vec!["cargo-llrun"],
+            vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
+            vec![],
+            Options {
+                open_in_external_app_on_warnings: true,
                 ..Options::default()
             },
             STUB_MINIMAL,
@@ -956,8 +990,12 @@ mod tests {
         let mut args = to_string(input.into_iter().skip(1));
         let expected_remaining_args = to_string(expected_remaining_args).collect();
         assert_eq!(
-            Options::parse_subcommand(&mut args, subcommand)?,
-            ((expected_subcommand.to_owned(), expected_remaining_args))
+            ParsedSubcommand::parse(&mut args, subcommand)?,
+            ParsedSubcommand {
+                subcommand: expected_subcommand.to_owned(),
+                open_in_external_app_on_warnings: false,
+                remaining_args: expected_remaining_args,
+            }
         );
         Ok(())
     }
