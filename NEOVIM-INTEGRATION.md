@@ -27,7 +27,7 @@ Run `nvim +PlugInstall +UpdateRemotePlugins +qa` to install it.
 #!/bin/bash
 
 workspace_root="$1"
-workspace_root_escaped=$(echo "$1" | sed 's!/!%!g')
+workspace_root_escaped=$(echo "$1" | sed 's![/\\:]!%!g')
 nvim_listen_address="/tmp/nvim-cargo-limit-${USER}/${workspace_root_escaped}"
 
 shift
