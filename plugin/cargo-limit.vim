@@ -1,4 +1,3 @@
-"TODO: detect OS, set named pipe on windows
 "TODO: escape paths with spaces and weird characters?
 "TODO: escape windows username?
 "TODO: detect whether cargo installed?
@@ -15,15 +14,25 @@ function! s:on_cargo_metadata_stdout(_job_id, data, event)
       let l:metadata = json_decode(l:stdout)
       let l:workspace_root = get(l:metadata, 'workspace_root')
       let l:escaped_workspace_root = substitute(workspace_root, '/', '%', 'g')
-
-      let l:server_address_dir = '/tmp/nvim-cargo-limit-' . $USER
-      call mkdir(l:server_address_dir, 'p', 0700)
-
-      let l:server_address_path = l:server_address_dir . '/' . l:escaped_workspace_root
-      if !filereadable(l:server_address_path)
-        call serverstart(l:server_address_path)
+      let l:server_address = s:create_server_address(l:escaped_workspace_root)
+      if !filereadable(l:server_address)
+        call serverstart(l:server_address)
       endif
     endif
+  endif
+endfunction
+
+function! s:create_server_address(escaped_workspace_root)
+  let l:prefix = 'nvim-cargo-limit-'
+  if has('win32')
+    return '\\.\pipe\' . l:prefix . $USERNAME . '-' . a:escaped_workspace_root
+  elseif has('unix')
+    let l:server_address_dir =  '/tmp/' . l:prefix . $USER
+    call mkdir(l:server_address_dir, 'p', 0700)
+    let l:server_address = l:server_address_dir . '/' . a:escaped_workspace_root
+    return l:server_address
+  else
+    throw 'unsupported OS'
   endif
 endfunction
 
