@@ -13,7 +13,7 @@ function! s:on_cargo_metadata_stdout(_job_id, data, event)
     if len(l:stdout) > 0
       let l:metadata = json_decode(l:stdout)
       let l:workspace_root = get(l:metadata, 'workspace_root')
-      let l:escaped_workspace_root = substitute(workspace_root, '/', '%', 'g')
+      let l:escaped_workspace_root = substitute(workspace_root, '[/\\:]', '%', 'g')
       let l:server_address = s:create_server_address(l:escaped_workspace_root)
       if !filereadable(l:server_address)
         call serverstart(l:server_address)
