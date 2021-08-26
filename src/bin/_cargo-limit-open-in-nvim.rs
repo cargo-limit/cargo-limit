@@ -83,7 +83,7 @@ impl NeovimRemote {
         }))
     }
 
-    fn run(self) -> Result<ExitStatus> {
+    fn run(self) -> Result<Option<ExitStatus>> {
         const PREFIX: &str = "nvim-cargo-limit-";
 
         let NeovimRemote {
@@ -127,27 +127,35 @@ impl NeovimRemote {
             &nvim_command,
         ];
 
-        let Output {
-            status,
-            stdout,
-            stderr,
-        } = Command::new("nvr").args(nvr_args).output()?;
+        match Command::new("nvr").args(nvr_args).output() {
+            Ok(Output {
+                status,
+                stdout,
+                stderr,
+            }) => {
+                let mut stdout_writer = io::stdout();
+                stdout_writer.write(&stdout)?;
+                stdout_writer.flush()?;
 
-        let mut stdout_writer = io::stdout();
-        stdout_writer.write(&stdout)?;
-        stdout_writer.flush()?;
+                let mut stderr_writer = io::stderr();
+                stderr_writer.write(&stderr)?;
+                stderr_writer.flush()?;
 
-        let mut stderr_writer = io::stderr();
-        stderr_writer.write(&stderr)?;
-        stderr_writer.flush()?;
-
-        Ok(status)
+                Ok(Some(status))
+            },
+            Err(err) if err.kind() == io::ErrorKind::NotFound => return Ok(None),
+            Err(err) => return Err(Error::from(err)),
+        }
     }
 }
 
 fn main() -> Result<()> {
     let code = if let Some(neovim_remote) = NeovimRemote::parse_args(env::args())? {
-        neovim_remote.run()?.code().unwrap_or(NO_EXIT_CODE)
+        if let Some(status) = neovim_remote.run()? {
+            status.code().unwrap_or(NO_EXIT_CODE)
+        } else {
+            NO_EXIT_CODE
+        }
     } else {
         0
     };
