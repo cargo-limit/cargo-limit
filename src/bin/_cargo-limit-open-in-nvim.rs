@@ -59,7 +59,7 @@ impl NeovimRemote {
             .replace(':', ESCAPE_CHAR);
 
         let mut command = Vec::new();
-        for i in args {
+        for i in args.collect::<Vec<_>>().into_iter().rev() {
             let SourceFile {
                 relative_path,
                 line,
