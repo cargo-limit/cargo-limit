@@ -76,7 +76,7 @@ impl NeovimRemote {
             command.push("|".to_owned());
         }
 
-        let nvim_command = command.join(""); // TODO: "|"?
+        let nvim_command = command.join("");
         Ok(Some(Self {
             escaped_workspace_root,
             nvim_command,
