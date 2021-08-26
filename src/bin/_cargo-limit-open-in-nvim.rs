@@ -59,16 +59,17 @@ impl NeovimRemote {
                 column,
             } = i.parse()?;
             let full_path = workspace_root.join(relative_path);
-            command.push("<esc>:tab drop ");
-            command.push(&full_path.to_string_lossy());
-            command.push("<cr>");
-            command.push(line.to_string().as_str());
-            command.push("G");
-            command.push(column.to_string().as_str());
-            command.push("|");
+
+            command.push("<esc>:tab drop ".to_owned());
+            command.push(full_path.to_string_lossy().to_string());
+            command.push("<cr>".to_owned());
+            command.push(line.to_string());
+            command.push("G".to_owned());
+            command.push(column.to_string());
+            command.push("|".to_owned());
         }
 
-        let nvim_command = command.join("");
+        let nvim_command = command.join(""); // TODO: "|"?
         Ok(Some(Self {
             escaped_workspace_root,
             nvim_command,
