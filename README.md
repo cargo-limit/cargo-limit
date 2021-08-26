@@ -40,8 +40,8 @@ Install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 ### Testing
 1. Open two terminals
 2. `cd your/project/directory` in both of them
-3. In one terminal open `nvim`
-4. In another run `cargo lrun`
+3. Run `nvim` in one of them
+4. Run `cargo lrun` in the other one
 5. In case of compiling error `nvim` will open new or existing tab with the file on affected line
 6. Use `cargo llrun` (`llcheck`, etc.) to make Neovim react on warnings besides errors as well.
 

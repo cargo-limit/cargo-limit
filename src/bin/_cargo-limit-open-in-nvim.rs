@@ -154,7 +154,7 @@ fn main() -> Result<()> {
         if let Some(status) = neovim_remote.run()? {
             status.code().unwrap_or(NO_EXIT_CODE)
         } else {
-            NO_EXIT_CODE
+            NO_EXIT_CODE // TODO: or 0? or something else?
         }
     } else {
         0
