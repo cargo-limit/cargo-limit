@@ -48,6 +48,8 @@ Install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 ### Other text editors/IDEs integration
 TODO
 
+example for vscode? gedit?
+
 ## Usage
 Run any of these in your project directory:
 ```

@@ -127,6 +127,7 @@ impl NeovimRemote {
             &nvim_command,
         ];
 
+        // TODO: rnvr?
         match Command::new("nvr").args(nvr_args).output() {
             Ok(Output {
                 status,
