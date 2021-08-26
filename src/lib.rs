@@ -19,7 +19,9 @@ use std::{
 
 pub(crate) const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
-const NO_EXIT_CODE: i32 = 127;
+
+#[doc(hidden)]
+pub const NO_EXIT_CODE: i32 = 127;
 
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     include_str!("../additional_environment_variables.txt");

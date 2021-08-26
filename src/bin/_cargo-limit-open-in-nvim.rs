@@ -1,5 +1,12 @@
 use anyhow::{format_err, Error, Result};
-use std::{env, path::PathBuf, str::FromStr};
+use cargo_limit::NO_EXIT_CODE;
+use std::{
+    env, io,
+    io::Write,
+    path::PathBuf,
+    process::{exit, Command, ExitStatus, Output},
+    str::FromStr,
+};
 
 struct SourceFile {
     relative_path: PathBuf,
@@ -76,7 +83,7 @@ impl NeovimRemote {
         }))
     }
 
-    fn run(self) -> Result<()> {
+    fn run(self) -> Result<ExitStatus> {
         const PREFIX: &str = "nvim-cargo-limit-";
 
         let NeovimRemote {
@@ -111,8 +118,7 @@ impl NeovimRemote {
             }
         };
 
-        let args = vec![
-            "nvr",
+        let nvr_args = vec![
             "-s",
             "--nostart",
             "--servername",
@@ -120,18 +126,32 @@ impl NeovimRemote {
             "--remote-send",
             &nvim_command,
         ];
-        dbg!(args);
-        // TODO: run it here
 
-        Ok(())
+        let Output {
+            status,
+            stdout,
+            stderr,
+        } = Command::new("nvr").args(nvr_args).output()?;
+
+        let mut stdout_writer = io::stdout();
+        stdout_writer.write(&stdout)?;
+        stdout_writer.flush()?;
+
+        let mut stderr_writer = io::stderr();
+        stderr_writer.write(&stderr)?;
+        stderr_writer.flush()?;
+
+        Ok(status)
     }
 }
 
 fn main() -> Result<()> {
-    if let Some(neovim_remote) = NeovimRemote::parse_args(env::args())? {
-        neovim_remote.run()?;
-    }
-    Ok(())
+    let code = if let Some(neovim_remote) = NeovimRemote::parse_args(env::args())? {
+        neovim_remote.run()?.code().unwrap_or(NO_EXIT_CODE)
+    } else {
+        0
+    };
+    exit(code);
 }
 
 // TODO: write test?

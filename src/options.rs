@@ -69,7 +69,7 @@ impl Default for Options {
             ascending_messages_order: false,
             show_warnings_if_errors_exist: false,
             show_dependencies_warnings: false,
-            open_in_external_app: "".to_owned(),
+            open_in_external_app: "_cargo-limit-open-in-nvim".to_owned(),
             open_in_external_app_on_warnings: false,
             help: false,
             version: false,
