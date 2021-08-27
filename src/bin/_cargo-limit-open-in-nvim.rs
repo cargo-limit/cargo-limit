@@ -95,7 +95,7 @@ impl NeovimRemote {
             #[cfg(windows)]
             {
                 format!(
-                    "\\\\.\\pipe\\{}{}-{}",
+                    r"\\.\pipe\{}{}-{}",
                     PREFIX,
                     env::var("USERNAME")?,
                     escaped_workspace_root
