@@ -31,9 +31,7 @@ for ((i=${#files[@]}-1; i>=0; i--)); do
     gedit "${filename}" "+${line}:${column}" &
 done
 ```
-
 2. `chmod +x open-in-gedit.sh`
 3. Set `CARGO_EDITOR=/path/to/open-in-gedit.sh` environment variable
-4. Run `cargo lrun` in your project, it will open `gedit` on the affected line and column in case of compiling error
-
-`cargo llrun` will open it in case of warnings as well.
+4. Run `cargo lrun` in your project directory, in case of compiling error it will open files in `gedit` on affected lines and columns
+5. `cargo llrun` will open them in case of warnings as well.
