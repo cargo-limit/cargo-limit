@@ -69,19 +69,7 @@ cargo ltest
     - `"_cargo-limit-open-in-nvim"` is default
 
 ## Neovim integration
-Enable the plugin in your `~/.config/nvim/init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
-```viml
-Plug 'alopatindev/cargo-limit', { 'branch': 'nvim-plugin', 'do': 'cargo install --force --git https://github.com/alopatindev/nvim-send' }
-```
-and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
-
-### Testing
-1. Open two terminals
-2. `cd your/project/directory` in both of them
-3. Run `nvim` in one of them
-4. Run `cargo lrun` in the other
-5. In case of compiling error `nvim` will open new or existing tabs with the files on affected lines and columns
-6. `cargo llrun` (`cargo llcheck`, etc.) will make `nvim` open them in case of warnings as well.
+See [here](EDITOR-INTEGRATION.md#neovim-integration)
 
 ## Other text editors/IDEs integration
 See [here](EDITOR-INTEGRATION.md#other-text-editorsides-integration).
