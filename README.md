@@ -84,7 +84,7 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 6. Use `cargo llrun` (`llcheck`, etc.) to make Neovim react on warnings besides errors as well.
 
 ### Other text editors/IDEs integration
-TODO
+See [here](EDITOR-INTEGRATION.md#other-text-editors-ides-integration).
 
 ## Why "limit"?
 Initially it was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189).

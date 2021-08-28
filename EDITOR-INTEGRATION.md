@@ -1,7 +1,8 @@
-TODO: change filename to IDE-INTEGRATION.md, refer from readme
+# Neovim
+See [here](../#neovim-integration).
 
 # Other text editors/IDEs integration
-`cargo-limit` can run an external app, providing it a list of affected files, lines and columns as arguments in the following format:
+cargo-limit can run an external app, providing it a project path and a list of affected files, lines and columns as arguments in the following format:
 
 ```
 /full/path/to/project relative/path/to/file1.rs:10:5 relative/path/to/file2.rs:4:1
