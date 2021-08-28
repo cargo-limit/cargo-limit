@@ -33,15 +33,15 @@ cargo install --force --git https://github.com/alopatindev/cargo-limit
 ## Neovim integration
 Enable the plugin in your `~/.config/nvim/init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
 ```viml
-Plug 'alopatindev/cargo-limit'
+Plug 'alopatindev/cargo-limit', { 'branch': 'nvim-plugin', 'do': 'cargo install --force --git https://github.com/alopatindev/nvim-send' }
 ```
-Install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
+and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 
 ### Testing
 1. Open two terminals
 2. `cd your/project/directory` in both of them
 3. Run `nvim` in one of them
-4. Run `cargo lrun` in the other one
+4. Run `cargo lrun` in the other
 5. In case of compiling error `nvim` will open new or existing tab with the file on affected line
 6. Use `cargo llrun` (`llcheck`, etc.) to make Neovim react on warnings besides errors as well.
 
