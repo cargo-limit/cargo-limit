@@ -39,6 +39,15 @@ fn next<T>(iter: &mut impl Iterator<Item = T>) -> Result<T> {
     iter.next().context("invalid arguments")
 }
 
+fn escape(text: &str) -> String {
+    text.replace(r"\", r"\\")
+        .replace(r#"""#, r#"\""#)
+        .replace("'", r"\'")
+        .replace("[", r"\[")
+        .replace("<", r"\<")
+        .replace(" ", r"\ ")
+}
+
 impl NeovimRemote {
     fn parse_args(mut args: impl Iterator<Item = String>) -> Result<Option<Self>> {
         const ESCAPE_CHAR: &str = "%";
@@ -51,6 +60,7 @@ impl NeovimRemote {
 
         let workspace_root = next(&mut args)?.parse::<PathBuf>()?;
 
+        // TODO: rename?
         let escaped_workspace_root = workspace_root
             .to_string_lossy()
             .replace('/', ESCAPE_CHAR)
@@ -65,9 +75,9 @@ impl NeovimRemote {
                 column,
             } = i.parse()?;
             let full_path = workspace_root.join(relative_path);
-
+            let escaped_full_path = escape(&full_path.to_string_lossy());
             command.push("<esc>:tab drop ".to_owned());
-            command.push(full_path.to_string_lossy().to_string());
+            command.push(escaped_full_path);
             command.push("<cr>".to_owned());
             command.push(line.to_string());
             command.push("G".to_owned());
@@ -157,6 +167,18 @@ fn main() -> Result<()> {
         0
     };
     exit(code);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test() {
+        let input = r###"/tmp/ ss z^_+<>,'=+@;]["11\z /asdf"###;
+        let expected = r###"/tmp/\ ss\ z^_+\<>,\'=+@;]\[\"11\\z\ /asdf"###;
+        assert_eq!(escape(input), expected);
+    }
 }
 
 // TODO: write test?
