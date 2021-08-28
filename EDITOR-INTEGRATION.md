@@ -45,5 +45,6 @@ done
 ```
 2. `chmod +x open-in-gedit.sh`
 3. Set `CARGO_EDITOR=/path/to/open-in-gedit.sh` environment variable
-4. Run `cargo lrun` in your project directory, in case of compiling error it will open files in `gedit` on affected lines and columns
-5. `cargo llrun` (`cargo llcheck`, etc.) will open them in case of warnings as well.
+4. Run `cargo lrun` in your project directory
+5. In case of compiling error it will open files in `gedit` on affected lines and columns
+6. `cargo llrun` (`cargo llcheck`, etc.) will open them in case of warnings as well.
