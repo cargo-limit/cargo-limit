@@ -39,8 +39,8 @@ fn next<T>(iter: &mut impl Iterator<Item = T>) -> Result<T> {
     iter.next().context("invalid arguments")
 }
 
-fn escape(text: &str) -> String {
-    text.replace(r"\", r"\\")
+fn escape_for_neovim_command(path: &str) -> String {
+    path.replace(r"\", r"\\")
         .replace(r#"""#, r#"\""#)
         .replace("'", r"\'")
         .replace("[", r"\[")
@@ -60,7 +60,6 @@ impl NeovimRemote {
 
         let workspace_root = next(&mut args)?.parse::<PathBuf>()?;
 
-        // TODO: rename?
         let escaped_workspace_root = workspace_root
             .to_string_lossy()
             .replace('/', ESCAPE_CHAR)
@@ -75,7 +74,7 @@ impl NeovimRemote {
                 column,
             } = i.parse()?;
             let full_path = workspace_root.join(relative_path);
-            let escaped_full_path = escape(&full_path.to_string_lossy());
+            let escaped_full_path = escape_for_neovim_command(&full_path.to_string_lossy());
             command.push("<esc>:tab drop ".to_owned());
             command.push(escaped_full_path);
             command.push("<cr>".to_owned());
@@ -177,7 +176,7 @@ mod tests {
     fn test() {
         let input = r###"/tmp/ ss z^_+<>,'=+@;]["11\z /asdf"###;
         let expected = r###"/tmp/\ ss\ z^_+\<>,\'=+@;]\[\"11\\z\ /asdf"###;
-        assert_eq!(escape(input), expected);
+        assert_eq!(escape_for_neovim_command(input), expected);
     }
 }
 
