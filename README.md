@@ -82,7 +82,7 @@ cargo ltest
 - `CARGO_DEPS_WARN`
     - show dependencies' warnings
     - `false` is default
-- `CARGO_OPEN`
+- `CARGO_EDITOR`
     - opens affected files in external app
         - see [neovim integration](NEOVIM-INTEGRATION.md) as example
     - empty (`""`) means don't run external app

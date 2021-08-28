@@ -47,7 +47,7 @@ nvr -s --nostart --servername "${nvim_listen_address}" --remote-send "${cmd}"
 
 4. `chmod +x open-in-nvim`
 
-5. Set `CARGO_OPEN=open-in-nvim` environment variable
+5. Set `CARGO_EDITOR=open-in-nvim` environment variable
 
 6. Open two terminals
 - run `cd to/your/project ; vi` in one of them
