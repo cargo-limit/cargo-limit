@@ -175,7 +175,7 @@ mod tests {
     #[test]
     fn test() {
         let input = r###"/tmp/ ss z^_+<>,'=+@;]["11\z /asdf"###;
-        let expected = r###"/tmp/\ ss\ z^_+\<>,\'=+@;]\[\"11\\z\ /asdf"###;
+        let expected = r###"/tmp/\ ss\ z^_+<LT>>,\'=+@;]\[\"11\\z\ /asdf"###;
         assert_eq!(escape_for_neovim_command(input), expected);
     }
 }
