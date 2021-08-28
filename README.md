@@ -48,7 +48,7 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 ### Other text editors/IDEs integration
 TODO
 
-example for vscode? gedit?
+example for vscode? `gedit +line:column`?
 
 ## Usage
 Run any of these in your project directory:
