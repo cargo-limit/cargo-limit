@@ -69,7 +69,7 @@ cargo ltest
     - `"_cargo-limit-open-in-nvim"` is default
 
 ## Neovim integration
-See [here](EDITOR-INTEGRATION.md#neovim-integration)
+See [here](EDITOR-INTEGRATION.md#neovim-integration).
 
 ## Other text editors/IDEs integration
 See [here](EDITOR-INTEGRATION.md#other-text-editorsides-integration).
