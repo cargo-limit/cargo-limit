@@ -44,7 +44,7 @@ fn escape_for_neovim_command(path: &str) -> String {
         .replace(r#"""#, r#"\""#)
         .replace("'", r"\'")
         .replace("[", r"\[")
-        .replace("<", r"\<")
+        .replace("<", r"<LT>")
         .replace(" ", r"\ ")
 }
 
