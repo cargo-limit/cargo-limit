@@ -30,26 +30,6 @@ cargo install cargo-limit
 cargo install --force --git https://github.com/alopatindev/cargo-limit
 ```
 
-## Neovim integration
-Enable the plugin in your `~/.config/nvim/init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
-```viml
-Plug 'alopatindev/cargo-limit', { 'branch': 'nvim-plugin', 'do': 'cargo install --force --git https://github.com/alopatindev/nvim-send' }
-```
-and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
-
-### Testing
-1. Open two terminals
-2. `cd your/project/directory` in both of them
-3. Run `nvim` in one of them
-4. Run `cargo lrun` in the other
-5. In case of compiling error `nvim` will open new or existing tab with the file on affected line
-6. Use `cargo llrun` (`llcheck`, etc.) to make Neovim react on warnings besides errors as well.
-
-### Other text editors/IDEs integration
-TODO
-
-example for vscode? `gedit +line:column`?
-
 ## Usage
 Run any of these in your project directory:
 ```
@@ -87,6 +67,24 @@ cargo ltest
         - see [neovim integration](NEOVIM-INTEGRATION.md) as example
     - empty (`""`) means don't run external app
     - `"_cargo-limit-open-in-nvim"` is default
+
+## Neovim integration
+Enable the plugin in your `~/.config/nvim/init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
+```viml
+Plug 'alopatindev/cargo-limit', { 'branch': 'nvim-plugin', 'do': 'cargo install --force --git https://github.com/alopatindev/nvim-send' }
+```
+and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
+
+### Testing
+1. Open two terminals
+2. `cd your/project/directory` in both of them
+3. Run `nvim` in one of them
+4. Run `cargo lrun` in the other
+5. In case of compiling error `nvim` will open new or existing tab with the file on affected line
+6. Use `cargo llrun` (`llcheck`, etc.) to make Neovim react on warnings besides errors as well.
+
+### Other text editors/IDEs integration
+TODO
 
 ## Why "limit"?
 Initially it was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189).
