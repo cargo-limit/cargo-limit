@@ -119,16 +119,13 @@ impl NeovimRemote {
         };
 
         let nvr_args = vec![
-            "-s",
-            "--nostart",
             "--servername",
             &nvim_listen_address,
             "--remote-send",
             &nvim_command,
         ];
 
-        // TODO: rnvr?
-        match Command::new("nvr").args(nvr_args).output() {
+        match Command::new("nvim-send").args(nvr_args).output() {
             Ok(Output {
                 status,
                 stdout,

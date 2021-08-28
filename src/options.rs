@@ -114,8 +114,7 @@ impl Options {
             &mut result.show_warnings_if_errors_exist,
         )?;
         Self::parse_var("CARGO_DEPS_WARN", &mut result.show_dependencies_warnings)?;
-        Self::parse_var("CARGO_OPEN", &mut result.open_in_external_app)?; // TODO: rename env var!
-                                                                          // TODO: CARGO_HANDLE? CARGO_HANDLER? CARGO_OPEN_APP? CARGO_OPEN_EDITOR? CARGO_CODE_EDITOR?
+        Self::parse_var("CARGO_EDITOR", &mut result.open_in_external_app)?;
 
         Ok(result)
     }
