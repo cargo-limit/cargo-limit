@@ -1,4 +1,4 @@
-use anyhow::{format_err, Error, Result};
+use anyhow::{Context, Error, Result};
 use cargo_limit::NO_EXIT_CODE;
 use std::{
     env, io,
@@ -35,9 +35,8 @@ impl FromStr for SourceFile {
     }
 }
 
-// TODO: is it used somewhere else?
 fn next<T>(iter: &mut impl Iterator<Item = T>) -> Result<T> {
-    iter.next().ok_or_else(|| format_err!("invalid arguments"))
+    iter.next().context("invalid arguments")
 }
 
 impl NeovimRemote {
