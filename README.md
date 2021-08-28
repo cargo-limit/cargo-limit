@@ -80,8 +80,8 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 2. `cd your/project/directory` in both of them
 3. Run `nvim` in one of them
 4. Run `cargo lrun` in the other
-5. In case of compiling error `nvim` will open new or existing tab with the file on affected line
-6. Use `cargo llrun` (`llcheck`, etc.) to make Neovim react on warnings besides errors as well.
+5. In case of compiling error `nvim` will open new or existing tabs with the files on affected lines and columns
+6. `cargo llrun` (`cargo llcheck`, etc.) will make `nvim` open them in case of warnings as well.
 
 ## Other text editors/IDEs integration
 See [here](EDITOR-INTEGRATION.md#other-text-editorsides-integration).

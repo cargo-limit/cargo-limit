@@ -1,5 +1,5 @@
 # Neovim
-See [here](../#neovim-integration).
+See [here](../../#neovim-integration).
 
 # Other text editors/IDEs integration
 cargo-limit can run an external app, providing it a project path and a list of affected files, lines and columns as arguments in the following format:
@@ -34,4 +34,4 @@ done
 2. `chmod +x open-in-gedit.sh`
 3. Set `CARGO_EDITOR=/path/to/open-in-gedit.sh` environment variable
 4. Run `cargo lrun` in your project directory, in case of compiling error it will open files in `gedit` on affected lines and columns
-5. `cargo llrun` will open them in case of warnings as well.
+5. `cargo llrun` (`cargo llcheck`, etc.) will open them in case of warnings as well.
