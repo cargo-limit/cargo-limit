@@ -83,8 +83,8 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 5. In case of compiling error `nvim` will open new or existing tab with the file on affected line
 6. Use `cargo llrun` (`llcheck`, etc.) to make Neovim react on warnings besides errors as well.
 
-### Other text editors/IDEs integration
-See [here](EDITOR-INTEGRATION.md#other-text-editors-ides-integration).
+## Other text editors/IDEs integration
+See [here](EDITOR-INTEGRATION.md#other-text-editorsides-integration).
 
 ## Why "limit"?
 Initially it was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189).
