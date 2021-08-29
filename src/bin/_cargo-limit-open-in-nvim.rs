@@ -14,6 +14,7 @@ struct SourceFile {
     column: usize,
 }
 
+// TODO: rename?
 struct NeovimRemote {
     escaped_workspace_root: String,
     nvim_command: String,
@@ -99,6 +100,7 @@ impl NeovimRemote {
             nvim_command,
         } = self;
 
+        // TODO: extract
         let nvim_listen_address = {
             #[cfg(windows)]
             {

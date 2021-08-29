@@ -22,13 +22,13 @@ cargo-limit can run an external app/script, providing it affected files to stdin
   "workspace_root": "/full/path/to/project",
   "files": [
     {
-      "path": "relative/path/to/file2.rs",
-      "row": 4,
+      "relative_path": "relative/path/to/file2.rs",
+      "line": 4,
       "column": 1
     },
     {
-      "path": "relative/path/to/file1.rs",
-      "row": 10,
+      "relative_path": "relative/path/to/file1.rs",
+      "line": 10,
       "column": 5
     }
   ]
@@ -46,7 +46,7 @@ Theoretically this can be used for any text editor or IDE, especially if it supp
 jq --raw-output '. as $root | $root | .files[] | [
     "gedit",
     $root.workspace_root + "/" + .path,
-    "+" + (.row | tostring) + ":" + (.column | tostring),
+    "+" + (.line | tostring) + ":" + (.column | tostring),
     "&"
 ] | join(" ")' | bash
 ```

@@ -11,8 +11,10 @@ use cargo_metadata::{diagnostic::DiagnosticSpan, Message, MetadataCommand};
 use io::Buffers;
 use messages::{process_messages, ParsedMessages, ProcessedMessages};
 use options::Options;
+use serde::Serialize;
 use std::{
     env, fmt,
+    io::Write,
     path::{Path, PathBuf},
     process::{Command, Stdio},
 };
@@ -25,6 +27,50 @@ pub const NO_EXIT_CODE: i32 = 127;
 
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     include_str!("../additional_environment_variables.txt");
+
+// TODO: move to editor module?
+#[derive(Serialize)]
+struct EditorData {
+    workspace_root: PathBuf,
+    files: Vec<SourceFile>,
+}
+
+// TODO: common struct?
+#[derive(Serialize)]
+struct SourceFile {
+    path: String,
+    line: usize,
+    column: usize,
+}
+
+impl EditorData {
+    fn new(workspace_root: &Path, spans_in_consistent_order: Vec<DiagnosticSpan>) -> Self {
+        let workspace_root = workspace_root.to_path_buf();
+        let files = spans_in_consistent_order
+            .into_iter()
+            .rev()
+            .map(SourceFile::from_diagnostic_span)
+            .collect();
+        Self {
+            workspace_root,
+            files,
+        }
+    }
+
+    fn to_json(&self) -> Result<String> {
+        Ok(serde_json::to_string(&self)?)
+    }
+}
+
+impl SourceFile {
+    fn from_diagnostic_span(span: DiagnosticSpan) -> Self {
+        Self {
+            path: span.file_name,
+            line: span.line_start,
+            column: span.column_start,
+        }
+    }
+}
 
 #[doc(hidden)]
 pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
@@ -107,16 +153,18 @@ fn open_in_external_app_for_affected_files(
 ) -> Result<()> {
     let app = &parsed_args.open_in_external_app;
     if !app.is_empty() {
-        let mut args = vec![workspace_root.to_string_lossy().to_string()];
-        for span in spans_in_consistent_order.into_iter().rev() {
-            args.push(format!(
-                "{}:{}:{}",
-                span.file_name, span.line_start, span.column_start
-            ));
-        }
-        if !args.is_empty() {
+        let editor_data = EditorData::new(workspace_root, spans_in_consistent_order);
+        if !editor_data.files.is_empty() {
+            let mut child = Command::new(app).spawn()?;
+            child
+                .stdin
+                .take()
+                .context("no stdin")?
+                .write(editor_data.to_json()?.as_bytes())?;
+
             let error_text = failed_to_execute_error_text(app);
-            let output = Command::new(app).args(args).output().context(error_text)?;
+            let output = child.wait_with_output().context(error_text)?;
+
             buffers.write_all_to_stderr(&output.stdout)?;
             buffers.write_all_to_stderr(&output.stderr)?;
         }
