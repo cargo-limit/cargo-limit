@@ -1,4 +1,4 @@
-use anyhow::{Context, Error, Result};
+use anyhow::{Error, Result};
 use cargo_limit::{
     models::{EditorData, SourceFile},
     NO_EXIT_CODE,
@@ -6,9 +6,7 @@ use cargo_limit::{
 use std::{
     env, io,
     io::{Read, Write},
-    path::PathBuf,
     process::{exit, Command, ExitStatus, Output},
-    str::FromStr,
 };
 
 // TODO: rename?
