@@ -22,14 +22,14 @@ cargo-limit can run an external app/script, providing it affected files to stdin
   "workspace_root": "/full/path/to/project",
   "files": [
     {
-      "path": "relative/path/to/file1.rs",
-      "row": 10,
-      "column": 5
-    },
-    {
       "path": "relative/path/to/file2.rs",
       "row": 4,
       "column": 1
+    },
+    {
+      "path": "relative/path/to/file1.rs",
+      "row": 10,
+      "column": 5
     }
   ]
 }
