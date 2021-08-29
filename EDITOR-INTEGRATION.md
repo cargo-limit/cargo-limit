@@ -45,7 +45,7 @@ Theoretically this can be used for any text editor or IDE, especially if it supp
 
 jq --raw-output '. as $root | $root | .files[] | [
     "gedit",
-    $root.workspace_root + "/" + .path,
+    $root.workspace_root + "/" + .relative_path,
     "+" + (.line | tostring) + ":" + (.column | tostring),
     "&"
 ] | join(" ")' | bash
