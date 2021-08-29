@@ -5,6 +5,8 @@ Plug 'alopatindev/cargo-limit', { 'do': 'cargo install --force --git https://git
 ```
 and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 
+TODO: use released nvim-send
+
 ## Testing
 1. Open two terminals
 2. `cd your/project/directory` in both of them
