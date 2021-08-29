@@ -1,21 +1,21 @@
 use anyhow::Result;
 use cargo_metadata::diagnostic::DiagnosticSpan;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 // TODO: naming. EditorCall?
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct EditorData {
-    workspace_root: PathBuf,
-    files: Vec<SourceFile>,
+    pub workspace_root: PathBuf,
+    pub files: Vec<SourceFile>,
 }
 
 // TODO: common struct?
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct SourceFile {
-    path: String,
-    line: usize,
-    column: usize,
+    pub relative_path: String, // TODO: PathBuf?
+    pub line: usize,
+    pub column: usize,
 }
 
 impl EditorData {
@@ -32,10 +32,6 @@ impl EditorData {
         }
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.files.is_empty()
-    }
-
     pub fn to_json(&self) -> Result<String> {
         Ok(serde_json::to_string(&self)?)
     }
@@ -44,7 +40,7 @@ impl EditorData {
 impl SourceFile {
     pub fn from_diagnostic_span(span: DiagnosticSpan) -> Self {
         Self {
-            path: span.file_name,
+            relative_path: span.file_name,
             line: span.line_start,
             column: span.column_start,
         }

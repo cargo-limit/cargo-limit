@@ -1,9 +1,11 @@
 //! **Documentation is [here](https://github.com/alopatindev/cargo-limit#readme).**
 
+#[doc(hidden)]
+pub mod models;
+
 mod cargo_toml;
 mod io;
 mod messages;
-mod models;
 mod options;
 mod process;
 
@@ -112,7 +114,7 @@ fn open_in_external_app_for_affected_files(
     if !app.is_empty() {
         // TODO: naming?
         let editor_data = EditorData::new(workspace_root, spans_in_consistent_order);
-        if !editor_data.is_empty() {
+        if !editor_data.files.is_empty() {
             let mut child = Command::new(app).spawn()?;
             child
                 .stdin

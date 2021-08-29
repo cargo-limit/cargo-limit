@@ -1,43 +1,20 @@
 use anyhow::{Context, Error, Result};
-use cargo_limit::NO_EXIT_CODE;
+use cargo_limit::{
+    models::{EditorData, SourceFile},
+    NO_EXIT_CODE,
+};
 use std::{
     env, io,
-    io::Write,
+    io::{Read, Write},
     path::PathBuf,
     process::{exit, Command, ExitStatus, Output},
     str::FromStr,
 };
 
-struct SourceFile {
-    relative_path: PathBuf,
-    line: usize,
-    column: usize,
-}
-
 // TODO: rename?
 struct NeovimRemote {
     escaped_workspace_root: String,
     nvim_command: String,
-}
-
-impl FromStr for SourceFile {
-    type Err = Error;
-
-    fn from_str(text: &str) -> Result<Self, Self::Err> {
-        let mut iter = text.rsplitn(3, ':').collect::<Vec<_>>().into_iter().rev();
-        let relative_path = next(&mut iter)?.parse()?;
-        let line = next(&mut iter)?.parse()?;
-        let column = next(&mut iter)?.parse()?;
-        Ok(Self {
-            relative_path,
-            line,
-            column,
-        })
-    }
-}
-
-fn next<T>(iter: &mut impl Iterator<Item = T>) -> Result<T> {
-    iter.next().context("invalid arguments")
 }
 
 fn escape_for_neovim_command(path: &str) -> String {
@@ -50,31 +27,26 @@ fn escape_for_neovim_command(path: &str) -> String {
 }
 
 impl NeovimRemote {
-    fn parse_args(mut args: impl Iterator<Item = String>) -> Result<Option<Self>> {
+    // TODO: from_editor_data?
+    fn parse_editor_data<R: Read>(input: R) -> Result<Option<Self>> {
         const ESCAPE_CHAR: &str = "%";
 
-        let _ = args.next();
-        let mut args = args.peekable();
-        if args.peek().is_none() {
-            return Ok(None);
-        }
-
-        let workspace_root = next(&mut args)?.parse::<PathBuf>()?;
-
-        let escaped_workspace_root = workspace_root
+        let editor_data: EditorData = serde_json::from_reader(input)?;
+        let escaped_workspace_root = editor_data
+            .workspace_root
             .to_string_lossy()
             .replace('/', ESCAPE_CHAR)
             .replace('\\', ESCAPE_CHAR)
             .replace(':', ESCAPE_CHAR);
 
         let mut command = Vec::new();
-        for i in args.collect::<Vec<_>>().into_iter() {
+        for i in editor_data.files.into_iter() {
             let SourceFile {
                 relative_path,
                 line,
                 column,
-            } = i.parse()?;
-            let full_path = workspace_root.join(relative_path);
+            } = i;
+            let full_path = editor_data.workspace_root.join(relative_path);
             let escaped_full_path = escape_for_neovim_command(&full_path.to_string_lossy());
             command.push("<esc>:tab drop ".to_owned());
             command.push(escaped_full_path);
@@ -158,7 +130,7 @@ impl NeovimRemote {
 }
 
 fn main() -> Result<()> {
-    let code = if let Some(neovim_remote) = NeovimRemote::parse_args(env::args())? {
+    let code = if let Some(neovim_remote) = NeovimRemote::parse_editor_data(&mut io::stdin())? {
         if let Some(status) = neovim_remote.run()? {
             status.code().unwrap_or(NO_EXIT_CODE)
         } else {
