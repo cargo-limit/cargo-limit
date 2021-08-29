@@ -16,7 +16,7 @@ TODO: use released nvim-send
 6. `cargo llrun` (`cargo llcheck`, etc.) will make `nvim` open them in case of warnings as well.
 
 # Other text editors/IDEs integration
-cargo-limit can run an external app/script, providing it affected files to stdin in the following format:
+cargo-limit can run an external app/script with affected files in stdin in the following format:
 ```json
 {
   "workspace_root": "/full/path/to/project",
@@ -25,8 +25,7 @@ cargo-limit can run an external app/script, providing it affected files to stdin
       "relative_path": "relative/path/to/file.rs",
       "line": 4,
       "column": 1
-    },
-    ...
+    }
   ]
 }
 ```
