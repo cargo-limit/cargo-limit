@@ -38,6 +38,7 @@ cargo-limit can run an external app/script, providing it affected files to stdin
 Theoretically this can be used for any text editor or IDE, especially if it supports client/server communication. In order to do that you need a wrapper script that parses the files and gives it to the text editor or IDE client.
 
 ## Example: gedit
+TODO: not very good example as it requires concurrency; in this case files will be opened in arbitrary order
 1. Install [`jq`](https://stedolan.github.io/jq/download/)
 2. Create `open-in-gedit.sh`:
 ```bash
