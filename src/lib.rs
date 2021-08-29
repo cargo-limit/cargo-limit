@@ -108,7 +108,7 @@ fn open_in_external_app_for_affected_files(
     let app = &parsed_args.open_in_external_app;
     if !app.is_empty() {
         let mut args = vec![workspace_root.to_string_lossy().to_string()];
-        for span in spans_in_consistent_order.into_iter() {
+        for span in spans_in_consistent_order.into_iter().rev() {
             args.push(format!(
                 "{}:{}:{}",
                 span.file_name, span.line_start, span.column_start

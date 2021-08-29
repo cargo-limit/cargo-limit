@@ -1,7 +1,7 @@
 # Neovim integration
 Enable the plugin in your `~/.config/nvim/init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
 ```viml
-Plug 'alopatindev/cargo-limit', { 'branch': 'nvim-plugin', 'do': 'cargo install --force --git https://github.com/alopatindev/nvim-send' }
+Plug 'alopatindev/cargo-limit', { 'do': 'cargo install --force --git https://github.com/alopatindev/nvim-send' }
 ```
 and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 
@@ -14,8 +14,7 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 6. `cargo llrun` (`cargo llcheck`, etc.) will make `nvim` open them in case of warnings as well.
 
 # Other text editors/IDEs integration
-cargo-limit can run an external app, providing it affected files to stdin in the following format:
-
+cargo-limit can run an external app/script, providing it affected files to stdin in the following format:
 ```json
 {
   "workspace_root": "/full/path/to/project",
@@ -42,7 +41,7 @@ Theoretically this can be used for any text editor or IDE, especially if it supp
 ```bash
 #!/bin/bash
 
-jq --raw-output '. as $root | $root | [.files[]] | reverse[] | [
+jq --raw-output '. as $root | $root | .files[] | [
     "gedit",
     $root.workspace_root + "/" + .path,
     "+" + (.row | tostring) + ":" + (.column | tostring),
