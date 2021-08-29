@@ -3,6 +3,7 @@
 mod cargo_toml;
 mod io;
 mod messages;
+mod models;
 mod options;
 mod process;
 
@@ -10,8 +11,8 @@ use anyhow::{Context, Result};
 use cargo_metadata::{diagnostic::DiagnosticSpan, Message, MetadataCommand};
 use io::Buffers;
 use messages::{process_messages, ParsedMessages, ProcessedMessages};
+use models::EditorData;
 use options::Options;
-use serde::Serialize;
 use std::{
     env, fmt,
     io::Write,
@@ -27,50 +28,6 @@ pub const NO_EXIT_CODE: i32 = 127;
 
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     include_str!("../additional_environment_variables.txt");
-
-// TODO: move to editor module?
-#[derive(Serialize)]
-struct EditorData {
-    workspace_root: PathBuf,
-    files: Vec<SourceFile>,
-}
-
-// TODO: common struct?
-#[derive(Serialize)]
-struct SourceFile {
-    path: String,
-    line: usize,
-    column: usize,
-}
-
-impl EditorData {
-    fn new(workspace_root: &Path, spans_in_consistent_order: Vec<DiagnosticSpan>) -> Self {
-        let workspace_root = workspace_root.to_path_buf();
-        let files = spans_in_consistent_order
-            .into_iter()
-            .rev()
-            .map(SourceFile::from_diagnostic_span)
-            .collect();
-        Self {
-            workspace_root,
-            files,
-        }
-    }
-
-    fn to_json(&self) -> Result<String> {
-        Ok(serde_json::to_string(&self)?)
-    }
-}
-
-impl SourceFile {
-    fn from_diagnostic_span(span: DiagnosticSpan) -> Self {
-        Self {
-            path: span.file_name,
-            line: span.line_start,
-            column: span.column_start,
-        }
-    }
-}
 
 #[doc(hidden)]
 pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
@@ -153,8 +110,9 @@ fn open_in_external_app_for_affected_files(
 ) -> Result<()> {
     let app = &parsed_args.open_in_external_app;
     if !app.is_empty() {
+        // TODO: naming?
         let editor_data = EditorData::new(workspace_root, spans_in_consistent_order);
-        if !editor_data.files.is_empty() {
+        if !editor_data.is_empty() {
             let mut child = Command::new(app).spawn()?;
             child
                 .stdin
