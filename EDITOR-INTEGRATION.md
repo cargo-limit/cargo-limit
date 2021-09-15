@@ -1,5 +1,5 @@
 # Neovim integration
-Enable the plugin in your `~/.config/nvim/init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
+Enable the plugin in your `init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
 ```viml
 Plug 'alopatindev/cargo-limit', { 'do': 'cargo install nvim-send' }
 ```
