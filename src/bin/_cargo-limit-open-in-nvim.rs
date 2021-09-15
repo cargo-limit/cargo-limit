@@ -10,7 +10,7 @@ use std::{
 };
 
 // TODO: rename?
-struct NeovimRemote {
+struct NeovimClient {
     escaped_workspace_root: String,
     nvim_command: String,
 }
@@ -24,7 +24,7 @@ fn escape_for_neovim_command(path: &str) -> String {
         .replace(" ", r"\ ")
 }
 
-impl NeovimRemote {
+impl NeovimClient {
     fn from_editor_data<R: Read>(input: R) -> Result<Option<Self>> {
         const ESCAPE_CHAR: &str = "%";
 
@@ -64,7 +64,7 @@ impl NeovimRemote {
     fn run(self) -> Result<Option<ExitStatus>> {
         const PREFIX: &str = "nvim-cargo-limit-";
 
-        let NeovimRemote {
+        let NeovimClient {
             escaped_workspace_root,
             nvim_command,
         } = self;
@@ -127,8 +127,8 @@ impl NeovimRemote {
 }
 
 fn main() -> Result<()> {
-    let code = if let Some(neovim_remote) = NeovimRemote::from_editor_data(&mut io::stdin())? {
-        if let Some(status) = neovim_remote.run()? {
+    let code = if let Some(neovim_client) = NeovimClient::from_editor_data(&mut io::stdin())? {
+        if let Some(status) = neovim_client.run()? {
             status.code().unwrap_or(NO_EXIT_CODE)
         } else {
             NO_EXIT_CODE // TODO: or 0? or something else?
