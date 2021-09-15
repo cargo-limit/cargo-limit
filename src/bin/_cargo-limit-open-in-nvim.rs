@@ -77,17 +77,17 @@ impl NeovimClient {
                 stderr,
             }) => {
                 let mut stdout_writer = io::stdout();
-                stdout_writer.write(&stdout)?;
+                stdout_writer.write_all(&stdout)?;
                 stdout_writer.flush()?;
 
                 let mut stderr_writer = io::stderr();
-                stderr_writer.write(&stderr)?;
+                stderr_writer.write_all(&stderr)?;
                 stderr_writer.flush()?;
 
                 Ok(Some(status))
             },
-            Err(err) if err.kind() == io::ErrorKind::NotFound => return Ok(None),
-            Err(err) => return Err(Error::from(err)),
+            Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(None),
+            Err(err) => Err(Error::from(err)),
         }
     }
 }
