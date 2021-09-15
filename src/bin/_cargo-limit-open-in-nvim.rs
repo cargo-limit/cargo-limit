@@ -62,47 +62,13 @@ impl NeovimClient {
     }
 
     fn run(self) -> Result<Option<ExitStatus>> {
-        const PREFIX: &str = "nvim-cargo-limit-";
-
         let NeovimClient {
             escaped_workspace_root,
             nvim_command,
         } = self;
 
-        // TODO: extract
-        let nvim_listen_address = {
-            #[cfg(windows)]
-            {
-                format!(
-                    r"\\.\pipe\{}{}-{}",
-                    PREFIX,
-                    env::var("USERNAME")?,
-                    escaped_workspace_root
-                )
-            }
-
-            #[cfg(unix)]
-            {
-                format!(
-                    "/tmp/{}{}/{}",
-                    PREFIX,
-                    env::var("USER")?,
-                    escaped_workspace_root
-                )
-            }
-
-            #[cfg(not(any(unix, windows)))]
-            {
-                compile_error!("this platform is unsupported")
-            }
-        };
-
-        let nvim_send_args = vec![
-            "--servername",
-            &nvim_listen_address,
-            "--remote-send",
-            &nvim_command,
-        ];
+        let server_name = nvim_listen_address(escaped_workspace_root)?;
+        let nvim_send_args = vec!["--servername", &server_name, "--remote-send", &nvim_command];
 
         match Command::new("nvim-send").args(nvim_send_args).output() {
             Ok(Output {
@@ -126,12 +92,45 @@ impl NeovimClient {
     }
 }
 
+fn nvim_listen_address(escaped_workspace_root: String) -> Result<String> {
+    const PREFIX: &str = "nvim-cargo-limit-";
+
+    let result = {
+        #[cfg(windows)]
+        {
+            format!(
+                r"\\.\pipe\{}{}-{}",
+                PREFIX,
+                env::var("USERNAME")?,
+                escaped_workspace_root
+            )
+        }
+
+        #[cfg(unix)]
+        {
+            format!(
+                "/tmp/{}{}/{}",
+                PREFIX,
+                env::var("USER")?,
+                escaped_workspace_root
+            )
+        }
+
+        #[cfg(not(any(unix, windows)))]
+        {
+            compile_error!("this platform is unsupported")
+        }
+    };
+
+    Ok(result)
+}
+
 fn main() -> Result<()> {
     let code = if let Some(neovim_client) = NeovimClient::from_editor_data(&mut io::stdin())? {
         if let Some(status) = neovim_client.run()? {
             status.code().unwrap_or(NO_EXIT_CODE)
         } else {
-            NO_EXIT_CODE // TODO: or 0? or something else?
+            NO_EXIT_CODE
         }
     } else {
         0
@@ -150,5 +149,3 @@ mod tests {
         assert_eq!(escape_for_neovim_command(input), expected);
     }
 }
-
-// TODO: write test?
