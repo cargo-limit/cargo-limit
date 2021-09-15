@@ -98,6 +98,8 @@ impl NeovimRemote {
             }
         };
 
+        dbg!(&nvim_listen_address);
+
         let nvim_send_args = vec![
             "--servername",
             &nvim_listen_address,
