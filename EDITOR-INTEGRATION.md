@@ -1,11 +1,9 @@
 # Neovim integration
 Enable the plugin in your `~/.config/nvim/init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
 ```viml
-Plug 'alopatindev/cargo-limit', { 'do': 'cargo install --force --git https://github.com/alopatindev/nvim-send' }
+Plug 'alopatindev/cargo-limit', { 'do': 'cargo install nvim-send' }
 ```
 and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
-
-TODO: use released nvim-send
 
 ## Testing
 1. Open two terminals
@@ -13,7 +11,7 @@ TODO: use released nvim-send
 3. Run `nvim` in one of them
 4. Run `cargo lrun` in the other
 5. In case of compiling errors `nvim` will open new or existing tabs with the files on affected lines and columns
-6. `cargo llrun` (`cargo llcheck`, etc.) will make `nvim` open them in case of warnings as well.
+6. `cargo llrun` (`cargo llcheck`, etc.) will open them in case of warnings as well.
 
 # Other text editors/IDEs integration
 cargo-limit can run external app/script and provide affected files in stdin in the following format:
@@ -33,7 +31,6 @@ cargo-limit can run external app/script and provide affected files in stdin in t
 Theoretically this can be used for any text editor or IDE, especially if it supports client/server communication. In order to do that you need a wrapper script that parses the files and gives it to the text editor or IDE client.
 
 ## Example: gedit
-TODO: not very good example as it requires concurrency; in this case files will be opened in arbitrary order
 1. Install [`jq`](https://stedolan.github.io/jq/download/)
 2. Create `open-in-gedit.sh`:
 ```bash
