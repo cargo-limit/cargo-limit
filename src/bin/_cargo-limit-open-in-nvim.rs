@@ -25,8 +25,7 @@ fn escape_for_neovim_command(path: &str) -> String {
 }
 
 impl NeovimRemote {
-    // TODO: from_editor_data?
-    fn parse_editor_data<R: Read>(input: R) -> Result<Option<Self>> {
+    fn from_editor_data<R: Read>(input: R) -> Result<Option<Self>> {
         const ESCAPE_CHAR: &str = "%";
 
         let editor_data: EditorData = serde_json::from_reader(input)?;
@@ -128,7 +127,7 @@ impl NeovimRemote {
 }
 
 fn main() -> Result<()> {
-    let code = if let Some(neovim_remote) = NeovimRemote::parse_editor_data(&mut io::stdin())? {
+    let code = if let Some(neovim_remote) = NeovimRemote::from_editor_data(&mut io::stdin())? {
         if let Some(status) = neovim_remote.run()? {
             status.code().unwrap_or(NO_EXIT_CODE)
         } else {
