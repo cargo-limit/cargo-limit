@@ -1,5 +1,4 @@
-"TODO: escape paths with spaces and weird characters?
-"TODO: escape windows username?
+"TODO: escape windows username? probably no
 "TODO: detect whether cargo installed?
 "TODO: stderr => print error?
 
