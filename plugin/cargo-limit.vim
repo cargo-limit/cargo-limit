@@ -40,10 +40,15 @@ function! s:open_in_new_or_existing_tab(path, line, column)
   " TODO: don't handle this stuff if
   " + current mode is not normal
   " - or no file from project is currently open and active (which means it's netrw/fzf search/etc. is going on)
+  "   - echo expand('%:p')
   " - or current file is unsaved (which means it's probably been edited using normal mode)
+  "   - echo &l:modified
   " - or normal mode input buffer is not empty (for instance we're in the middle on `2G` command)
   " - or command line buffer is not empty (or just : is in the input)
-  " - or search mode is active (/...)
+  "   - filetype? rightleft? modifiable? buftype? (nofile), swapfile? getcmdwintype()?
+  " - or search mode is active (/ or ?)
+  " - or filter commands is active? (!)
+  " - other commands (>/=@- ?)
   if mode() == 'n'
     "TODO: escape path here?
     "call feedkeys('<esc>:tab drop ' . path . '<cr>' . line . 'G' . column . '|')
