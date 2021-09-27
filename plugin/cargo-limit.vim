@@ -35,6 +35,21 @@ function! s:create_server_address(escaped_workspace_root)
   endif
 endfunction
 
+" TODO: pass a list of files?
+function! s:open_in_new_or_existing_tab(path, line, column)
+  " TODO: don't handle this stuff if
+  " + current mode is not normal
+  " - or no file from project is currently open and active (which means it's netrw/fzf search/etc. is going on)
+  " - or current file is unsaved (which means it's probably been edited using normal mode)
+  " - or normal mode input buffer is not empty (for instance we're in the middle on `2G` command)
+  " - or command line buffer is not empty (or just : is in the input)
+  " - or search mode is active (/...)
+  if mode() == 'n'
+    "TODO: escape path here?
+    "call feedkeys('<esc>:tab drop ' . path . '<cr>' . line . 'G' . column . '|')
+  endif
+endfunction
+
 if has('nvim')
   call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
   \ 'on_stdout': function('s:on_cargo_metadata_stdout'),
