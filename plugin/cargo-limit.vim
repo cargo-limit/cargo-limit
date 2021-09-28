@@ -68,9 +68,9 @@ function! CargoLimit_open_in_new_or_existing_tabs(editor_data)
   let l:initial_file_is_part_of_project = s:starts_with(l:initial_file, resolve(l:editor_data.workspace_root)) && filereadable(l:initial_file)
 
   for source_file in l:editor_data.files
+    let l:path = (l:editor_data.workspace_root) . '/' . (source_file.relative_path)
     if l:initial_file_is_part_of_project && mode() == 'n' && &l:modified == 0
       "TODO: escape path here for the command? (escape_for_neovim_command)
-      let l:path = (l:editor_data.workspace_root) . '/' . (source_file.relative_path)
       execute 'tab drop ' . l:path
       call cursor((source_file.line), (source_file.column))
     endif
