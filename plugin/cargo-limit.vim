@@ -39,7 +39,16 @@ function! s:starts_with(longer, shorter) abort
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
 
-" TODO: pass a list of files?
+" TODO: rewrite
+" fn escape_for_neovim_command(path: &str) -> String {
+"     path.replace(r"\", r"\\")
+"         .replace(r#"""#, r#"\""#)
+"         .replace("'", r"\'")
+"         .replace("[", r"\[")
+"         .replace("<", r"<LT>")
+"         .replace(" ", r"\ ")
+" }
+
 function! CargoLimit_open_in_new_or_existing_tabs(editor_data)
   " TODO: don't handle this stuff if
   " + current mode is not normal
@@ -60,8 +69,9 @@ function! CargoLimit_open_in_new_or_existing_tabs(editor_data)
 
   for source_file in l:editor_data.files
     if l:initial_file_is_part_of_project && mode() == 'n' && &l:modified == 0
-      "TODO: escape path here for the command?
-      execute 'tab drop ' . (source_file.relative_path)
+      "TODO: escape path here for the command? (escape_for_neovim_command)
+      let l:path = (l:editor_data.workspace_root) . '/' . (source_file.relative_path)
+      execute 'tab drop ' . l:path
       call cursor((source_file.line), (source_file.column))
     endif
   endfor
