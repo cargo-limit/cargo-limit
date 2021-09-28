@@ -8,10 +8,14 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 ## Testing
 1. Open two terminals
 2. `cd your/project/directory` in both of them
-3. Run `nvim` in one of them
+3. Run `nvim path/to/existing/project/file.rs` in one of them
 4. Run `cargo lrun` in the other
 5. In case of compiling errors `nvim` will open new or existing tabs with the files on affected lines and columns
 6. `cargo llrun` (`cargo llcheck`, etc.) will open them in case of warnings as well.
+
+In order to not disrupt from text editing, this will work only if
+- current mode is normal
+- current file is some existing and unmodified (saved) project file.
 
 # Other text editors/IDEs integration
 cargo-limit can run external app/script and provide affected files in stdin in the following format:

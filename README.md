@@ -64,7 +64,7 @@ cargo ltest
     - `false` is default
 - `CARGO_EDITOR`
     - opens affected files in external app
-        - see [neovim integration](NEOVIM-INTEGRATION.md) as example
+        - see [neovim integration](EDITOR-INTEGRATION.md) as example
     - empty (`""`) means don't run external app
     - `"_cargo-limit-open-in-nvim"` is default
 
