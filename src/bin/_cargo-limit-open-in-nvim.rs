@@ -36,34 +36,8 @@ impl NeovimClient {
             .replace('\\', ESCAPE_CHAR)
             .replace(':', ESCAPE_CHAR);
 
-        //let mut command = Vec::new();
-        //TODO: just give input to nvim as json
-        //        for i in editor_data.files.into_iter() {
-        //            let SourceFile {
-        //                relative_path,
-        //                line,
-        //                column,
-        //            } = i;
-        //            let full_path = editor_data.workspace_root.join(relative_path);
-        //            /*let escaped_full_path = escape_for_neovim_command(&full_path.to_string_lossy());
-        //            command.push("<esc>:tab drop ".to_owned());
-        //            command.push(escaped_full_path);
-        //            command.push("<cr>".to_owned());
-        //            command.push(line.to_string());
-        //            command.push("G".to_owned());
-        //            command.push(column.to_string());
-        //            command.push("|".to_owned());*/
-        //        }
-        //        // s:open_in_new_or_existing_tabs
-        //
-        //        let nvim_command = command.join("");
-        //let mut nvim_command = String::new();
-        //input.read_to_string(&mut nvim_command)?;
-
-        // FIXME: pressing <esc> is actually forcing normal mode
-        // TODO: escape '
         let nvim_command = format!(
-            "<esc>:call CargoLimit_open_in_new_or_existing_tabs('{}')<cr>",
+            "call CargoLimit_open_in_new_or_existing_tabs('{}')",
             serde_json::to_string(&editor_data)?
         );
 
@@ -80,7 +54,7 @@ impl NeovimClient {
         } = self;
 
         let server_name = nvim_listen_address(escaped_workspace_root)?;
-        let nvim_send_args = vec!["--servername", &server_name, "--remote-send", &nvim_command];
+        let nvim_send_args = vec!["--servername", &server_name, "--command", &nvim_command];
 
         match Command::new("nvim-send").args(nvim_send_args).output() {
             Ok(Output {
