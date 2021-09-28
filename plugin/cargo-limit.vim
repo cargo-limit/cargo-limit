@@ -40,7 +40,7 @@ function! s:starts_with(longer, shorter) abort
 endfunction
 
 " TODO: pass a list of files?
-function! CargoLimit_open_in_new_or_existing_tabs(files, workspace_root)
+function! CargoLimit_open_in_new_or_existing_tabs(editor_data)
   " TODO: don't handle this stuff if
   " + current mode is not normal
   " + or no file from project is currently open and active (which means it's netrw/fzf search/etc. is going on)
@@ -54,15 +54,17 @@ function! CargoLimit_open_in_new_or_existing_tabs(files, workspace_root)
   " ? or filter commands is active? (!)
   " ? other commands (>/=@- ?)
 
-  let l:current_file = resolve(expand('%:p'))
-  let l:current_file_is_part_of_project = s:starts_with(l:current_file, resolve(a:workspace_root))
-    for i in a:files
-      if mode() == 'n' && &l:modified == 0 && l:current_file_is_part_of_project && filereadable(l:current_file)
-        "TODO: escape path here for the command?
-        execute 'tab drop ' . (i.path)
-        call cursor((i.line), (i.column))
-      endif
-    endfor
+  let l:editor_data = json_decode(a:editor_data)
+  let l:initial_file = resolve(expand('%:p'))
+  let l:initial_file_is_part_of_project = s:starts_with(l:initial_file, resolve(l:editor_data.workspace_root)) && filereadable(l:initial_file)
+
+  for source_file in l:editor_data.files
+    if l:initial_file_is_part_of_project && mode() == 'n' && &l:modified == 0
+      "TODO: escape path here for the command?
+      execute 'tab drop ' . (source_file.relative_path)
+      call cursor((source_file.line), (source_file.column))
+    endif
+  endfor
 endfunction
 
 if has('nvim')
