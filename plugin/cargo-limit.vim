@@ -47,7 +47,7 @@ function! CargoLimit_open_in_new_or_existing_tabs(files, workspace_root)
   "   - echo expand('%:p')
   " + or current file is unsaved (which means it's probably been edited using normal mode)
   "   - echo &l:modified
-  " ? or normal mode input buffer is not empty (for instance we're in the middle on `2G` command)
+  " ? or normal mode input buffer (typeahead buffer?) is not empty (for instance we're in the middle on `2G` command)
   " + or command line buffer is not empty (or just : is in the input)
   "   - filetype? rightleft? modifiable? buftype? (nofile), swapfile? getcmdwintype()?
   " ? or search mode is active (/ or ?)
@@ -56,12 +56,13 @@ function! CargoLimit_open_in_new_or_existing_tabs(files, workspace_root)
 
   let l:current_file = resolve(expand('%:p'))
   let l:current_file_is_part_of_project = s:starts_with(l:current_file, resolve(a:workspace_root))
-  if mode() == 'n' && &l:modified == 0 && l:current_file_is_part_of_project && filereadable(l:current_file)
-    echo 'worked 3'
-    "TODO: escape path here for the command?
-    "path, line, column from file dict
-    "call feedkeys('<esc>:tab drop ' . path . '<cr>' . line . 'G' . column . '|')
-  endif
+    for i in a:files
+      if mode() == 'n' && &l:modified == 0 && l:current_file_is_part_of_project && filereadable(l:current_file)
+        "TODO: escape path here for the command?
+        execute 'tab drop ' . (i.path)
+        call cursor((i.line), (i.column))
+      endif
+    endfor
 endfunction
 
 if has('nvim')
