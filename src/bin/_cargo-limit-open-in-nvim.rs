@@ -15,13 +15,14 @@ struct NeovimClient {
     nvim_command: String,
 }
 
-fn escape_for_neovim_command(path: &str) -> String {
-    path.replace(r"\", r"\\").replace(r#"""#, r#"\""#)
-    //.replace("'", r"\'")
-    //.replace("[", r"\[")
-    //.replace("<", r"<LT>")
-    //.replace(" ", r"\ ")
-}
+/*fn escape_for_neovim_command(path: &str) -> String {
+    path.replace(r"\", r"\\") // TODO: it fails with one and two backslashes
+        .replace(r#"""#, r#"\""#) // TODO
+        .replace("'", r"\'") // +
+        .replace("[", r"\[") // +
+        .replace("<", r"<LT>") // +
+        .replace(" ", r"\ ") // +
+}*/
 
 impl NeovimClient {
     fn from_editor_data<R: Read>(input: R) -> Result<Option<Self>> {
@@ -35,9 +36,12 @@ impl NeovimClient {
             .replace('\\', ESCAPE_CHAR)
             .replace(':', ESCAPE_CHAR);
 
+        // TODO: pass as byte array without any escaping?
+        let escaped_command = serde_json::to_string(&editor_data)?.replace(r#"""#, r#"\""#);
         let nvim_command = format!(
             r#"call CargoLimit_open_in_new_or_existing_tabs("{}")"#,
-            escape_for_neovim_command(&serde_json::to_string(&editor_data)?)
+            escaped_command,
+            //escape_for_neovim_command(&serde_json::to_string(&editor_data)?)
         );
 
         //println!("{}", nvim_command);
