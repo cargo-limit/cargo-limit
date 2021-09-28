@@ -16,12 +16,11 @@ struct NeovimClient {
 }
 
 fn escape_for_neovim_command(path: &str) -> String {
-    path.replace(r"\", r"\\")
-        .replace(r#"""#, r#"\""#)
-        .replace("'", r"\'")
-        .replace("[", r"\[")
-        .replace("<", r"<LT>")
-        .replace(" ", r"\ ")
+    path.replace(r"\", r"\\").replace(r#"""#, r#"\""#)
+    //.replace("'", r"\'")
+    //.replace("[", r"\[")
+    //.replace("<", r"<LT>")
+    //.replace(" ", r"\ ")
 }
 
 impl NeovimClient {
@@ -37,9 +36,11 @@ impl NeovimClient {
             .replace(':', ESCAPE_CHAR);
 
         let nvim_command = format!(
-            "call CargoLimit_open_in_new_or_existing_tabs('{}')",
-            serde_json::to_string(&editor_data)?
+            r#"call CargoLimit_open_in_new_or_existing_tabs("{}")"#,
+            escape_for_neovim_command(&serde_json::to_string(&editor_data)?)
         );
+
+        //println!("{}", nvim_command);
 
         Ok(Some(Self {
             escaped_workspace_root,
