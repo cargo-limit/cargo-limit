@@ -39,30 +39,7 @@ function! s:starts_with(longer, shorter) abort
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
 
-" TODO: rewrite
-" fn escape_for_neovim_command(path: &str) -> String {
-"     path.replace(r"\", r"\\")
-"         .replace(r#"""#, r#"\""#)
-"         .replace("'", r"\'")
-"         .replace("[", r"\[")
-"         .replace("<", r"<LT>")
-"         .replace(" ", r"\ ")
-" }
-
 function! CargoLimit_open_in_new_or_existing_tabs(editor_data)
-  " TODO: don't handle this stuff if
-  " + current mode is not normal
-  " + or no file from project is currently open and active (which means it's netrw/fzf search/etc. is going on)
-  "   - echo expand('%:p')
-  " + or current file is unsaved (which means it's probably been edited using normal mode)
-  "   - echo &l:modified
-  " ? or normal mode input buffer (typeahead buffer?) is not empty (for instance we're in the middle on `2G` command)
-  " + or command line buffer is not empty (or just : is in the input)
-  "   - filetype? rightleft? modifiable? buftype? (nofile), swapfile? getcmdwintype()?
-  " ? or search mode is active (/ or ?)
-  " ? or filter commands is active? (!)
-  " ? other commands (>/=@- ?)
-
   let l:editor_data = json_decode(a:editor_data)
   let l:initial_file = resolve(expand('%:p'))
   let l:initial_file_is_part_of_project = s:starts_with(l:initial_file, resolve(l:editor_data.workspace_root)) && filereadable(l:initial_file)
