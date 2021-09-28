@@ -35,22 +35,26 @@ function! s:create_server_address(escaped_workspace_root)
   endif
 endfunction
 
+function! s:starts_with(longer, shorter) abort
+  return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
+endfunction
+
 " TODO: pass a list of files?
-function! s:open_in_new_or_existing_tab(path, line, column)
+function! s:open_in_new_or_existing_tab(path, line, column, workspace_root)
   " TODO: don't handle this stuff if
   " + current mode is not normal
   " - or no file from project is currently open and active (which means it's netrw/fzf search/etc. is going on)
   "   - echo expand('%:p')
-  " - or current file is unsaved (which means it's probably been edited using normal mode)
+  " + or current file is unsaved (which means it's probably been edited using normal mode)
   "   - echo &l:modified
-  " - or normal mode input buffer is not empty (for instance we're in the middle on `2G` command)
-  " - or command line buffer is not empty (or just : is in the input)
+  " ? or normal mode input buffer is not empty (for instance we're in the middle on `2G` command)
+  " + or command line buffer is not empty (or just : is in the input)
   "   - filetype? rightleft? modifiable? buftype? (nofile), swapfile? getcmdwintype()?
-  " - or search mode is active (/ or ?)
-  " - or filter commands is active? (!)
-  " - other commands (>/=@- ?)
-  if mode() == 'n'
-    "TODO: escape path here?
+  " ? or search mode is active (/ or ?)
+  " ? or filter commands is active? (!)
+  " ? other commands (>/=@- ?)
+  if mode() == 'n' && &l:modified == 0 && starts_with(resolve(expand('%:p')), workspace_root)
+    "TODO: escape path here for the command?
     "call feedkeys('<esc>:tab drop ' . path . '<cr>' . line . 'G' . column . '|')
   endif
 endfunction
