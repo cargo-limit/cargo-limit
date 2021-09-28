@@ -59,7 +59,13 @@ impl NeovimClient {
         //        let nvim_command = command.join("");
         //let mut nvim_command = String::new();
         //input.read_to_string(&mut nvim_command)?;
-        let nvim_command = serde_json::to_string(&editor_data)?;
+
+        // FIXME: pressing <esc> is actually forcing normal mode
+        // TODO: escape '
+        let nvim_command = format!(
+            "<esc>:call CargoLimit_open_in_new_or_existing_tabs('{}')<cr>",
+            serde_json::to_string(&editor_data)?
+        );
 
         Ok(Some(Self {
             escaped_workspace_root,
