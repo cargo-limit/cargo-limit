@@ -43,7 +43,7 @@ endfunction
 function! CargoLimit_open_in_new_or_existing_tabs(files, workspace_root)
   " TODO: don't handle this stuff if
   " + current mode is not normal
-  " - or no file from project is currently open and active (which means it's netrw/fzf search/etc. is going on)
+  " + or no file from project is currently open and active (which means it's netrw/fzf search/etc. is going on)
   "   - echo expand('%:p')
   " + or current file is unsaved (which means it's probably been edited using normal mode)
   "   - echo &l:modified
@@ -53,8 +53,10 @@ function! CargoLimit_open_in_new_or_existing_tabs(files, workspace_root)
   " ? or search mode is active (/ or ?)
   " ? or filter commands is active? (!)
   " ? other commands (>/=@- ?)
-  let l:current_file_is_part_of_project = s:starts_with(resolve(expand('%:p')), resolve(a:workspace_root))
-  if mode() == 'n' && &l:modified == 0 && l:current_file_is_part_of_project
+
+  let l:current_file = resolve(expand('%:p'))
+  let l:current_file_is_part_of_project = s:starts_with(l:current_file, resolve(a:workspace_root))
+  if mode() == 'n' && &l:modified == 0 && l:current_file_is_part_of_project && filereadable(l:current_file)
     echo 'worked 3'
     "TODO: escape path here for the command?
     "path, line, column from file dict
