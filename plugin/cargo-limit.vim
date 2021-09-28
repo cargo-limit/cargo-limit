@@ -40,7 +40,7 @@ function! s:starts_with(longer, shorter) abort
 endfunction
 
 " TODO: pass a list of files?
-function! s:open_in_new_or_existing_tab(path, line, column, workspace_root)
+function! CargoLimit_open_in_new_or_existing_tabs(files, workspace_root)
   " TODO: don't handle this stuff if
   " + current mode is not normal
   " - or no file from project is currently open and active (which means it's netrw/fzf search/etc. is going on)
@@ -53,8 +53,11 @@ function! s:open_in_new_or_existing_tab(path, line, column, workspace_root)
   " ? or search mode is active (/ or ?)
   " ? or filter commands is active? (!)
   " ? other commands (>/=@- ?)
-  if mode() == 'n' && &l:modified == 0 && starts_with(resolve(expand('%:p')), workspace_root)
+  let l:current_file_is_part_of_project = s:starts_with(resolve(expand('%:p')), resolve(a:workspace_root))
+  if mode() == 'n' && &l:modified == 0 && l:current_file_is_part_of_project
+    echo 'worked 3'
     "TODO: escape path here for the command?
+    "path, line, column from file dict
     "call feedkeys('<esc>:tab drop ' . path . '<cr>' . line . 'G' . column . '|')
   endif
 endfunction
