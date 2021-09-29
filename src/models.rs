@@ -23,11 +23,11 @@ pub struct SourceFile {
 }
 
 impl EditorData {
-    pub fn new(workspace_root: &Path, spans_in_consistent_order: Vec<SourceFile>) -> Self {
+    pub fn new(workspace_root: &Path, source_files_in_consistent_order: Vec<SourceFile>) -> Self {
         let workspace_root = workspace_root.to_path_buf();
         Self {
             workspace_root,
-            files: spans_in_consistent_order, // TODO: naming
+            files: source_files_in_consistent_order, // TODO: naming
         }
     }
 
