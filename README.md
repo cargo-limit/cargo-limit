@@ -8,9 +8,10 @@ Cargo with less noise:
     - all dependencies' warnings are skipped by default
 - all messages come in reversed order by default
     - to avoid extra scrolling
-- [duplicated messages](https://github.com/rust-lang/cargo/issues/3531#issuecomment-272043238) are skipped
 - messages are grouped by filenames
 - number of messages can be limited
+- [duplicated messages](https://github.com/rust-lang/cargo/issues/3531#issuecomment-272043238) are skipped
+    - which is [probably fixed](https://github.com/rust-lang/cargo/pull/9675) in new cargo
 - after encountering first error the rest of build time is limited by default
 - files can be [automatically opened](#neovim-integration) in your text editor on affected lines
 
