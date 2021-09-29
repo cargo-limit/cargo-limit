@@ -1,12 +1,10 @@
-"TODO: escape windows username? probably no
-"TODO: detect whether cargo installed?
-"TODO: stderr => print error?
-
 let s:data_chunks = []
 
-function! s:on_cargo_metadata_stdout(_job_id, data, event)
+function! s:on_cargo_metadata(_job_id, data, event)
   if a:event == 'stdout'
     call add(s:data_chunks, join(a:data, ''))
+  elseif a:event == 'stderr' && type(a:data) == v:t_list && a:data != ['']
+    echoerr join(a:data, '')
   elseif a:event == 'exit'
     let l:stdout = join(s:data_chunks, '')
     if len(l:stdout) > 0
@@ -19,6 +17,10 @@ function! s:on_cargo_metadata_stdout(_job_id, data, event)
       endif
     endif
   endif
+endfunction
+
+function! s:on_cargo_metadata_stderr(_job_id, data, event)
+  "echoerr join(a:data, '')
 endfunction
 
 function! s:create_server_address(escaped_workspace_root)
@@ -56,8 +58,9 @@ endfunction
 
 if has('nvim')
   call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
-  \ 'on_stdout': function('s:on_cargo_metadata_stdout'),
-  \ 'on_exit': function('s:on_cargo_metadata_stdout'),
+  \ 'on_stdout': function('s:on_cargo_metadata'),
+  \ 'on_stderr': function('s:on_cargo_metadata'),
+  \ 'on_exit': function('s:on_cargo_metadata'),
   \ })
 else
   throw 'unsupported text editor'
