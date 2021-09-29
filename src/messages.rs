@@ -82,7 +82,8 @@ pub fn process_messages(
     }
     .collect::<Vec<_>>();
 
-    let source_files_in_consistent_order = extract_spans_for_external_app(&messages, parsed_args);
+    let source_files_in_consistent_order =
+        extract_source_files_for_external_app(&messages, parsed_args);
 
     let messages = messages.into_iter();
     let messages = {
@@ -162,8 +163,7 @@ fn filter_and_order_messages(
         .flat_map(|(_paths, messages)| messages.into_iter())
 }
 
-// TODO: naming
-fn extract_spans_for_external_app(
+fn extract_source_files_for_external_app(
     messages: &[CompilerMessage],
     parsed_args: &Options,
 ) -> Vec<SourceFile> {
