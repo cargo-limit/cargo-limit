@@ -16,7 +16,7 @@ pub struct ParsedMessages {
 
 pub struct ProcessedMessages {
     pub messages: Vec<Message>,
-    pub spans_in_consistent_order: Vec<SourceFile>,
+    pub source_files: Vec<SourceFile>,
 }
 
 impl ParsedMessages {
@@ -82,7 +82,7 @@ pub fn process_messages(
     }
     .collect::<Vec<_>>();
 
-    let spans_in_consistent_order = extract_spans_for_external_app(&messages, parsed_args);
+    let source_files = extract_spans_for_external_app(&messages, parsed_args);
 
     let messages = messages.into_iter();
     let messages = {
@@ -97,7 +97,7 @@ pub fn process_messages(
 
     Ok(ProcessedMessages {
         messages,
-        spans_in_consistent_order,
+        source_files,
     })
 }
 
@@ -190,16 +190,16 @@ fn extract_spans_for_external_app(
         })
         .map(|(span, message)| (find_leaf_project_expansion(span), &message.message));
 
-    let mut spans_in_consistent_order = Vec::new(); // TODO: naming
+    let mut source_files = Vec::new(); // TODO: naming
     let mut used_file_names = HashSet::new();
     for (span, message) in spans_for_external_app {
         if !used_file_names.contains(&span.file_name) {
             used_file_names.insert(span.file_name.clone());
-            spans_in_consistent_order.push(SourceFile::from_diagnostic_data(span, message));
+            source_files.push(SourceFile::from_diagnostic_data(span, message));
         }
     }
 
-    spans_in_consistent_order
+    source_files
 }
 
 fn find_leaf_project_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {
