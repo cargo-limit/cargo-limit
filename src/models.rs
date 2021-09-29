@@ -1,5 +1,5 @@
 use anyhow::Result;
-use cargo_metadata::diagnostic::DiagnosticSpan;
+use cargo_metadata::diagnostic::{Diagnostic, DiagnosticSpan};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -35,5 +35,19 @@ impl EditorData {
 
     pub fn to_json(&self) -> Result<String> {
         Ok(serde_json::to_string(&self)?)
+    }
+}
+
+impl SourceFile {
+    pub fn from_diagnostic_span_and_message(
+        span: DiagnosticSpan,
+        compiler_message: &Diagnostic,
+    ) -> Self {
+        Self {
+            relative_path: span.file_name,
+            line: span.line_start,
+            column: span.column_start,
+            message: compiler_message.message.clone(),
+        }
     }
 }

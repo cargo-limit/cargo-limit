@@ -194,13 +194,10 @@ fn extract_spans_for_external_app(
     for (span, message) in spans_for_external_app {
         if !used_file_names.contains(&span.file_name) {
             used_file_names.insert(span.file_name.clone());
-            //spans_in_consistent_order.push(span);
-            spans_in_consistent_order.push(SourceFile {
-                relative_path: span.file_name,
-                line: span.line_start,
-                column: span.column_start,
-                message: message.message.message.clone(),
-            });
+            spans_in_consistent_order.push(SourceFile::from_diagnostic_span_and_message(
+                span,
+                &message.message,
+            ));
         }
     }
 
