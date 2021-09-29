@@ -3,11 +3,10 @@ use cargo_metadata::diagnostic::{Diagnostic, DiagnosticSpan};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-// TODO: naming. EditorCall?
 #[derive(Deserialize, Serialize)]
 pub struct EditorData {
     pub workspace_root: PathBuf,
-    pub files: Vec<SourceFile>, // TODO: naming
+    pub files: Vec<SourceFile>,
 }
 
 #[derive(Deserialize, Serialize)]
