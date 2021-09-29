@@ -45,11 +45,8 @@ cargo lrustdoc
 cargo ltest
 ```
 
-## Neovim integration
+## Neovim and other text editors/IDEs integration
 See [here](EDITOR-INTEGRATION.md#neovim-integration).
-
-## Other text editors/IDEs integration
-See [here](EDITOR-INTEGRATION.md#other-text-editorsides-integration).
 
 ## Environment variables
 - `CARGO_MSG_LIMIT`
