@@ -69,7 +69,7 @@ impl Default for Options {
             ascending_messages_order: false,
             show_warnings_if_errors_exist: false,
             show_dependencies_warnings: false,
-            open_in_external_app: "".to_owned(),
+            open_in_external_app: "_cargo-limit-open-in-nvim".to_owned(),
             open_in_external_app_on_warnings: false,
             help: false,
             version: false,
@@ -114,7 +114,7 @@ impl Options {
             &mut result.show_warnings_if_errors_exist,
         )?;
         Self::parse_var("CARGO_DEPS_WARN", &mut result.show_dependencies_warnings)?;
-        Self::parse_var("CARGO_OPEN", &mut result.open_in_external_app)?;
+        Self::parse_var("CARGO_EDITOR", &mut result.open_in_external_app)?;
 
         Ok(result)
     }

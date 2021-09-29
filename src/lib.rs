@@ -1,5 +1,8 @@
 //! **Documentation is [here](https://github.com/alopatindev/cargo-limit#readme).**
 
+#[doc(hidden)]
+pub mod models;
+
 mod cargo_toml;
 mod io;
 mod messages;
@@ -10,16 +13,20 @@ use anyhow::{Context, Result};
 use cargo_metadata::{diagnostic::DiagnosticSpan, Message, MetadataCommand};
 use io::Buffers;
 use messages::{process_messages, ParsedMessages, ProcessedMessages};
+use models::EditorData;
 use options::Options;
 use std::{
     env, fmt,
+    io::Write,
     path::{Path, PathBuf},
     process::{Command, Stdio},
 };
 
 pub(crate) const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
-const NO_EXIT_CODE: i32 = 127;
+
+#[doc(hidden)]
+pub const NO_EXIT_CODE: i32 = 127;
 
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     include_str!("../additional_environment_variables.txt");
@@ -36,7 +43,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     let error_text = failed_to_execute_error_text(&cargo_path);
     let mut child = Command::new(cargo_path)
         .args(parsed_args.all_args())
-        .stdout(Stdio::piped())
+        .stdout(Stdio::piped()) // TODO: stderr?
         .spawn()
         .context(error_text)?;
 
@@ -105,16 +112,23 @@ fn open_in_external_app_for_affected_files(
 ) -> Result<()> {
     let app = &parsed_args.open_in_external_app;
     if !app.is_empty() {
-        let mut args = vec![workspace_root.to_string_lossy().to_string()];
-        for span in spans_in_consistent_order.into_iter() {
-            args.push(format!(
-                "{}:{}:{}",
-                span.file_name, span.line_start, span.column_start
-            ));
-        }
-        if !args.is_empty() {
+        // TODO: naming?
+        let editor_data = EditorData::new(workspace_root, spans_in_consistent_order);
+        if !editor_data.files.is_empty() {
+            let mut child = Command::new(app)
+                .stdin(Stdio::piped())
+                //.stdout(Stdio::piped()) // TODO
+                //.stderr(Stdio::piped())
+                .spawn()?;
+            child
+                .stdin
+                .take()
+                .context("no stdin")?
+                .write_all(editor_data.to_json()?.as_bytes())?;
+
             let error_text = failed_to_execute_error_text(app);
-            let output = Command::new(app).args(args).output().context(error_text)?;
+            let output = child.wait_with_output().context(error_text)?;
+
             buffers.write_all_to_stderr(&output.stdout)?;
             buffers.write_all_to_stderr(&output.stderr)?;
         }
