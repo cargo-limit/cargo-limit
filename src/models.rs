@@ -39,9 +39,10 @@ impl EditorData {
 }
 
 impl SourceFile {
+    // TODO: naming
     pub fn from_diagnostic_span_and_message(
         span: DiagnosticSpan,
-        compiler_message: &Diagnostic,
+        compiler_message: &Diagnostic, // TODO: naming
     ) -> Self {
         Self {
             relative_path: span.file_name,
