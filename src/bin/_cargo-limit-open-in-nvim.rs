@@ -1,8 +1,5 @@
 use anyhow::{Error, Result};
-use cargo_limit::{
-    models::{EditorData, SourceFile},
-    NO_EXIT_CODE,
-};
+use cargo_limit::{models::EditorData, NO_EXIT_CODE};
 use std::{
     env, io,
     io::{Read, Write},
@@ -14,15 +11,6 @@ struct NeovimClient {
     escaped_workspace_root: String,
     nvim_command: String,
 }
-
-/*fn escape_for_neovim_command(path: &str) -> String {
-    path.replace(r"\", r"\\") // TODO: it fails with one and two backslashes
-        .replace(r#"""#, r#"\""#) // TODO
-        .replace("'", r"\'") // +
-        .replace("[", r"\[") // +
-        .replace("<", r"<LT>") // +
-        .replace(" ", r"\ ") // +
-}*/
 
 impl NeovimClient {
     fn from_editor_data<R: Read>(input: R) -> Result<Option<Self>> {
@@ -123,16 +111,4 @@ fn main() -> Result<()> {
         0
     };
     exit(code);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test() {
-        let input = r###"/tmp/ ss z^_+<>,'=+@;]["11\z /asdf"###;
-        let expected = r###"/tmp/\ ss\ z^_+<LT>>,\'=+@;]\[\"11\\z\ /asdf"###;
-        assert_eq!(escape_for_neovim_command(input), expected);
-    }
 }
