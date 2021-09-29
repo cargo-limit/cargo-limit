@@ -31,24 +31,18 @@ impl EditorData {
         }
     }
 
-    // TODO: from ...
-
     pub fn to_json(&self) -> Result<String> {
         Ok(serde_json::to_string(&self)?)
     }
 }
 
 impl SourceFile {
-    // TODO: naming
-    pub fn from_diagnostic_span_and_message(
-        span: DiagnosticSpan,
-        compiler_message: &Diagnostic, // TODO: naming
-    ) -> Self {
+    pub fn from_diagnostic_data(span: DiagnosticSpan, diagnostic: &Diagnostic) -> Self {
         Self {
             relative_path: span.file_name,
             line: span.line_start,
             column: span.column_start,
-            message: compiler_message.message.clone(),
+            message: diagnostic.message.clone(),
         }
     }
 }

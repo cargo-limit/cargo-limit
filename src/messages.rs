@@ -162,6 +162,7 @@ fn filter_and_order_messages(
         .flat_map(|(_paths, messages)| messages.into_iter())
 }
 
+// TODO: naming
 fn extract_spans_for_external_app(
     messages: &[CompilerMessage],
     parsed_args: &Options,
@@ -189,13 +190,12 @@ fn extract_spans_for_external_app(
         })
         .map(|(span, message)| (find_leaf_project_expansion(span), &message.message));
 
-    let mut spans_in_consistent_order = Vec::new();
+    let mut spans_in_consistent_order = Vec::new(); // TODO: naming
     let mut used_file_names = HashSet::new();
     for (span, message) in spans_for_external_app {
         if !used_file_names.contains(&span.file_name) {
             used_file_names.insert(span.file_name.clone());
-            spans_in_consistent_order
-                .push(SourceFile::from_diagnostic_span_and_message(span, message));
+            spans_in_consistent_order.push(SourceFile::from_diagnostic_data(span, message));
         }
     }
 
