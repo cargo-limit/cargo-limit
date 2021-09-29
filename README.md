@@ -45,7 +45,13 @@ cargo lrustdoc
 cargo ltest
 ```
 
-### Environment variables
+## Neovim integration
+See [here](EDITOR-INTEGRATION.md#neovim-integration).
+
+## Other text editors/IDEs integration
+See [here](EDITOR-INTEGRATION.md#other-text-editorsides-integration).
+
+## Environment variables
 - `CARGO_MSG_LIMIT`
     - limit compiler messages number
     - `0` means no limit, which is default
@@ -64,15 +70,9 @@ cargo ltest
     - `false` is default
 - `CARGO_EDITOR`
     - opens affected files in external app
-        - see [neovim integration](EDITOR-INTEGRATION.md) as example
+        - see [neovim integration](EDITOR-INTEGRATION.md#neovim-integration)
     - empty (`""`) means don't run external app
     - `"_cargo-limit-open-in-nvim"` is default
-
-## Neovim integration
-See [here](EDITOR-INTEGRATION.md#neovim-integration).
-
-## Other text editors/IDEs integration
-See [here](EDITOR-INTEGRATION.md#other-text-editorsides-integration).
 
 ## Why "limit"?
 Initially it was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189).
