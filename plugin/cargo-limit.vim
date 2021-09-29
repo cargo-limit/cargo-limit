@@ -39,13 +39,9 @@ function! s:starts_with(longer, shorter) abort
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
 
-function! s:is_file(path)
-  return !isdirectory(a:path) && !empty(glob(a:path))
-endfunction
-
 function! CargoLimit_open_in_new_or_existing_tabs(editor_data)
   let l:initial_file = resolve(expand('%:p'))
-  let l:initial_file_is_part_of_project = s:starts_with(l:initial_file, resolve(a:editor_data.workspace_root)) && s:is_file(l:initial_file)
+  let l:initial_file_is_part_of_project = s:starts_with(l:initial_file, resolve(a:editor_data.workspace_root)) && filereadable(l:initial_file)
 
   for source_file in a:editor_data.files
     let l:path = fnameescape((a:editor_data.workspace_root) . '/' . (source_file.relative_path))
