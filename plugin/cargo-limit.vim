@@ -43,7 +43,6 @@ function! CargoLimit_open_in_new_or_existing_tabs(editor_data)
   let l:initial_file = resolve(expand('%:p'))
   let l:initial_file_is_part_of_project = s:starts_with(l:initial_file, resolve(a:editor_data.workspace_root)) && filereadable(l:initial_file)
 
-  set lazyredraw
   for source_file in a:editor_data.files
     let l:path = fnameescape((a:editor_data.workspace_root) . '/' . (source_file.relative_path))
     if l:initial_file_is_part_of_project && mode() == 'n' && &l:modified == 0
@@ -53,7 +52,6 @@ function! CargoLimit_open_in_new_or_existing_tabs(editor_data)
       break
     endif
   endfor
-  set nolazyredraw
 endfunction
 
 if has('nvim')
