@@ -9,6 +9,7 @@ mod messages;
 mod options;
 mod process;
 
+use crate::models::SourceFile;
 use anyhow::{Context, Result};
 use cargo_metadata::{diagnostic::DiagnosticSpan, Message, MetadataCommand};
 use io::Buffers;
@@ -106,7 +107,7 @@ fn parse_and_process_messages(
 
 fn open_in_external_app_for_affected_files(
     buffers: &mut Buffers,
-    spans_in_consistent_order: Vec<DiagnosticSpan>,
+    spans_in_consistent_order: Vec<SourceFile>,
     parsed_args: &Options,
     workspace_root: &Path,
 ) -> Result<()> {

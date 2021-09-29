@@ -1,4 +1,4 @@
-use crate::{options::Options, process};
+use crate::{models::SourceFile, options::Options, process};
 use anyhow::Result;
 use cargo_metadata::{
     diagnostic::{DiagnosticLevel, DiagnosticSpan},
@@ -16,7 +16,7 @@ pub struct ParsedMessages {
 
 pub struct ProcessedMessages {
     pub messages: Vec<Message>,
-    pub spans_in_consistent_order: Vec<DiagnosticSpan>,
+    pub spans_in_consistent_order: Vec<SourceFile>,
 }
 
 impl ParsedMessages {
@@ -165,8 +165,8 @@ fn filter_and_order_messages(
 fn extract_spans_for_external_app(
     messages: &[CompilerMessage],
     parsed_args: &Options,
-) -> Vec<DiagnosticSpan> {
-    let spans_for_external_app = messages
+) -> Vec<SourceFile> {
+    let spans_for_external_app = messages // TODO: naming
         .iter()
         .filter(|message| {
             if parsed_args.open_in_external_app_on_warnings {
@@ -185,15 +185,22 @@ fn extract_spans_for_external_app(
                 .iter()
                 .filter(|span| span.is_primary)
                 .cloned()
+                .map(move |span| (span, message))
         })
-        .map(find_leaf_project_expansion);
+        .map(|(span, message)| (find_leaf_project_expansion(span), message));
 
     let mut spans_in_consistent_order = Vec::new();
     let mut used_file_names = HashSet::new();
-    for span in spans_for_external_app {
+    for (span, message) in spans_for_external_app {
         if !used_file_names.contains(&span.file_name) {
             used_file_names.insert(span.file_name.clone());
-            spans_in_consistent_order.push(span);
+            //spans_in_consistent_order.push(span);
+            spans_in_consistent_order.push(SourceFile {
+                relative_path: span.file_name,
+                line: span.line_start,
+                column: span.column_start,
+                message: message.message.message.clone(),
+            });
         }
     }
 
