@@ -36,16 +36,11 @@ impl NeovimClient {
             .replace('\\', ESCAPE_CHAR)
             .replace(':', ESCAPE_CHAR);
 
-        // TODO: pass as byte array without any escaping? (this will require loop with nr2char in nvim)
-        // TODO: pass msgpack data (rmpv, rmp)? nvim has msgpackparse
-        let escaped_command = serde_json::to_string(&editor_data)?.replace(r#"""#, r#"\""#);
+        let editor_data = serde_json::to_string(&editor_data)?;
         let nvim_command = format!(
-            r#"call CargoLimit_open_in_new_or_existing_tabs("{}")"#,
-            escaped_command,
-            //escape_for_neovim_command(&serde_json::to_string(&editor_data)?)
+            r#"call CargoLimit_open_in_new_or_existing_tabs({})"#,
+            editor_data,
         );
-
-        //println!("{}", nvim_command);
 
         Ok(Some(Self {
             escaped_workspace_root,
