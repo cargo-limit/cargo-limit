@@ -190,12 +190,12 @@ fn extract_spans_for_external_app(
         })
         .map(|(span, message)| (find_leaf_project_expansion(span), &message.message));
 
-    let mut source_files_in_consistent_order = Vec::new(); // TODO: naming
+    let mut source_files_in_consistent_order = Vec::new();
     let mut used_file_names = HashSet::new();
     for (span, message) in spans_for_external_app {
         if !used_file_names.contains(&span.file_name) {
             used_file_names.insert(span.file_name.clone());
-            source_files_in_consistent_order.push(SourceFile::from_diagnostic_data(span, message));
+            source_files_in_consistent_order.push(SourceFile::new(span, message));
         }
     }
 

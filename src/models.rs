@@ -10,16 +10,13 @@ pub struct EditorData {
     pub files: Vec<SourceFile>, // TODO: naming
 }
 
-// TODO: naming
-// TODO: common struct?
-// TODO: pub fields?
 #[derive(Deserialize, Serialize)]
 pub struct SourceFile {
-    pub relative_path: String, // TODO: PathBuf?
-    pub line: usize,
-    pub column: usize,
-    pub message: String,
-    //pub level // TODO
+    relative_path: String, // TODO: PathBuf?
+    line: usize,
+    column: usize,
+    message: String,
+    //level // TODO
 }
 
 impl EditorData {
@@ -27,7 +24,7 @@ impl EditorData {
         let workspace_root = workspace_root.to_path_buf();
         Self {
             workspace_root,
-            files: source_files_in_consistent_order, // TODO: naming
+            files: source_files_in_consistent_order,
         }
     }
 
@@ -37,7 +34,7 @@ impl EditorData {
 }
 
 impl SourceFile {
-    pub fn from_diagnostic_data(span: DiagnosticSpan, diagnostic: &Diagnostic) -> Self {
+    pub fn new(span: DiagnosticSpan, diagnostic: &Diagnostic) -> Self {
         Self {
             relative_path: span.file_name,
             line: span.line_start,
