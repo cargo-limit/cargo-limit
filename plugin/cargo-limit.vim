@@ -22,10 +22,6 @@ function! s:on_cargo_metadata(_job_id, data, event)
   endif
 endfunction
 
-function! s:on_cargo_metadata_stderr(_job_id, data, event)
-  "echoerr join(a:data, '')
-endfunction
-
 function! s:create_server_address(escaped_workspace_root)
   let l:prefix = 'nvim-cargo-limit-'
   if has('win32')
