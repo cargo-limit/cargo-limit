@@ -1,4 +1,4 @@
-use crate::{options::Options, process};
+use crate::{models::SourceFile, options::Options, process};
 use anyhow::Result;
 use cargo_metadata::{
     diagnostic::{DiagnosticLevel, DiagnosticSpan},
@@ -16,7 +16,7 @@ pub struct ParsedMessages {
 
 pub struct ProcessedMessages {
     pub messages: Vec<Message>,
-    pub spans_in_consistent_order: Vec<DiagnosticSpan>,
+    pub source_files_in_consistent_order: Vec<SourceFile>,
 }
 
 impl ParsedMessages {
@@ -82,7 +82,8 @@ pub fn process_messages(
     }
     .collect::<Vec<_>>();
 
-    let spans_in_consistent_order = extract_spans_for_external_app(&messages, parsed_args);
+    let source_files_in_consistent_order =
+        extract_source_files_for_external_app(&messages, parsed_args);
 
     let messages = messages.into_iter();
     let messages = {
@@ -97,7 +98,7 @@ pub fn process_messages(
 
     Ok(ProcessedMessages {
         messages,
-        spans_in_consistent_order,
+        source_files_in_consistent_order,
     })
 }
 
@@ -162,11 +163,11 @@ fn filter_and_order_messages(
         .flat_map(|(_paths, messages)| messages.into_iter())
 }
 
-fn extract_spans_for_external_app(
+fn extract_source_files_for_external_app(
     messages: &[CompilerMessage],
     parsed_args: &Options,
-) -> Vec<DiagnosticSpan> {
-    let spans_for_external_app = messages
+) -> Vec<SourceFile> {
+    let spans_for_external_app = messages // TODO: naming
         .iter()
         .filter(|message| {
             if parsed_args.open_in_external_app_on_warnings {
@@ -185,19 +186,20 @@ fn extract_spans_for_external_app(
                 .iter()
                 .filter(|span| span.is_primary)
                 .cloned()
+                .map(move |span| (span, message))
         })
-        .map(find_leaf_project_expansion);
+        .map(|(span, message)| (find_leaf_project_expansion(span), &message.message));
 
-    let mut spans_in_consistent_order = Vec::new();
+    let mut source_files_in_consistent_order = Vec::new();
     let mut used_file_names = HashSet::new();
-    for span in spans_for_external_app {
+    for (span, message) in spans_for_external_app {
         if !used_file_names.contains(&span.file_name) {
             used_file_names.insert(span.file_name.clone());
-            spans_in_consistent_order.push(span);
+            source_files_in_consistent_order.push(SourceFile::new(span, message));
         }
     }
 
-    spans_in_consistent_order
+    source_files_in_consistent_order
 }
 
 fn find_leaf_project_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {

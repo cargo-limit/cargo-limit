@@ -9,8 +9,9 @@ mod messages;
 mod options;
 mod process;
 
+use crate::models::SourceFile;
 use anyhow::{Context, Result};
-use cargo_metadata::{diagnostic::DiagnosticSpan, Message, MetadataCommand};
+use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
 use messages::{process_messages, ParsedMessages, ProcessedMessages};
 use models::EditorData;
@@ -75,7 +76,7 @@ fn parse_and_process_messages(
             ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)?;
         let ProcessedMessages {
             messages,
-            spans_in_consistent_order,
+            source_files_in_consistent_order,
         } = process_messages(parsed_messages, &parsed_args, workspace_root)?;
         let processed_messages = messages.into_iter();
 
@@ -94,7 +95,7 @@ fn parse_and_process_messages(
 
         open_in_external_app_for_affected_files(
             buffers,
-            spans_in_consistent_order,
+            source_files_in_consistent_order,
             parsed_args,
             workspace_root,
         )?;
@@ -106,14 +107,14 @@ fn parse_and_process_messages(
 
 fn open_in_external_app_for_affected_files(
     buffers: &mut Buffers,
-    spans_in_consistent_order: Vec<DiagnosticSpan>,
+    source_files_in_consistent_order: Vec<SourceFile>,
     parsed_args: &Options,
     workspace_root: &Path,
 ) -> Result<()> {
     let app = &parsed_args.open_in_external_app;
     if !app.is_empty() {
         // TODO: naming?
-        let editor_data = EditorData::new(workspace_root, spans_in_consistent_order);
+        let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
         if !editor_data.files.is_empty() {
             let mut child = Command::new(app)
                 .stdin(Stdio::piped())
