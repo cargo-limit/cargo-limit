@@ -26,7 +26,9 @@ cargo-limit can run external app/script and provide affected files in stdin in t
     {
       "relative_path": "relative/path/to/file.rs",
       "line": 4,
-      "column": 1
+      "column": 1,
+      "message": "unused import: `diagnostic::DiagnosticSpan`",
+      "level": "warning"
     }
   ]
 }

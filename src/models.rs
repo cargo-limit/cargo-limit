@@ -1,5 +1,5 @@
 use anyhow::Result;
-use cargo_metadata::diagnostic::{Diagnostic, DiagnosticSpan};
+use cargo_metadata::diagnostic::{Diagnostic, DiagnosticLevel, DiagnosticSpan};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -15,7 +15,7 @@ pub struct SourceFile {
     line: usize,
     column: usize,
     message: String,
-    //level // TODO
+    level: DiagnosticLevel,
 }
 
 impl EditorData {
@@ -39,6 +39,7 @@ impl SourceFile {
             line: span.line_start,
             column: span.column_start,
             message: diagnostic.message.clone(),
+            level: diagnostic.level,
         }
     }
 }

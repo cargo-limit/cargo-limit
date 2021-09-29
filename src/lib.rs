@@ -11,7 +11,7 @@ mod process;
 
 use crate::models::SourceFile;
 use anyhow::{Context, Result};
-use cargo_metadata::{diagnostic::DiagnosticSpan, Message, MetadataCommand};
+use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
 use messages::{process_messages, ParsedMessages, ProcessedMessages};
 use models::EditorData;
