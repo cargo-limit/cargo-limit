@@ -167,7 +167,7 @@ fn extract_source_files_for_external_app(
     messages: &[CompilerMessage],
     parsed_args: &Options,
 ) -> Vec<SourceFile> {
-    let spans_for_external_app = messages // TODO: naming
+    let spans_and_messages = messages
         .iter()
         .filter(|message| {
             if parsed_args.open_in_external_app_on_warnings {
@@ -192,7 +192,7 @@ fn extract_source_files_for_external_app(
 
     let mut source_files_in_consistent_order = Vec::new();
     let mut used_file_names = HashSet::new();
-    for (span, message) in spans_for_external_app {
+    for (span, message) in spans_and_messages {
         if !used_file_names.contains(&span.file_name) {
             used_file_names.insert(span.file_name.clone());
             source_files_in_consistent_order.push(SourceFile::new(span, message));

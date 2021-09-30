@@ -44,7 +44,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     let error_text = failed_to_execute_error_text(&cargo_path);
     let mut child = Command::new(cargo_path)
         .args(parsed_args.all_args())
-        .stdout(Stdio::piped()) // TODO: stderr?
+        .stdout(Stdio::piped())
         .spawn()
         .context(error_text)?;
 
@@ -114,16 +114,12 @@ fn open_in_external_app_for_affected_files(
     let app = &parsed_args.open_in_external_app;
     if !app.is_empty() {
         let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
-        let mut child = Command::new(app)
-            .stdin(Stdio::piped())
-            //.stdout(Stdio::piped()) // TODO
-            //.stderr(Stdio::piped())
-            .spawn()?;
+        let mut child = Command::new(app).stdin(Stdio::piped()).spawn()?;
         child
             .stdin
             .take()
             .context("no stdin")?
-            .write_all(editor_data.to_json()?.as_bytes())?;
+            .write_all(serde_json::to_string(&editor_data)?.as_bytes())?;
 
         let error_text = failed_to_execute_error_text(app);
         let output = child.wait_with_output().context(error_text)?;

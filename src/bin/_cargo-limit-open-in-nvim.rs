@@ -6,17 +6,20 @@ use std::{
     process::{exit, Command, ExitStatus, Output},
 };
 
-// TODO: rename?
-struct NeovimClient {
+struct NeovimCommand {
     escaped_workspace_root: String,
-    nvim_command: String,
+    command: String,
 }
 
-impl NeovimClient {
-    fn from_editor_data<R: Read>(input: R) -> Result<Option<Self>> {
+impl NeovimCommand {
+    fn from_editor_data<R: Read>(mut input: R) -> Result<Option<Self>> {
         const ESCAPE_CHAR: &str = "%";
 
-        let editor_data: EditorData = serde_json::from_reader(input)?;
+        let mut raw_editor_data = String::new();
+        input.read_to_string(&mut raw_editor_data)?;
+        let command = format!(r#"call g:CargoLimitOpen({})"#, raw_editor_data);
+
+        let editor_data: EditorData = serde_json::from_str(&raw_editor_data)?;
         let escaped_workspace_root = editor_data
             .workspace_root
             .to_string_lossy()
@@ -24,23 +27,20 @@ impl NeovimClient {
             .replace('\\', ESCAPE_CHAR)
             .replace(':', ESCAPE_CHAR);
 
-        let editor_data = serde_json::to_string(&editor_data)?; // TODO: don't serialize it again?
-        let nvim_command = format!(r#"call g:CargoLimitOpen({})"#, editor_data);
-
         Ok(Some(Self {
             escaped_workspace_root,
-            nvim_command,
+            command,
         }))
     }
 
     fn run(self) -> Result<Option<ExitStatus>> {
-        let NeovimClient {
+        let NeovimCommand {
             escaped_workspace_root,
-            nvim_command,
+            command,
         } = self;
 
         let server_name = nvim_listen_address(escaped_workspace_root)?;
-        let nvim_send_args = vec!["--servername", &server_name, "--command", &nvim_command];
+        let nvim_send_args = vec!["--servername", &server_name, "--command", &command];
 
         match Command::new("nvim-send").args(nvim_send_args).output() {
             Ok(Output {
@@ -98,8 +98,8 @@ fn nvim_listen_address(escaped_workspace_root: String) -> Result<String> {
 }
 
 fn main() -> Result<()> {
-    let code = if let Some(neovim_client) = NeovimClient::from_editor_data(&mut io::stdin())? {
-        if let Some(status) = neovim_client.run()? {
+    let code = if let Some(neovim_command) = NeovimCommand::from_editor_data(&mut io::stdin())? {
+        if let Some(status) = neovim_command.run()? {
             status.code().unwrap_or(NO_EXIT_CODE)
         } else {
             NO_EXIT_CODE
