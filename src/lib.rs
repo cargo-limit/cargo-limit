@@ -135,11 +135,17 @@ fn failed_to_execute_error_text<T: fmt::Debug>(app: T) -> String {
 }
 
 #[doc(hidden)]
-pub fn run_subcommand() -> anyhow::Result<()> {
-    let current_exe = std::env::current_exe()?
-        .file_stem()
-        .ok_or_else(|| anyhow::format_err!("invalid executable"))?
-        .to_string_lossy()
-        .to_string();
-    std::process::exit(run_cargo_filtered(current_exe)?);
+#[macro_export]
+macro_rules! run_subcommand {
+    () => {
+        #[doc(hidden)]
+        fn main() -> anyhow::Result<()> {
+            let current_exe = std::env::current_exe()?
+                .file_stem()
+                .ok_or_else(|| anyhow::format_err!("invalid executable"))?
+                .to_string_lossy()
+                .to_string();
+            std::process::exit(cargo_limit::run_cargo_filtered(current_exe)?);
+        }
+    };
 }
