@@ -115,24 +115,22 @@ fn open_in_external_app_for_affected_files(
     if !app.is_empty() {
         // TODO: naming?
         let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
-        if !editor_data.files.is_empty() {
-            let mut child = Command::new(app)
-                .stdin(Stdio::piped())
-                //.stdout(Stdio::piped()) // TODO
-                //.stderr(Stdio::piped())
-                .spawn()?;
-            child
-                .stdin
-                .take()
-                .context("no stdin")?
-                .write_all(editor_data.to_json()?.as_bytes())?;
+        let mut child = Command::new(app)
+            .stdin(Stdio::piped())
+            //.stdout(Stdio::piped()) // TODO
+            //.stderr(Stdio::piped())
+            .spawn()?;
+        child
+            .stdin
+            .take()
+            .context("no stdin")?
+            .write_all(editor_data.to_json()?.as_bytes())?;
 
-            let error_text = failed_to_execute_error_text(app);
-            let output = child.wait_with_output().context(error_text)?;
+        let error_text = failed_to_execute_error_text(app);
+        let output = child.wait_with_output().context(error_text)?;
 
-            buffers.write_all_to_stderr(&output.stdout)?;
-            buffers.write_all_to_stderr(&output.stderr)?;
-        }
+        buffers.write_all_to_stderr(&output.stdout)?;
+        buffers.write_all_to_stderr(&output.stderr)?;
     }
     Ok(())
 }
