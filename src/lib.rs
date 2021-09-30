@@ -34,7 +34,7 @@ const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
 
 #[doc(hidden)]
 pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
-    let workspace_root = MetadataCommand::new().exec()?.workspace_root;
+    let workspace_root = MetadataCommand::new().no_deps().exec()?.workspace_root;
     let workspace_root = workspace_root.as_ref();
     let parsed_args = Options::from_os_env(current_exe, workspace_root)?;
     let cargo_path = env::var(CARGO_ENV_VAR)
