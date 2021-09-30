@@ -17,6 +17,14 @@ In order to not disrupt from text editing, this will work only if
 - current mode is normal
 - current file is some existing and unmodified (saved) project file.
 
+## Custom open handler
+If you want something different than opening/switching tabs with affected files — then you can add your own handler to `init.vim`:
+```viml
+function! g:CargoLimitOpen(editor_data)
+  echo a:editor_data
+endfunction
+```
+
 # Other text editors/IDEs integration
 cargo-limit can run external app/script and provide affected files in stdin in the following format:
 ```json
