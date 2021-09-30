@@ -7,11 +7,17 @@ use cargo_metadata::{
 use itertools::{Either, Itertools};
 use std::{collections::HashSet, io, io::Write, path::Path, time::Duration};
 
+// TODO: Default? pub?
 #[derive(Default)]
 pub struct ParsedMessages {
     internal_compiler_errors: Vec<CompilerMessage>,
     errors: Vec<CompilerMessage>,
     non_errors: Vec<CompilerMessage>,
+}
+
+struct ErrorsAndWarnings {
+    errors: Vec<CompilerMessage>,
+    warnings: Vec<CompilerMessage>,
 }
 
 pub struct ProcessedMessages {
@@ -60,16 +66,56 @@ impl ParsedMessages {
     }
 }
 
+impl ErrorsAndWarnings {
+    fn process(
+        parsed_messages: ParsedMessages,
+        parsed_args: &Options,
+        workspace_root: &Path,
+    ) -> Self {
+        let warnings = if parsed_args.show_dependencies_warnings {
+            parsed_messages.non_errors
+        } else {
+            parsed_messages
+                .non_errors
+                .into_iter()
+                .filter(|i| i.target.src_path.starts_with(workspace_root))
+                .collect()
+        };
+
+        let errors = parsed_messages
+            .internal_compiler_errors
+            .into_iter()
+            .chain(parsed_messages.errors.into_iter())
+            .collect();
+
+        Self { errors, warnings }
+    }
+}
+
 pub fn process_messages(
     parsed_messages: ParsedMessages,
     parsed_args: &Options,
     workspace_root: &Path,
 ) -> Result<ProcessedMessages> {
-    let messages = filter_and_order_messages(process_warnings_and_errors(
-        parsed_messages,
-        parsed_args,
-        workspace_root,
-    ));
+    let has_warnings_only =
+        parsed_messages.internal_compiler_errors.is_empty() && parsed_messages.errors.is_empty();
+
+    let ErrorsAndWarnings { errors, warnings } =
+        ErrorsAndWarnings::process(parsed_messages, parsed_args, workspace_root);
+
+    let errors = filter_and_order_messages(errors);
+    let warnings = filter_and_order_messages(warnings);
+
+    let messages = if parsed_args.show_warnings_if_errors_exist {
+        Either::Left(errors.chain(warnings))
+    } else {
+        let messages = if has_warnings_only {
+            Either::Left(warnings)
+        } else {
+            Either::Right(errors)
+        };
+        Either::Right(messages)
+    };
 
     let limit_messages = parsed_args.limit_messages;
     let no_limit = limit_messages == 0;
@@ -102,50 +148,11 @@ pub fn process_messages(
     })
 }
 
-fn process_warnings_and_errors(
-    parsed_messages: ParsedMessages,
-    parsed_args: &Options,
-    workspace_root: &Path,
-) -> impl Iterator<Item = CompilerMessage> {
-    let non_errors = if parsed_args.show_dependencies_warnings {
-        Either::Left(parsed_messages.non_errors.into_iter())
-    } else {
-        let non_errors = parsed_messages
-            .non_errors
-            .into_iter()
-            .filter(|i| i.target.src_path.starts_with(workspace_root));
-        Either::Right(non_errors.collect::<Vec<_>>().into_iter())
-    };
-
-    if parsed_args.show_warnings_if_errors_exist {
-        Either::Left(
-            parsed_messages
-                .internal_compiler_errors
-                .into_iter()
-                .chain(parsed_messages.errors.into_iter())
-                .chain(non_errors),
-        )
-    } else {
-        let has_any_errors = !parsed_messages.internal_compiler_errors.is_empty()
-            || !parsed_messages.errors.is_empty();
-        let messages = if has_any_errors {
-            Either::Left(
-                parsed_messages
-                    .internal_compiler_errors
-                    .into_iter()
-                    .chain(parsed_messages.errors.into_iter()),
-            )
-        } else {
-            Either::Right(non_errors)
-        };
-        Either::Right(messages)
-    }
-}
-
 fn filter_and_order_messages(
-    messages: impl Iterator<Item = CompilerMessage>,
+    messages: impl IntoIterator<Item = CompilerMessage>,
 ) -> impl Iterator<Item = CompilerMessage> {
     messages
+        .into_iter()
         .unique()
         .filter(|i| !i.message.spans.is_empty())
         .map(|i| {
