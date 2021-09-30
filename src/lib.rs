@@ -35,7 +35,8 @@ const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
 #[doc(hidden)]
 pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     let workspace_root = MetadataCommand::new().exec()?.workspace_root;
-    let parsed_args = Options::from_os_env(current_exe, &workspace_root)?;
+    let workspace_root = workspace_root.as_ref();
+    let parsed_args = Options::from_os_env(current_exe, workspace_root)?;
     let cargo_path = env::var(CARGO_ENV_VAR)
         .map(PathBuf::from)
         .ok()
@@ -54,9 +55,9 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     })?;
 
     let mut buffers = Buffers::new(&mut child)?;
-    parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args, &workspace_root)?;
+    parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args, workspace_root)?;
     let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
-    parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args, &workspace_root)?;
+    parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args, workspace_root)?;
 
     if parsed_args.help {
         buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
