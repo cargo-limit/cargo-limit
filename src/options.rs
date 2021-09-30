@@ -320,11 +320,9 @@ impl ParsedSubcommand {
         let current_exe = current_exe.to_lowercase();
         let (_, subcommand) = current_exe
             .split_once(EXECUTABLE_PREFIX)
-            .ok_or_else(|| format_err!("invalid arguments"))?;
+            .context("invalid arguments")?;
         let (open_in_external_app_on_warnings, subcommand) = if subcommand.starts_with('l') {
-            let (_, subcommand) = subcommand
-                .split_once('l')
-                .ok_or_else(|| format_err!("invalid arguments"))?;
+            let (_, subcommand) = subcommand.split_once('l').context("invalid arguments")?;
             (true, subcommand)
         } else {
             (false, subcommand)

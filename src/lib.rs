@@ -141,9 +141,10 @@ macro_rules! run_subcommand {
     () => {
         #[doc(hidden)]
         fn main() -> anyhow::Result<()> {
+            use anyhow::Context;
             let current_exe = std::env::current_exe()?
                 .file_stem()
-                .ok_or_else(|| anyhow::format_err!("invalid executable"))?
+                .context("invalid executable")?
                 .to_string_lossy()
                 .to_string();
             std::process::exit(cargo_limit::run_cargo_filtered(current_exe)?);
