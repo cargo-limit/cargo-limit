@@ -113,7 +113,6 @@ fn open_in_external_app_for_affected_files(
 ) -> Result<()> {
     let app = &parsed_args.open_in_external_app;
     if !app.is_empty() {
-        // TODO: naming?
         let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
         let mut child = Command::new(app)
             .stdin(Stdio::piped())

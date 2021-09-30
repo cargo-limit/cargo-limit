@@ -36,7 +36,7 @@ function! s:create_server_address(escaped_workspace_root)
   endif
 endfunction
 
-function! s:starts_with(longer, shorter) abort
+function! s:starts_with(longer, shorter)
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
 

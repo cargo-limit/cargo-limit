@@ -24,7 +24,7 @@ impl NeovimClient {
             .replace('\\', ESCAPE_CHAR)
             .replace(':', ESCAPE_CHAR);
 
-        let editor_data = serde_json::to_string(&editor_data)?;
+        let editor_data = serde_json::to_string(&editor_data)?; // TODO: don't serialize it again?
         let nvim_command = format!(r#"call g:CargoLimitOpen({})"#, editor_data);
 
         Ok(Some(Self {
