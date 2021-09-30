@@ -25,10 +25,7 @@ impl NeovimClient {
             .replace(':', ESCAPE_CHAR);
 
         let editor_data = serde_json::to_string(&editor_data)?;
-        let nvim_command = format!(
-            r#"call CargoLimit_open_in_new_or_existing_tabs({})"#,
-            editor_data,
-        );
+        let nvim_command = format!(r#"call g:CargoLimitOpen({})"#, editor_data);
 
         Ok(Some(Self {
             escaped_workspace_root,
