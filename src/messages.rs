@@ -103,8 +103,8 @@ pub fn process_messages(
     let ErrorsAndWarnings { errors, warnings } =
         ErrorsAndWarnings::process(parsed_messages, parsed_args, workspace_root);
 
-    let errors = filter_and_order_messages(errors);
-    let warnings = filter_and_order_messages(warnings);
+    let errors = filter_and_order_messages(errors, workspace_root);
+    let warnings = filter_and_order_messages(warnings, workspace_root);
 
     let messages = if parsed_args.show_warnings_if_errors_exist {
         Either::Left(errors.chain(warnings))
@@ -150,8 +150,9 @@ pub fn process_messages(
 
 fn filter_and_order_messages(
     messages: impl IntoIterator<Item = CompilerMessage>,
+    workspace_root: &Path,
 ) -> impl Iterator<Item = CompilerMessage> {
-    messages
+    let messages = messages
         .into_iter()
         .unique()
         .filter(|i| !i.message.spans.is_empty())
@@ -167,7 +168,19 @@ fn filter_and_order_messages(
         .into_group_map()
         .into_iter()
         .sorted_by_key(|(paths, _messages)| paths.clone())
-        .flat_map(|(_paths, messages)| messages.into_iter())
+        .flat_map(|(_paths, messages)| messages.into_iter());
+
+    let mut project_messages = Vec::new();
+    let mut dependencies_messages = Vec::new();
+    for i in messages {
+        if i.target.src_path.starts_with(workspace_root) {
+            project_messages.push(i);
+        } else {
+            dependencies_messages.push(i);
+        }
+    }
+
+    project_messages.into_iter().chain(dependencies_messages)
 }
 
 fn extract_source_files_for_external_app(
