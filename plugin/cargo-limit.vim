@@ -40,10 +40,9 @@ function! s:starts_with(longer, shorter) abort
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
 
-function! CargoLimit_open_in_new_or_existing_tabs(editor_data)
+function! s:open_in_new_or_existing_tabs(editor_data)
   let l:initial_file = resolve(expand('%:p'))
   let l:initial_file_is_part_of_project = s:starts_with(l:initial_file, resolve(a:editor_data.workspace_root)) && filereadable(l:initial_file)
-
   for source_file in reverse(a:editor_data.files)
     let l:path = fnameescape((a:editor_data.workspace_root) . '/' . (source_file.relative_path))
     if l:initial_file_is_part_of_project && mode() == 'n' && &l:modified == 0
@@ -54,6 +53,12 @@ function! CargoLimit_open_in_new_or_existing_tabs(editor_data)
     endif
   endfor
 endfunction
+
+if !exists('*CargoLimitOpen')
+  function! g:CargoLimitOpen(editor_data)
+    call s:open_in_new_or_existing_tabs(a:editor_data)
+  endfunction
+endif
 
 if has('nvim')
   call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
