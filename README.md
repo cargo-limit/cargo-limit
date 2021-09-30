@@ -64,7 +64,7 @@ See [here](EDITOR-INTEGRATION.md#neovim-integration).
     - show warnings even if errors still exist
     - `false` is default
 - `CARGO_DEPS_WARN`
-    - show dependencies' warnings
+    - show [path dependencies'](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#specifying-path-dependencies) warnings
     - `false` is default
 - `CARGO_EDITOR`
     - opens affected files in external app
