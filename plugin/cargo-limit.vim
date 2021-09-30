@@ -36,16 +36,14 @@ function! s:create_server_address(escaped_workspace_root)
   endif
 endfunction
 
-function! s:starts_with(longer, shorter)
-  return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
-endfunction
-
 function! s:open_in_new_or_existing_tabs(editor_data)
   let l:initial_file = resolve(expand('%:p'))
-  let l:initial_file_is_part_of_project = s:starts_with(l:initial_file, resolve(a:editor_data.workspace_root)) && filereadable(l:initial_file)
+  if !filereadable(l:initial_file)
+    return
+  endif
   for source_file in reverse(a:editor_data.files)
-    let l:path = fnameescape((a:editor_data.workspace_root) . '/' . (source_file.relative_path))
-    if l:initial_file_is_part_of_project && mode() == 'n' && &l:modified == 0
+    let l:path = fnameescape(source_file.path)
+    if mode() == 'n' && &l:modified == 0
       execute 'tab drop ' . l:path
       call cursor((source_file.line), (source_file.column))
     else

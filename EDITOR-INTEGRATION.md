@@ -15,7 +15,7 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 
 In order to not disrupt from text editing, this will work only if
 - current mode is normal
-- current file is some existing and unmodified (saved) project file.
+- current file is some existing and unmodified (saved) file.
 
 ## Custom open handler
 If you want something different than opening/switching tabs with affected files — then you can add your own handler to `init.vim`:
@@ -32,7 +32,7 @@ cargo-limit can run external app/script and provide affected files in stdin in t
   "workspace_root": "/full/path/to/project",
   "files": [
     {
-      "relative_path": "relative/path/to/file.rs",
+      "path": "/full/path/to/file.rs",
       "line": 4,
       "column": 1,
       "message": "unused import: `diagnostic::DiagnosticSpan`",
@@ -52,7 +52,7 @@ Theoretically this can be used for any text editor or IDE, especially if it supp
 
 jq --raw-output '. as $root | $root | .files[] | [
     "gedit",
-    $root.workspace_root + "/" + .relative_path,
+    .path,
     "+" + (.line | tostring) + ":" + (.column | tostring),
     "&"
 ] | join(" ")' | bash

@@ -10,7 +10,7 @@ pub struct EditorData {
 
 #[derive(Deserialize, Serialize)]
 pub struct SourceFile {
-    relative_path: PathBuf,
+    path: PathBuf,
     line: usize,
     column: usize,
     message: String,
@@ -28,9 +28,15 @@ impl EditorData {
 }
 
 impl SourceFile {
-    pub fn new(span: DiagnosticSpan, diagnostic: &Diagnostic) -> Self {
+    pub fn new(span: DiagnosticSpan, diagnostic: &Diagnostic, workspace_root: &Path) -> Self {
+        let path = PathBuf::from(span.file_name);
+        let path = if path.is_relative() {
+            workspace_root.join(&path)
+        } else {
+            path
+        };
         Self {
-            relative_path: PathBuf::from(span.file_name),
+            path,
             line: span.line_start,
             column: span.column_start,
             message: diagnostic.message.clone(),

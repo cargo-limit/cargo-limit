@@ -83,7 +83,7 @@ pub fn process_messages(
     .collect::<Vec<_>>();
 
     let source_files_in_consistent_order =
-        extract_source_files_for_external_app(&messages, parsed_args);
+        extract_source_files_for_external_app(&messages, parsed_args, workspace_root);
 
     let messages = messages.into_iter();
     let messages = {
@@ -166,6 +166,7 @@ fn filter_and_order_messages(
 fn extract_source_files_for_external_app(
     messages: &[CompilerMessage],
     parsed_args: &Options,
+    workspace_root: &Path,
 ) -> Vec<SourceFile> {
     let spans_and_messages = messages
         .iter()
@@ -195,7 +196,7 @@ fn extract_source_files_for_external_app(
     for (span, message) in spans_and_messages {
         if !used_file_names.contains(&span.file_name) {
             used_file_names.insert(span.file_name.clone());
-            source_files_in_consistent_order.push(SourceFile::new(span, message));
+            source_files_in_consistent_order.push(SourceFile::new(span, message, workspace_root));
         }
     }
 
