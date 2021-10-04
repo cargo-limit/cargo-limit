@@ -58,8 +58,6 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     let mut parsed_messages =
         parse_messages_and_start_kill_timer(&mut buffers, Some(cargo_pid), &parsed_args)?;
 
-    let mut child_killed = false;
-
     let exit_code = if parsed_messages.child_killed {
         let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
 
@@ -68,13 +66,11 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
             None,
             &parsed_args,
         )?);
-        child_killed = parsed_messages.child_killed;
         process_messages(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
 
         exit_code
     } else {
-        child_killed = parsed_messages.child_killed;
         process_messages(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
         child.wait()?.code().unwrap_or(NO_EXIT_CODE)
@@ -84,8 +80,6 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
         buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
     }
 
-    dbg!(child_killed);
-
     Ok(exit_code)
 }
 
@@ -94,13 +88,11 @@ fn parse_messages_and_start_kill_timer(
     cargo_pid: Option<u32>,
     parsed_args: &Options,
 ) -> Result<ParsedMessages> {
-    let parsed_messages = if parsed_args.help || parsed_args.version {
-        ParsedMessages::default()
+    if parsed_args.help || parsed_args.version {
+        Ok(ParsedMessages::default())
     } else {
-        ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)?
-    };
-
-    Ok(parsed_messages)
+        ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)
+    }
 }
 
 fn process_messages(
