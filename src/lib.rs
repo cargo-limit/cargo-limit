@@ -13,7 +13,7 @@ use crate::models::SourceFile;
 use anyhow::{Context, Result};
 use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
-use messages::{process_messages, ParsedMessages, ProcessedMessages};
+use messages::{ParsedMessages, ProcessedMessages};
 use models::EditorData;
 use options::Options;
 use std::{
@@ -55,9 +55,28 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     })?;
 
     let mut buffers = Buffers::new(&mut child)?;
-    parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args, workspace_root)?;
-    let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
-    parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args, workspace_root)?;
+    let mut parsed_messages =
+        parse_messages_with_timeout(&mut buffers, Some(cargo_pid), &parsed_args)?;
+
+    let exit_code = if parsed_messages.child_killed {
+        buffers.writeln_to_stdout("")?;
+
+        let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
+
+        parsed_messages.merge(parse_messages_with_timeout(
+            &mut buffers,
+            None,
+            &parsed_args,
+        )?);
+        process_messages(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
+        buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
+
+        exit_code
+    } else {
+        process_messages(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
+        buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
+        child.wait()?.code().unwrap_or(NO_EXIT_CODE)
+    };
 
     if parsed_args.help {
         buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
@@ -66,44 +85,53 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     Ok(exit_code)
 }
 
-fn parse_and_process_messages(
+fn parse_messages_with_timeout(
     buffers: &mut Buffers,
-    cargo_pid: u32,
+    cargo_pid: Option<u32>,
+    parsed_args: &Options,
+) -> Result<ParsedMessages> {
+    if parsed_args.help || parsed_args.version {
+        Ok(ParsedMessages::default())
+    } else {
+        ParsedMessages::parse_with_timeout(
+            buffers.child_stdout_reader_mut(),
+            cargo_pid,
+            parsed_args,
+        )
+    }
+}
+
+fn process_messages(
+    buffers: &mut Buffers,
+    parsed_messages: ParsedMessages,
     parsed_args: &Options,
     workspace_root: &Path,
 ) -> Result<()> {
-    if !parsed_args.help && !parsed_args.version {
-        let parsed_messages =
-            ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)?;
-        let ProcessedMessages {
-            messages,
-            source_files_in_consistent_order,
-        } = process_messages(parsed_messages, &parsed_args, workspace_root)?;
-        let processed_messages = messages.into_iter();
+    let ProcessedMessages {
+        messages,
+        source_files_in_consistent_order,
+    } = ProcessedMessages::process(parsed_messages, &parsed_args, workspace_root)?;
+    let processed_messages = messages.into_iter();
 
-        if parsed_args.json_message_format {
-            for message in processed_messages {
-                buffers.writeln_to_stdout(serde_json::to_string(&message)?)?;
-            }
-        } else {
-            for message in processed_messages.filter_map(|message| match message {
-                Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
-                _ => None,
-            }) {
-                buffers.write_to_stderr(message)?;
-            }
+    if parsed_args.json_message_format {
+        for message in processed_messages {
+            buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
         }
-
-        open_in_external_app_for_affected_files(
-            buffers,
-            source_files_in_consistent_order,
-            parsed_args,
-            workspace_root,
-        )?;
+    } else {
+        for message in processed_messages.filter_map(|message| match message {
+            Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
+            _ => None,
+        }) {
+            buffers.write_to_stderr(message)?;
+        }
     }
 
-    buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
-    Ok(())
+    open_in_external_app_for_affected_files(
+        buffers,
+        source_files_in_consistent_order,
+        parsed_args,
+        workspace_root,
+    )
 }
 
 fn open_in_external_app_for_affected_files(

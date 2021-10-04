@@ -53,7 +53,7 @@ impl Buffers {
         std::write!(&mut self.stdout_writer, "{}", text)
     }
 
-    pub fn writeln_to_stdout(&mut self, text: String) -> io::Result<()> {
+    pub fn writeln_to_stdout(&mut self, text: &str) -> io::Result<()> {
         std::writeln!(&mut self.stdout_writer, "{}", text)
     }
 

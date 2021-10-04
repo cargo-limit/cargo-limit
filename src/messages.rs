@@ -5,7 +5,13 @@ use cargo_metadata::{
     CompilerMessage, Message,
 };
 use itertools::{Either, Itertools};
-use std::{collections::HashSet, io, io::Write, path::Path, time::Duration};
+use std::{
+    collections::HashSet,
+    io,
+    path::Path,
+    sync::mpsc::{sync_channel, TryRecvError},
+    time::Duration,
+};
 
 // TODO: Default? pub?
 #[derive(Default)]
@@ -13,6 +19,7 @@ pub struct ParsedMessages {
     internal_compiler_errors: Vec<CompilerMessage>,
     errors: Vec<CompilerMessage>,
     non_errors: Vec<CompilerMessage>,
+    pub child_killed: bool,
 }
 
 struct ErrorsAndWarnings {
@@ -25,14 +32,16 @@ pub struct ProcessedMessages {
     pub source_files_in_consistent_order: Vec<SourceFile>,
 }
 
+// TODO: rename
 impl ParsedMessages {
-    pub fn parse<R: io::BufRead>(
+    pub fn parse_with_timeout<R: io::BufRead>(
         reader: &mut R,
-        cargo_pid: u32,
+        cargo_pid: Option<u32>,
         parsed_args: &Options,
     ) -> Result<Self> {
         let mut result = ParsedMessages::default();
         let mut kill_timer_started = false;
+        let (killed_sender, killed_receiver) = sync_channel(1);
 
         for message in Message::parse_stream(reader) {
             match message? {
@@ -51,18 +60,37 @@ impl ParsedMessages {
                 _ => (),
             }
 
-            if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
-                let time_limit = parsed_args.time_limit_after_error;
-                if time_limit > Duration::from_secs(0) && !kill_timer_started {
-                    kill_timer_started = true;
-                    process::wait_in_background_and_kill(cargo_pid, time_limit, move || {
-                        let _ = std::writeln!(&mut io::stdout(), "");
-                    });
+            // TODO: extract?
+            if let Some(cargo_pid) = cargo_pid {
+                if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
+                    let time_limit = parsed_args.time_limit_after_error;
+                    if time_limit > Duration::from_secs(0) && !kill_timer_started {
+                        kill_timer_started = true;
+                        let killed_sender = killed_sender.clone();
+                        process::wait_in_background_and_kill(cargo_pid, time_limit, move || {
+                            let _ = killed_sender.send(());
+                        });
+                    }
                 }
             }
         }
 
+        let child_killed = match killed_receiver.try_recv() {
+            Ok(()) => true,
+            Err(TryRecvError::Empty) => false,
+            Err(error) => return Err(anyhow::Error::from(error)),
+        };
+        result.child_killed = child_killed;
+
         Ok(result)
+    }
+
+    pub fn merge(&mut self, other: Self) {
+        self.internal_compiler_errors
+            .extend(other.internal_compiler_errors);
+        self.errors.extend(other.errors);
+        self.non_errors.extend(other.non_errors);
+        self.child_killed |= other.child_killed;
     }
 }
 
@@ -92,144 +120,150 @@ impl ErrorsAndWarnings {
     }
 }
 
-pub fn process_messages(
-    parsed_messages: ParsedMessages,
-    parsed_args: &Options,
-    workspace_root: &Path,
-) -> Result<ProcessedMessages> {
-    let has_warnings_only =
-        parsed_messages.internal_compiler_errors.is_empty() && parsed_messages.errors.is_empty();
+impl ProcessedMessages {
+    pub fn process(
+        parsed_messages: ParsedMessages,
+        parsed_args: &Options,
+        workspace_root: &Path,
+    ) -> Result<Self> {
+        let has_warnings_only = parsed_messages.internal_compiler_errors.is_empty()
+            && parsed_messages.errors.is_empty();
 
-    let ErrorsAndWarnings { errors, warnings } =
-        ErrorsAndWarnings::process(parsed_messages, parsed_args, workspace_root);
+        let ErrorsAndWarnings { errors, warnings } =
+            ErrorsAndWarnings::process(parsed_messages, parsed_args, workspace_root);
 
-    let errors = filter_and_order_messages(errors, workspace_root);
-    let warnings = filter_and_order_messages(warnings, workspace_root);
+        let errors = Self::filter_and_order_messages(errors, workspace_root);
+        let warnings = Self::filter_and_order_messages(warnings, workspace_root);
 
-    let messages = if parsed_args.show_warnings_if_errors_exist {
-        Either::Left(errors.chain(warnings))
-    } else {
-        let messages = if has_warnings_only {
-            Either::Left(warnings)
+        let messages = if parsed_args.show_warnings_if_errors_exist {
+            Either::Left(errors.chain(warnings))
         } else {
-            Either::Right(errors)
-        };
-        Either::Right(messages)
-    };
-
-    let limit_messages = parsed_args.limit_messages;
-    let no_limit = limit_messages == 0;
-    let messages = {
-        if no_limit {
-            Either::Left(messages)
-        } else {
-            Either::Right(messages.take(limit_messages))
-        }
-    }
-    .collect::<Vec<_>>();
-
-    let source_files_in_consistent_order =
-        extract_source_files_for_external_app(&messages, parsed_args, workspace_root);
-
-    let messages = messages.into_iter();
-    let messages = {
-        if parsed_args.ascending_messages_order {
-            Either::Left(messages)
-        } else {
-            Either::Right(messages.rev())
-        }
-    }
-    .map(Message::CompilerMessage)
-    .collect();
-
-    Ok(ProcessedMessages {
-        messages,
-        source_files_in_consistent_order,
-    })
-}
-
-fn filter_and_order_messages(
-    messages: impl IntoIterator<Item = CompilerMessage>,
-    workspace_root: &Path,
-) -> impl Iterator<Item = CompilerMessage> {
-    let messages = messages
-        .into_iter()
-        .unique()
-        .filter(|i| !i.message.spans.is_empty())
-        .map(|i| {
-            let key = i
-                .message
-                .spans
-                .iter()
-                .map(|span| (span.file_name.clone(), span.line_start))
-                .collect::<Vec<_>>();
-            (key, i)
-        })
-        .into_group_map()
-        .into_iter()
-        .sorted_by_key(|(paths, _messages)| paths.clone())
-        .flat_map(|(_paths, messages)| messages.into_iter());
-
-    let mut project_messages = Vec::new();
-    let mut dependencies_messages = Vec::new();
-    for i in messages {
-        if i.target.src_path.starts_with(workspace_root) {
-            project_messages.push(i);
-        } else {
-            dependencies_messages.push(i);
-        }
-    }
-
-    project_messages.into_iter().chain(dependencies_messages)
-}
-
-fn extract_source_files_for_external_app(
-    messages: &[CompilerMessage],
-    parsed_args: &Options,
-    workspace_root: &Path,
-) -> Vec<SourceFile> {
-    let spans_and_messages = messages
-        .iter()
-        .filter(|message| {
-            if parsed_args.open_in_external_app_on_warnings {
-                true
+            let messages = if has_warnings_only {
+                Either::Left(warnings)
             } else {
-                matches!(
-                    message.message.level,
-                    DiagnosticLevel::Error | DiagnosticLevel::Ice
-                )
+                Either::Right(errors)
+            };
+            Either::Right(messages)
+        };
+
+        let limit_messages = parsed_args.limit_messages;
+        let no_limit = limit_messages == 0;
+        let messages = {
+            if no_limit {
+                Either::Left(messages)
+            } else {
+                Either::Right(messages.take(limit_messages))
             }
-        })
-        .flat_map(|message| {
-            message
-                .message
-                .spans
-                .iter()
-                .filter(|span| span.is_primary)
-                .cloned()
-                .map(move |span| (span, message))
-        })
-        .map(|(span, message)| (find_leaf_project_expansion(span), &message.message));
-
-    let mut source_files_in_consistent_order = Vec::new();
-    let mut used_file_names = HashSet::new();
-    for (span, message) in spans_and_messages {
-        if !used_file_names.contains(&span.file_name) {
-            used_file_names.insert(span.file_name.clone());
-            source_files_in_consistent_order.push(SourceFile::new(span, message, workspace_root));
         }
+        .collect::<Vec<_>>();
+
+        let source_files_in_consistent_order =
+            Self::extract_source_files_for_external_app(&messages, parsed_args, workspace_root);
+
+        let messages = messages.into_iter();
+        let messages = {
+            if parsed_args.ascending_messages_order {
+                Either::Left(messages)
+            } else {
+                Either::Right(messages.rev())
+            }
+        }
+        .map(Message::CompilerMessage)
+        .collect();
+
+        Ok(Self {
+            messages,
+            source_files_in_consistent_order,
+        })
     }
 
-    source_files_in_consistent_order
-}
+    fn filter_and_order_messages(
+        messages: impl IntoIterator<Item = CompilerMessage>,
+        workspace_root: &Path,
+    ) -> impl Iterator<Item = CompilerMessage> {
+        let messages = messages
+            .into_iter()
+            .unique()
+            .filter(|i| !i.message.spans.is_empty())
+            .map(|i| {
+                let key = i
+                    .message
+                    .spans
+                    .iter()
+                    .map(|span| (span.file_name.clone(), span.line_start))
+                    .collect::<Vec<_>>();
+                (key, i)
+            })
+            .into_group_map()
+            .into_iter()
+            .sorted_by_key(|(paths, _messages)| paths.clone())
+            .flat_map(|(_paths, messages)| messages.into_iter());
 
-fn find_leaf_project_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {
-    let mut project_span = span.clone();
-    while let Some(expansion) = span.expansion {
-        span = expansion.span;
-        if Path::new(&span.file_name).is_relative() {
-            project_span = span.clone();
+        let mut project_messages = Vec::new();
+        let mut dependencies_messages = Vec::new();
+        for i in messages {
+            if i.target.src_path.starts_with(workspace_root) {
+                project_messages.push(i);
+            } else {
+                dependencies_messages.push(i);
+            }
         }
+
+        project_messages.into_iter().chain(dependencies_messages)
     }
-    project_span
+
+    fn extract_source_files_for_external_app(
+        messages: &[CompilerMessage],
+        parsed_args: &Options,
+        workspace_root: &Path,
+    ) -> Vec<SourceFile> {
+        let spans_and_messages = messages
+            .iter()
+            .filter(|message| {
+                if parsed_args.open_in_external_app_on_warnings {
+                    true
+                } else {
+                    matches!(
+                        message.message.level,
+                        DiagnosticLevel::Error | DiagnosticLevel::Ice
+                    )
+                }
+            })
+            .flat_map(|message| {
+                message
+                    .message
+                    .spans
+                    .iter()
+                    .filter(|span| span.is_primary)
+                    .cloned()
+                    .map(move |span| (span, message))
+            })
+            .map(|(span, message)| (Self::find_leaf_project_expansion(span), &message.message));
+
+        let mut source_files_in_consistent_order = Vec::new();
+        let mut used_file_names = HashSet::new();
+        for (span, message) in spans_and_messages {
+            if !used_file_names.contains(&span.file_name) {
+                used_file_names.insert(span.file_name.clone());
+                source_files_in_consistent_order.push(SourceFile::new(
+                    span,
+                    message,
+                    workspace_root,
+                ));
+            }
+        }
+
+        source_files_in_consistent_order
+    }
+
+    fn find_leaf_project_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {
+        let mut project_span = span.clone();
+        while let Some(expansion) = span.expansion {
+            span = expansion.span;
+            if Path::new(&span.file_name).is_relative() {
+                project_span = span.clone();
+            }
+        }
+        project_span
+    }
 }
