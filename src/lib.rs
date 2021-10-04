@@ -56,12 +56,12 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
     let mut buffers = Buffers::new(&mut child)?;
     let mut parsed_messages =
-        parse_messages_and_start_kill_timer(&mut buffers, Some(cargo_pid), &parsed_args)?;
+        parse_messages_with_timeout(&mut buffers, Some(cargo_pid), &parsed_args)?;
 
     let exit_code = if parsed_messages.child_killed {
         let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
 
-        parsed_messages.merge(parse_messages_and_start_kill_timer(
+        parsed_messages.merge(parse_messages_with_timeout(
             &mut buffers,
             None,
             &parsed_args,
@@ -83,7 +83,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     Ok(exit_code)
 }
 
-fn parse_messages_and_start_kill_timer(
+fn parse_messages_with_timeout(
     buffers: &mut Buffers,
     cargo_pid: Option<u32>,
     parsed_args: &Options,
@@ -91,7 +91,11 @@ fn parse_messages_and_start_kill_timer(
     if parsed_args.help || parsed_args.version {
         Ok(ParsedMessages::default())
     } else {
-        ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)
+        ParsedMessages::parse_with_timeout(
+            buffers.child_stdout_reader_mut(),
+            cargo_pid,
+            parsed_args,
+        )
     }
 }
 

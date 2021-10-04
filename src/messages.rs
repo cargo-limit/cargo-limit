@@ -35,8 +35,7 @@ pub struct ProcessedMessages {
 
 // TODO: rename
 impl ParsedMessages {
-    // TODO: rename: parse with_timeout
-    pub fn parse<R: io::BufRead>(
+    pub fn parse_with_timeout<R: io::BufRead>(
         reader: &mut R,
         cargo_pid: Option<u32>,
         parsed_args: &Options,
