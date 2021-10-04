@@ -63,7 +63,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
         &parsed_args,
     )?);
 
-    process_messages1(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
+    process_messages(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
 
     if parsed_args.help {
         buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
@@ -88,8 +88,7 @@ fn parse_and_process_messages(
     Ok(parsed_messages)
 }
 
-// TODO: rename
-fn process_messages1(
+fn process_messages(
     buffers: &mut Buffers,
     parsed_messages: ParsedMessages,
     parsed_args: &Options,
