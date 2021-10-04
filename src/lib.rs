@@ -55,9 +55,15 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     })?;
 
     let mut buffers = Buffers::new(&mut child)?;
-    parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args, workspace_root)?;
+    let mut parsed_messages = parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args)?;
     let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
-    parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args, workspace_root)?;
+    parsed_messages.merge(parse_and_process_messages(
+        &mut buffers,
+        cargo_pid,
+        &parsed_args,
+    )?);
+
+    process_messages1(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
 
     if parsed_args.help {
         buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
@@ -66,16 +72,17 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     Ok(exit_code)
 }
 
+// TODO: rename
 fn parse_and_process_messages(
     buffers: &mut Buffers,
     cargo_pid: u32,
     parsed_args: &Options,
-    workspace_root: &Path,
-) -> Result<()> {
-    if !parsed_args.help && !parsed_args.version {
-        let parsed_messages =
-            ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)?;
-        let ProcessedMessages {
+    //workspace_root: &Path,
+) -> Result<ParsedMessages> {
+    // TODO: refactor
+    let parsed_messages = if !parsed_args.help && !parsed_args.version {
+        ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)?
+        /*let ProcessedMessages {
             messages,
             source_files_in_consistent_order,
         } = process_messages(parsed_messages, &parsed_args, workspace_root)?;
@@ -99,11 +106,47 @@ fn parse_and_process_messages(
             source_files_in_consistent_order,
             parsed_args,
             workspace_root,
-        )?;
-    }
+        )?;*/
+    } else {
+        ParsedMessages::empty()
+    };
 
     buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
-    Ok(())
+    Ok(parsed_messages)
+}
+
+// TODO: rename
+fn process_messages1(
+    buffers: &mut Buffers,
+    parsed_messages: ParsedMessages,
+    parsed_args: &Options,
+    workspace_root: &Path,
+) -> Result<()> {
+    let ProcessedMessages {
+        messages,
+        source_files_in_consistent_order,
+    } = process_messages(parsed_messages, &parsed_args, workspace_root)?;
+    let processed_messages = messages.into_iter();
+
+    if parsed_args.json_message_format {
+        for message in processed_messages {
+            buffers.writeln_to_stdout(serde_json::to_string(&message)?)?;
+        }
+    } else {
+        for message in processed_messages.filter_map(|message| match message {
+            Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
+            _ => None,
+        }) {
+            buffers.write_to_stderr(message)?;
+        }
+    }
+
+    open_in_external_app_for_affected_files(
+        buffers,
+        source_files_in_consistent_order,
+        parsed_args,
+        workspace_root,
+    )
 }
 
 fn open_in_external_app_for_affected_files(

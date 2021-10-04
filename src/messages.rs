@@ -64,6 +64,21 @@ impl ParsedMessages {
 
         Ok(result)
     }
+
+    pub fn empty() -> Self {
+        Self {
+            internal_compiler_errors: Vec::new(),
+            errors: Vec::new(),
+            non_errors: Vec::new(),
+        }
+    }
+
+    pub fn merge(&mut self, other: Self) {
+        self.internal_compiler_errors
+            .extend(other.internal_compiler_errors);
+        self.errors.extend(other.errors);
+        self.non_errors.extend(other.non_errors);
+    }
 }
 
 impl ErrorsAndWarnings {
