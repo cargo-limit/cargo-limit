@@ -38,7 +38,7 @@ endfunction
 
 function! s:open_in_new_or_existing_tabs(editor_data)
   let l:initial_file = resolve(expand('%:p'))
-  if !filereadable(l:initial_file)
+  if l:initial_file != '' && !filereadable(l:initial_file)
     return
   endif
   for source_file in reverse(a:editor_data.files)
