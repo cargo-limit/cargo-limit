@@ -59,6 +59,8 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
         parse_messages_with_timeout(&mut buffers, Some(cargo_pid), &parsed_args)?;
 
     let exit_code = if parsed_messages.child_killed {
+        let _ = std::writeln!(&mut std::io::stdout(), "");
+
         let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
 
         parsed_messages.merge(parse_messages_with_timeout(

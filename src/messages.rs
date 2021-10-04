@@ -70,7 +70,6 @@ impl ParsedMessages {
                         let killed_sender = killed_sender.clone();
                         process::wait_in_background_and_kill(cargo_pid, time_limit, move || {
                             let _ = killed_sender.send(());
-                            let _ = std::writeln!(&mut io::stdout(), ""); // TODO: move to run_cargo_filtered
                         });
                     }
                 }
