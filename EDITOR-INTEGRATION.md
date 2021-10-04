@@ -26,7 +26,7 @@ endfunction
 ```
 
 # Other text editors/IDEs integration
-cargo-limit can run external app/script and provide affected files in stdin in the following format:
+cargo-limit can run external app/script and provide affected files to stdin in the following format:
 ```json
 {
   "workspace_root": "/full/path/to/project",
@@ -42,7 +42,7 @@ cargo-limit can run external app/script and provide affected files in stdin in t
 }
 ```
 
-Theoretically this can be used for any text editor or IDE, especially if it supports client/server communication. In order to do that you need a wrapper script that parses the files and gives it to the text editor or IDE client.
+Theoretically this can be used for any text editor or IDE, especially if it supports client/server communication. To do that you need a wrapper script that parses the files and gives it to the text editor or IDE client.
 
 ## Example: gedit
 1. Install [`jq`](https://stedolan.github.io/jq/download/)
