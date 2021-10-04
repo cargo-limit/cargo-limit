@@ -59,7 +59,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
         parse_messages_with_timeout(&mut buffers, Some(cargo_pid), &parsed_args)?;
 
     let exit_code = if parsed_messages.child_killed {
-        let _ = std::writeln!(&mut std::io::stdout(), "");
+        buffers.writeln_to_stdout("")?;
 
         let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
 
@@ -115,7 +115,7 @@ fn process_messages(
 
     if parsed_args.json_message_format {
         for message in processed_messages {
-            buffers.writeln_to_stdout(serde_json::to_string(&message)?)?;
+            buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
         }
     } else {
         for message in processed_messages.filter_map(|message| match message {
