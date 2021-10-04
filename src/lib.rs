@@ -141,7 +141,7 @@ fn open_in_external_app_for_affected_files(
     workspace_root: &Path,
 ) -> Result<()> {
     let app = &parsed_args.open_in_external_app;
-    if !app.is_empty() && !source_files_in_consistent_order.is_empty() {
+    if !app.is_empty() {
         let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
         let mut child = Command::new(app).stdin(Stdio::piped()).spawn()?;
         child
