@@ -13,7 +13,7 @@ use crate::models::SourceFile;
 use anyhow::{Context, Result};
 use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
-use messages::{process_messages, ParsedMessages, ProcessedMessages};
+use messages::{ParsedMessages, ProcessedMessages};
 use models::EditorData;
 use options::Options;
 use std::{
@@ -98,7 +98,7 @@ fn process_messages1(
     let ProcessedMessages {
         messages,
         source_files_in_consistent_order,
-    } = process_messages(parsed_messages, &parsed_args, workspace_root)?;
+    } = ProcessedMessages::process(parsed_messages, &parsed_args, workspace_root)?;
     let processed_messages = messages.into_iter();
 
     if parsed_args.json_message_format {

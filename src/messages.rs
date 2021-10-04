@@ -107,60 +107,62 @@ impl ErrorsAndWarnings {
     }
 }
 
-pub fn process_messages(
-    parsed_messages: ParsedMessages,
-    parsed_args: &Options,
-    workspace_root: &Path,
-) -> Result<ProcessedMessages> {
-    let has_warnings_only =
-        parsed_messages.internal_compiler_errors.is_empty() && parsed_messages.errors.is_empty();
+impl ProcessedMessages {
+    pub fn process(
+        parsed_messages: ParsedMessages,
+        parsed_args: &Options,
+        workspace_root: &Path,
+    ) -> Result<Self> {
+        let has_warnings_only = parsed_messages.internal_compiler_errors.is_empty()
+            && parsed_messages.errors.is_empty();
 
-    let ErrorsAndWarnings { errors, warnings } =
-        ErrorsAndWarnings::process(parsed_messages, parsed_args, workspace_root);
+        let ErrorsAndWarnings { errors, warnings } =
+            ErrorsAndWarnings::process(parsed_messages, parsed_args, workspace_root);
 
-    let errors = filter_and_order_messages(errors, workspace_root);
-    let warnings = filter_and_order_messages(warnings, workspace_root);
+        let errors = filter_and_order_messages(errors, workspace_root);
+        let warnings = filter_and_order_messages(warnings, workspace_root);
 
-    let messages = if parsed_args.show_warnings_if_errors_exist {
-        Either::Left(errors.chain(warnings))
-    } else {
-        let messages = if has_warnings_only {
-            Either::Left(warnings)
+        let messages = if parsed_args.show_warnings_if_errors_exist {
+            Either::Left(errors.chain(warnings))
         } else {
-            Either::Right(errors)
+            let messages = if has_warnings_only {
+                Either::Left(warnings)
+            } else {
+                Either::Right(errors)
+            };
+            Either::Right(messages)
         };
-        Either::Right(messages)
-    };
 
-    let limit_messages = parsed_args.limit_messages;
-    let no_limit = limit_messages == 0;
-    let messages = {
-        if no_limit {
-            Either::Left(messages)
-        } else {
-            Either::Right(messages.take(limit_messages))
+        let limit_messages = parsed_args.limit_messages;
+        let no_limit = limit_messages == 0;
+        let messages = {
+            if no_limit {
+                Either::Left(messages)
+            } else {
+                Either::Right(messages.take(limit_messages))
+            }
         }
-    }
-    .collect::<Vec<_>>();
+        .collect::<Vec<_>>();
 
-    let source_files_in_consistent_order =
-        extract_source_files_for_external_app(&messages, parsed_args, workspace_root);
+        let source_files_in_consistent_order =
+            extract_source_files_for_external_app(&messages, parsed_args, workspace_root);
 
-    let messages = messages.into_iter();
-    let messages = {
-        if parsed_args.ascending_messages_order {
-            Either::Left(messages)
-        } else {
-            Either::Right(messages.rev())
+        let messages = messages.into_iter();
+        let messages = {
+            if parsed_args.ascending_messages_order {
+                Either::Left(messages)
+            } else {
+                Either::Right(messages.rev())
+            }
         }
-    }
-    .map(Message::CompilerMessage)
-    .collect();
+        .map(Message::CompilerMessage)
+        .collect();
 
-    Ok(ProcessedMessages {
-        messages,
-        source_files_in_consistent_order,
-    })
+        Ok(Self {
+            messages,
+            source_files_in_consistent_order,
+        })
+    }
 }
 
 fn filter_and_order_messages(
