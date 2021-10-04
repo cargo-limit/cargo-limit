@@ -79,7 +79,7 @@ fn parse_messages_and_copy_child_stdout(
     parsed_args: &Options,
 ) -> Result<ParsedMessages> {
     let parsed_messages = if parsed_args.help || parsed_args.version {
-        ParsedMessages::empty()
+        ParsedMessages::default()
     } else {
         ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)?
     };

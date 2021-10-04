@@ -5,7 +5,14 @@ use cargo_metadata::{
     CompilerMessage, Message,
 };
 use itertools::{Either, Itertools};
-use std::{collections::HashSet, io, io::Write, path::Path, time::Duration};
+use std::{
+    collections::HashSet,
+    io,
+    io::Write,
+    path::Path,
+    sync::mpsc::{sync_channel, TryRecvError},
+    time::Duration,
+};
 
 // TODO: Default? pub?
 #[derive(Default)]
@@ -13,6 +20,7 @@ pub struct ParsedMessages {
     internal_compiler_errors: Vec<CompilerMessage>,
     errors: Vec<CompilerMessage>,
     non_errors: Vec<CompilerMessage>,
+    pub child_killed: bool,
 }
 
 struct ErrorsAndWarnings {
@@ -25,7 +33,9 @@ pub struct ProcessedMessages {
     pub source_files_in_consistent_order: Vec<SourceFile>,
 }
 
+// TODO: rename
 impl ParsedMessages {
+    // TODO: rename: parse with_timeout
     pub fn parse<R: io::BufRead>(
         reader: &mut R,
         cargo_pid: Option<u32>,
@@ -33,6 +43,7 @@ impl ParsedMessages {
     ) -> Result<Self> {
         let mut result = ParsedMessages::default();
         let mut kill_timer_started = false;
+        let (killed_sender, killed_receiver) = sync_channel(1);
 
         for message in Message::parse_stream(reader) {
             match message? {
@@ -51,30 +62,30 @@ impl ParsedMessages {
                 _ => (),
             }
 
+            // TODO: extract?
             if let Some(cargo_pid) = cargo_pid {
                 if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
                     let time_limit = parsed_args.time_limit_after_error;
                     if time_limit > Duration::from_secs(0) && !kill_timer_started {
                         kill_timer_started = true;
+                        let killed_sender = killed_sender.clone();
                         process::wait_in_background_and_kill(cargo_pid, time_limit, move || {
+                            let _ = killed_sender.send(());
                             let _ = std::writeln!(&mut io::stdout(), ""); // TODO: move to run_cargo_filtered
-
-                            // TODO: set flag and check in run_cargo_filtered
                         });
                     }
                 }
             }
         }
 
-        Ok(result)
-    }
+        let child_killed = match killed_receiver.try_recv() {
+            Ok(()) => true,
+            Err(TryRecvError::Empty) => false,
+            Err(error) => return Err(anyhow::Error::from(error)),
+        };
+        result.child_killed = child_killed;
 
-    pub fn empty() -> Self {
-        Self {
-            internal_compiler_errors: Vec::new(),
-            errors: Vec::new(),
-            non_errors: Vec::new(),
-        }
+        Ok(result)
     }
 
     pub fn merge(&mut self, other: Self) {
@@ -82,6 +93,7 @@ impl ParsedMessages {
             .extend(other.internal_compiler_errors);
         self.errors.extend(other.errors);
         self.non_errors.extend(other.non_errors);
+        self.child_killed |= other.child_killed;
     }
 }
 
