@@ -56,11 +56,11 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
     let mut buffers = Buffers::new(&mut child)?;
     let mut parsed_messages =
-        parse_messages_and_copy_child_stdout(&mut buffers, cargo_pid, &parsed_args)?;
+        parse_messages_and_copy_child_stdout(&mut buffers, Some(cargo_pid), &parsed_args)?;
     let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
     parsed_messages.merge(parse_messages_and_copy_child_stdout(
         &mut buffers,
-        cargo_pid,
+        None,
         &parsed_args,
     )?);
 
@@ -75,7 +75,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
 fn parse_messages_and_copy_child_stdout(
     buffers: &mut Buffers,
-    cargo_pid: u32,
+    cargo_pid: Option<u32>,
     parsed_args: &Options,
 ) -> Result<ParsedMessages> {
     let parsed_messages = if parsed_args.help || parsed_args.version {

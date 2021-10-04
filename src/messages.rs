@@ -28,7 +28,7 @@ pub struct ProcessedMessages {
 impl ParsedMessages {
     pub fn parse<R: io::BufRead>(
         reader: &mut R,
-        cargo_pid: u32,
+        cargo_pid: Option<u32>,
         parsed_args: &Options,
     ) -> Result<Self> {
         let mut result = ParsedMessages::default();
@@ -51,13 +51,17 @@ impl ParsedMessages {
                 _ => (),
             }
 
-            if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
-                let time_limit = parsed_args.time_limit_after_error;
-                if time_limit > Duration::from_secs(0) && !kill_timer_started {
-                    kill_timer_started = true;
-                    process::wait_in_background_and_kill(cargo_pid, time_limit, move || {
-                        let _ = std::writeln!(&mut io::stdout(), "");
-                    });
+            if let Some(cargo_pid) = cargo_pid {
+                if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
+                    let time_limit = parsed_args.time_limit_after_error;
+                    if time_limit > Duration::from_secs(0) && !kill_timer_started {
+                        kill_timer_started = true;
+                        process::wait_in_background_and_kill(cargo_pid, time_limit, move || {
+                            let _ = std::writeln!(&mut io::stdout(), ""); // TODO: move to run_cargo_filtered
+
+                            // TODO: set flag and check in run_cargo_filtered
+                        });
+                    }
                 }
             }
         }
