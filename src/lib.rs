@@ -77,38 +77,11 @@ fn parse_and_process_messages(
     buffers: &mut Buffers,
     cargo_pid: u32,
     parsed_args: &Options,
-    //workspace_root: &Path,
 ) -> Result<ParsedMessages> {
-    // TODO: refactor
-    let parsed_messages = if !parsed_args.help && !parsed_args.version {
-        ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)?
-        /*let ProcessedMessages {
-            messages,
-            source_files_in_consistent_order,
-        } = process_messages(parsed_messages, &parsed_args, workspace_root)?;
-        let processed_messages = messages.into_iter();
-
-        if parsed_args.json_message_format {
-            for message in processed_messages {
-                buffers.writeln_to_stdout(serde_json::to_string(&message)?)?;
-            }
-        } else {
-            for message in processed_messages.filter_map(|message| match message {
-                Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
-                _ => None,
-            }) {
-                buffers.write_to_stderr(message)?;
-            }
-        }
-
-        open_in_external_app_for_affected_files(
-            buffers,
-            source_files_in_consistent_order,
-            parsed_args,
-            workspace_root,
-        )?;*/
-    } else {
+    let parsed_messages = if parsed_args.help || parsed_args.version {
         ParsedMessages::empty()
+    } else {
+        ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)?
     };
 
     buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
