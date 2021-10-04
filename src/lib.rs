@@ -56,24 +56,40 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
     let mut buffers = Buffers::new(&mut child)?;
     let mut parsed_messages =
-        parse_messages_and_copy_child_stdout(&mut buffers, Some(cargo_pid), &parsed_args)?;
-    let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
-    parsed_messages.merge(parse_messages_and_copy_child_stdout(
-        &mut buffers,
-        None,
-        &parsed_args,
-    )?);
+        parse_messages_and_start_kill_timer(&mut buffers, Some(cargo_pid), &parsed_args)?;
 
-    process_messages(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
+    let mut child_killed = false;
+
+    let exit_code = if parsed_messages.child_killed {
+        let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
+
+        parsed_messages.merge(parse_messages_and_start_kill_timer(
+            &mut buffers,
+            None,
+            &parsed_args,
+        )?);
+        child_killed = parsed_messages.child_killed;
+        process_messages(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
+        buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
+
+        exit_code
+    } else {
+        child_killed = parsed_messages.child_killed;
+        process_messages(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
+        buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
+        child.wait()?.code().unwrap_or(NO_EXIT_CODE)
+    };
 
     if parsed_args.help {
         buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
     }
 
+    dbg!(child_killed);
+
     Ok(exit_code)
 }
 
-fn parse_messages_and_copy_child_stdout(
+fn parse_messages_and_start_kill_timer(
     buffers: &mut Buffers,
     cargo_pid: Option<u32>,
     parsed_args: &Options,
@@ -84,7 +100,6 @@ fn parse_messages_and_copy_child_stdout(
         ParsedMessages::parse(buffers.child_stdout_reader_mut(), cargo_pid, parsed_args)?
     };
 
-    buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
     Ok(parsed_messages)
 }
 
