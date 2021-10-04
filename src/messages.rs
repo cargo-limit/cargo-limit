@@ -8,7 +8,6 @@ use itertools::{Either, Itertools};
 use std::{
     collections::HashSet,
     io,
-    io::Write,
     path::Path,
     sync::mpsc::{sync_channel, TryRecvError},
     time::Duration,
