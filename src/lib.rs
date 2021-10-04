@@ -55,9 +55,10 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     })?;
 
     let mut buffers = Buffers::new(&mut child)?;
-    let mut parsed_messages = parse_and_process_messages(&mut buffers, cargo_pid, &parsed_args)?;
+    let mut parsed_messages =
+        parse_messages_and_copy_child_stdout(&mut buffers, cargo_pid, &parsed_args)?;
     let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
-    parsed_messages.merge(parse_and_process_messages(
+    parsed_messages.merge(parse_messages_and_copy_child_stdout(
         &mut buffers,
         cargo_pid,
         &parsed_args,
@@ -72,8 +73,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     Ok(exit_code)
 }
 
-// TODO: rename
-fn parse_and_process_messages(
+fn parse_messages_and_copy_child_stdout(
     buffers: &mut Buffers,
     cargo_pid: u32,
     parsed_args: &Options,
