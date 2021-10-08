@@ -98,11 +98,15 @@ impl CargoProcess {
 
                 #[cfg(windows)]
                 {
-                    let std::process::Output { stderr, .. } =
-                        std::process::Command::new("taskkill")
-                            .args(&["/PID", pid.to_string().as_str(), "/t"])
-                            .output();
-                    String::from_utf8_lossy(stderr).starts_with("SUCCESS")
+                    use std::process::Output;
+                    if let Ok(Output { stderr, .. }) = Command::new("taskkill")
+                        .args(&["/PID", pid.to_string().as_str(), "/t"])
+                        .output()
+                    {
+                        String::from_utf8_lossy(&stderr).starts_with("SUCCESS")
+                    } else {
+                        false
+                    }
                 }
 
                 #[cfg(not(any(unix, windows)))]
