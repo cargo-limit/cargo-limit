@@ -1,11 +1,10 @@
 use crate::options::Options;
-use anyhow::{format_err, Context, Result};
-use atomig::{Atom, Atomic};
+use anyhow::{Context, Result};
+use atomig::Atomic;
 use getset::MutGetters;
 use std::{
     env, fmt,
-    io::Write,
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::{Child, Command, Stdio},
     sync::{atomic::Ordering, Arc},
     thread,

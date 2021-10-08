@@ -20,9 +20,8 @@ use models::{EditorData, SourceFile};
 use options::Options;
 use process::{failed_to_execute_error_text, CargoProcess};
 use std::{
-    env, fmt,
     io::Write,
-    path::{Path, PathBuf},
+    path::Path,
     process::{Command, Stdio},
 };
 
