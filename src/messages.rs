@@ -69,7 +69,6 @@ impl ParsedMessages {
         } else {
             false
         };
-        dbg!(result.child_killed);
 
         Ok(result)
     }
