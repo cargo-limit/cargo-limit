@@ -1,11 +1,13 @@
 use cargo_metadata::diagnostic::{Diagnostic, DiagnosticLevel, DiagnosticSpan};
+use getset::Getters;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Getters)]
 pub struct EditorData {
-    pub workspace_root: PathBuf,
-    pub files: Vec<SourceFile>,
+    #[get = "pub"]
+    workspace_root: PathBuf,
+    files: Vec<SourceFile>,
 }
 
 #[derive(Deserialize, Serialize)]

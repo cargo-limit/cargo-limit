@@ -21,7 +21,7 @@ impl NeovimCommand {
 
         let editor_data: EditorData = serde_json::from_str(&raw_editor_data)?;
         let escaped_workspace_root = editor_data
-            .workspace_root
+            .workspace_root()
             .to_string_lossy()
             .replace('/', ESCAPE_CHAR)
             .replace('\\', ESCAPE_CHAR)
