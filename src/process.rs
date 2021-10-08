@@ -15,6 +15,9 @@ use std::{
 pub(crate) const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 
+#[doc(hidden)]
+pub const NO_EXIT_CODE: i32 = 127;
+
 #[derive(Debug, MutGetters)]
 pub struct CargoProcess {
     #[get_mut = "pub"]
@@ -54,6 +57,10 @@ impl CargoProcess {
         })?;
 
         Ok(Self { child, state })
+    }
+
+    pub fn wait(&mut self) -> Result<i32> {
+        Ok(self.child.wait()?.code().unwrap_or(NO_EXIT_CODE))
     }
 
     pub fn kill_after_timeout<F: 'static>(&self, time_limit: Duration, after_kill: F)

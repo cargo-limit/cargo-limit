@@ -9,6 +9,9 @@ mod messages;
 mod options;
 mod process;
 
+#[doc(hidden)]
+pub use process::NO_EXIT_CODE;
+
 use anyhow::{Context, Result};
 use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
@@ -22,9 +25,6 @@ use std::{
     path::{Path, PathBuf},
     process::{Command, Stdio},
 };
-
-#[doc(hidden)]
-pub const NO_EXIT_CODE: i32 = 127;
 
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     include_str!("../additional_environment_variables.txt");
@@ -44,13 +44,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
     let exit_code = if parsed_messages.child_killed {
         buffers.writeln_to_stdout("")?;
-
-        let exit_code = cargo_process
-            .child_mut()
-            .wait()?
-            .code()
-            .unwrap_or(NO_EXIT_CODE); // TODO: extract
-
+        let exit_code = cargo_process.wait()?;
         parsed_messages.merge(parse_messages_with_timeout(
             &mut buffers,
             None,
@@ -63,11 +57,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     } else {
         process_messages(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
-        cargo_process
-            .child_mut()
-            .wait()?
-            .code()
-            .unwrap_or(NO_EXIT_CODE) // TODO: extract
+        cargo_process.wait()?
     };
 
     if parsed_args.help {
