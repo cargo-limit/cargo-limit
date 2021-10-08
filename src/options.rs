@@ -1,6 +1,7 @@
 use crate::{cargo_toml::CargoToml, process::CARGO_EXECUTABLE};
 use anyhow::{format_err, Context, Result};
 use const_format::concatcp;
+use getset::{CopyGetters, Getters};
 use itertools::Either;
 use std::{env, iter, path::Path, str::FromStr, time::Duration};
 
@@ -33,21 +34,33 @@ const COLOR_ALWAYS: &str = "always";
 const COLOR_NEVER: &str = "never";
 const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, CopyGetters, Getters)]
 pub struct Options {
     cargo_args: Vec<String>,
     args_after_app_args_delimiter: Vec<String>,
     terminal_supports_colors: bool,
-    pub limit_messages: usize,
-    pub time_limit_after_error: Duration,
-    pub ascending_messages_order: bool,
-    pub show_warnings_if_errors_exist: bool,
-    pub show_dependencies_warnings: bool,
-    pub open_in_external_app: String,
-    pub open_in_external_app_on_warnings: bool,
-    pub help: bool,
-    pub version: bool,
-    pub json_message_format: bool,
+
+    #[get_copy = "pub"]
+    limit_messages: usize,
+    #[get_copy = "pub"]
+    time_limit_after_error: Duration,
+    #[get_copy = "pub"]
+    ascending_messages_order: bool,
+    #[get_copy = "pub"]
+    show_warnings_if_errors_exist: bool,
+    #[get_copy = "pub"]
+    show_dependencies_warnings: bool,
+    #[get = "pub"]
+    open_in_external_app: String,
+    #[get_copy = "pub"]
+    open_in_external_app_on_warnings: bool,
+    #[get_copy = "pub"]
+    help: bool,
+    #[get_copy = "pub"]
+    version: bool,
+    #[get_copy = "pub"]
+    json_message_format: bool,
+
     short_message_format: bool,
 }
 

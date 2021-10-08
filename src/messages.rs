@@ -37,7 +37,7 @@ impl ParsedMessages {
         options: &Options,
     ) -> Result<Self> {
         let mut result = ParsedMessages::default();
-        if options.help || options.version {
+        if options.help() || options.version() {
             return Ok(result);
         }
 
@@ -60,7 +60,7 @@ impl ParsedMessages {
 
             if let Some(cargo_process) = cargo_process {
                 if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
-                    let time_limit = options.time_limit_after_error;
+                    let time_limit = options.time_limit_after_error();
                     if time_limit > Duration::from_secs(0) {
                         cargo_process.kill_after_timeout(time_limit);
                     }
@@ -88,7 +88,7 @@ impl ParsedMessages {
 
 impl ErrorsAndWarnings {
     fn process(parsed_messages: ParsedMessages, options: &Options, workspace_root: &Path) -> Self {
-        let warnings = if options.show_dependencies_warnings {
+        let warnings = if options.show_dependencies_warnings() {
             parsed_messages.non_errors
         } else {
             parsed_messages
@@ -123,7 +123,7 @@ impl ProcessedMessages {
         let errors = Self::filter_and_order_messages(errors, workspace_root);
         let warnings = Self::filter_and_order_messages(warnings, workspace_root);
 
-        let messages = if options.show_warnings_if_errors_exist {
+        let messages = if options.show_warnings_if_errors_exist() {
             Either::Left(errors.chain(warnings))
         } else {
             let messages = if has_warnings_only {
@@ -134,7 +134,7 @@ impl ProcessedMessages {
             Either::Right(messages)
         };
 
-        let limit_messages = options.limit_messages;
+        let limit_messages = options.limit_messages();
         let no_limit = limit_messages == 0;
         let messages = {
             if no_limit {
@@ -150,7 +150,7 @@ impl ProcessedMessages {
 
         let messages = messages.into_iter();
         let messages = {
-            if options.ascending_messages_order {
+            if options.ascending_messages_order() {
                 Either::Left(messages)
             } else {
                 Either::Right(messages.rev())
@@ -208,7 +208,7 @@ impl ProcessedMessages {
         let spans_and_messages = messages
             .iter()
             .filter(|message| {
-                if options.open_in_external_app_on_warnings {
+                if options.open_in_external_app_on_warnings() {
                     true
                 } else {
                     matches!(

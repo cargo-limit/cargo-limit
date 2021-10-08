@@ -58,7 +58,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
         cargo_process.wait()?
     };
 
-    if options.help {
+    if options.help() {
         buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
     }
 
@@ -77,7 +77,7 @@ fn process_messages(
     } = ProcessedMessages::process(parsed_messages, &options, workspace_root)?;
     let processed_messages = messages.into_iter();
 
-    if options.json_message_format {
+    if options.json_message_format() {
         for message in processed_messages {
             buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
         }
@@ -104,7 +104,7 @@ fn open_in_external_app_for_affected_files(
     options: &Options,
     workspace_root: &Path,
 ) -> Result<()> {
-    let app = &options.open_in_external_app;
+    let app = &options.open_in_external_app();
     if !app.is_empty() {
         let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
         let mut child = Command::new(app).stdin(Stdio::piped()).spawn()?;
