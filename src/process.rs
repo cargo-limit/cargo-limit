@@ -102,10 +102,15 @@ impl CargoProcess {
 
             #[cfg(windows)]
             {
-                let _ = std::process::Command::new("taskkill")
+                let std::process::Output { stderr, .. } = std::process::Command::new("taskkill")
                     .args(&["/PID", pid.to_string().as_str(), "/t"])
                     .output();
-                Self::killed(state); // TODO: handle failure
+                let success = String::from_utf8_lossy(stderr).starts_with("SUCCESS");
+                if success {
+                    Self::killed(state);
+                } else {
+                    Self::failed_to_kill(state);
+                }
             }
 
             #[cfg(not(any(unix, windows)))]
