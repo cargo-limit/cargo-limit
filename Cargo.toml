@@ -12,6 +12,7 @@ documentation = "https://github.com/alopatindev/cargo-limit#readme"
 
 [dependencies]
 anyhow = "1"
+atomic_enum = "0.1"
 atty = "0.2"
 cargo_metadata = "0.14"
 const_format = "^0.2.8"

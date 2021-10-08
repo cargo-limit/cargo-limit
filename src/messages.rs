@@ -41,7 +41,6 @@ impl ParsedMessages {
         parsed_args: &Options,
     ) -> Result<Self> {
         let mut result = ParsedMessages::default();
-        let mut kill_timer_started = false;
         let (killed_sender, killed_receiver) = sync_channel(1); // TODO: replace with atomic bool
 
         for message in Message::parse_stream(reader) {
@@ -65,10 +64,9 @@ impl ParsedMessages {
             if let Some(cargo_process) = cargo_process {
                 if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
                     let time_limit = parsed_args.time_limit_after_error;
-                    if time_limit > Duration::from_secs(0) && !kill_timer_started {
-                        kill_timer_started = true; // TODO: make it shared atomic
+                    if time_limit > Duration::from_secs(0) {
                         let killed_sender = killed_sender.clone();
-                        cargo_process.wait_in_background_and_kill(time_limit, move || {
+                        cargo_process.kill_after_timeout(time_limit, move || {
                             let _ = killed_sender.send(()); // TODO: don't block here, set child_killed atomic bool
                             dbg!("killed after timeout");
                         });
