@@ -29,9 +29,9 @@ pub struct CargoProcess {
 pub enum State {
     Running,
     KillTimerStarted,
-    // TODO: Killing,
+    Killing,
     Killed,
-    // TODO: FailedToKill,
+    FailedToKill,
 }
 
 impl CargoProcess {
@@ -68,10 +68,7 @@ impl CargoProcess {
         Ok(self.child.wait()?.code().unwrap_or(NO_EXIT_CODE))
     }
 
-    pub fn kill_after_timeout<F: 'static>(&self, time_limit: Duration, after_kill: F)
-    where
-        F: Fn() + Send,
-    {
+    pub fn kill_after_timeout(&self, time_limit: Duration) {
         if self.can_start_kill_timer() {
             thread::spawn({
                 let pid = self.child.id();
@@ -79,17 +76,21 @@ impl CargoProcess {
                 move || {
                     thread::sleep(time_limit);
                     Self::kill(pid, state);
-                    after_kill();
                 }
             });
         }
     }
 
     fn kill(pid: u32, state: Arc<Atomic<State>>) {
-        if Self::can_kill(state) {
+        if Self::can_start_killing(state.clone()) {
             #[cfg(unix)]
             {
                 let success = unsafe { libc::kill(pid as libc::pid_t, libc::SIGINT) == 0 };
+                if success {
+                    Self::killed(state)
+                } else {
+                    Self::failed_to_kill(state)
+                }
             }
 
             #[cfg(windows)]
@@ -97,6 +98,7 @@ impl CargoProcess {
                 let _ = std::process::Command::new("taskkill")
                     .args(&["/PID", pid.to_string().as_str(), "/t"])
                     .output();
+                Self::killed(state); // TODO: handle failure
             }
 
             #[cfg(not(any(unix, windows)))]
@@ -115,11 +117,11 @@ impl CargoProcess {
             .is_ok()
     }
 
-    fn can_kill(state: Arc<Atomic<State>>) -> bool {
+    fn can_start_killing(state: Arc<Atomic<State>>) -> bool {
         state
             .compare_exchange(
                 State::Running,
-                State::Killed,
+                State::Killing,
                 Ordering::AcqRel,
                 Ordering::Acquire,
             )
@@ -127,11 +129,29 @@ impl CargoProcess {
             || state
                 .compare_exchange(
                     State::KillTimerStarted,
-                    State::Killed,
+                    State::Killing,
                     Ordering::AcqRel,
                     Ordering::Acquire,
                 )
                 .is_ok()
+    }
+
+    fn killed(state: Arc<Atomic<State>>) {
+        let _ = state.compare_exchange(
+            State::Killing,
+            State::Killed,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        );
+    }
+
+    fn failed_to_kill(state: Arc<Atomic<State>>) {
+        let _ = state.compare_exchange(
+            State::Killing,
+            State::FailedToKill,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        );
     }
 }
 
