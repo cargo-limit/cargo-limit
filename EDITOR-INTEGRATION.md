@@ -20,8 +20,19 @@ In order to not disrupt from text editing, this will work only if
 ## Custom open handler
 If you want something different than opening/switching tabs with affected files — then you can add your own handler to `init.vim`:
 ```viml
-function! g:CargoLimitOpen(editor_data)
-  echo a:editor_data
+set errorformat =%f:%l:%c:%m
+
+function! g:CargoLimitOpen(result)
+  cgetexpr []
+  for file in a:result['files']
+    caddexpr file['path'] . ':' . file['line'] . ':' . file['column'] . ':' . file['message']
+  endfor
+
+  if empty(a:result['files'])
+    cclose
+  else
+    copen
+  endif
 endfunction
 ```
 
