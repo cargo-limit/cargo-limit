@@ -90,31 +90,30 @@ impl CargoProcess {
 
     fn kill(pid: u32, state: Arc<Atomic<State>>) {
         if Self::can_start_killing(state.clone()) {
-            #[cfg(unix)]
-            {
-                let success = unsafe { libc::kill(pid as libc::pid_t, libc::SIGINT) == 0 };
-                if success {
-                    Self::killed(state)
-                } else {
-                    Self::failed_to_kill(state)
+            let success = {
+                #[cfg(unix)]
+                unsafe {
+                    libc::kill(pid as libc::pid_t, libc::SIGINT) == 0
                 }
-            }
 
-            #[cfg(windows)]
-            {
-                let std::process::Output { stderr, .. } = std::process::Command::new("taskkill")
-                    .args(&["/PID", pid.to_string().as_str(), "/t"])
-                    .output();
-                let success = String::from_utf8_lossy(stderr).starts_with("SUCCESS");
-                if success {
-                    Self::killed(state);
-                } else {
-                    Self::failed_to_kill(state);
+                #[cfg(windows)]
+                {
+                    let std::process::Output { stderr, .. } =
+                        std::process::Command::new("taskkill")
+                            .args(&["/PID", pid.to_string().as_str(), "/t"])
+                            .output();
+                    String::from_utf8_lossy(stderr).starts_with("SUCCESS")
                 }
-            }
 
-            #[cfg(not(any(unix, windows)))]
-            compile_error!("this platform is unsupported");
+                #[cfg(not(any(unix, windows)))]
+                compile_error!("this platform is unsupported");
+            };
+
+            if success {
+                Self::killed(state)
+            } else {
+                Self::failed_to_kill(state)
+            }
         }
     }
 
