@@ -49,9 +49,7 @@ impl CargoProcess {
             let pid = child.id();
             let state = state.clone();
             move || {
-                dbg!("ctrl+c");
                 Self::kill(pid, state.clone());
-                dbg!("killed on ctrl+c");
             }
         })?;
 
@@ -62,9 +60,7 @@ impl CargoProcess {
     where
         F: Fn() + Send,
     {
-        dbg!("trying to start kill timer");
         if self.can_start_kill_timer() {
-            dbg!("kill timer has started");
             thread::spawn({
                 let pid = self.child.id();
                 let state = self.state.clone();
@@ -78,9 +74,7 @@ impl CargoProcess {
     }
 
     fn kill(pid: u32, state: Arc<Atomic<State>>) {
-        dbg!("trying to kill");
         if Self::can_kill(state) {
-            dbg!("killing");
             #[cfg(unix)]
             unsafe {
                 libc::kill(pid as libc::pid_t, libc::SIGINT);

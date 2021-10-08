@@ -68,7 +68,6 @@ impl ParsedMessages {
                         let killed_sender = killed_sender.clone();
                         cargo_process.kill_after_timeout(time_limit, move || {
                             let _ = killed_sender.send(()); // TODO: don't block here, set child_killed atomic bool
-                            dbg!("killed after timeout");
                         });
                     }
                 }
