@@ -9,25 +9,21 @@ mod messages;
 mod options;
 mod process;
 
-use crate::models::SourceFile;
+#[doc(hidden)]
+pub use process::NO_EXIT_CODE;
+
 use anyhow::{Context, Result};
 use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
 use messages::{ParsedMessages, ProcessedMessages};
-use models::EditorData;
+use models::{EditorData, SourceFile};
 use options::Options;
+use process::{failed_to_execute_error_text, CargoProcess};
 use std::{
-    env, fmt,
     io::Write,
-    path::{Path, PathBuf},
+    path::Path,
     process::{Command, Stdio},
 };
-
-pub(crate) const CARGO_EXECUTABLE: &str = "cargo";
-const CARGO_ENV_VAR: &str = "CARGO";
-
-#[doc(hidden)]
-pub const NO_EXIT_CODE: i32 = 127;
 
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     include_str!("../additional_environment_variables.txt");
@@ -37,32 +33,17 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     let workspace_root = MetadataCommand::new().no_deps().exec()?.workspace_root;
     let workspace_root = workspace_root.as_ref();
     let parsed_args = Options::from_os_env(current_exe, workspace_root)?;
-    let cargo_path = env::var(CARGO_ENV_VAR)
-        .map(PathBuf::from)
-        .ok()
-        .unwrap_or_else(|| PathBuf::from(CARGO_EXECUTABLE));
+    // TODO: args => options?
 
-    let error_text = failed_to_execute_error_text(&cargo_path);
-    let mut child = Command::new(cargo_path)
-        .args(parsed_args.all_args())
-        .stdout(Stdio::piped())
-        .spawn()
-        .context(error_text)?;
+    let mut cargo_process = CargoProcess::run(&parsed_args)?;
 
-    let cargo_pid = child.id();
-    ctrlc::set_handler(move || {
-        process::kill(cargo_pid);
-    })?;
-
-    let mut buffers = Buffers::new(&mut child)?;
+    let mut buffers = Buffers::new(cargo_process.child_mut())?;
     let mut parsed_messages =
-        parse_messages_with_timeout(&mut buffers, Some(cargo_pid), &parsed_args)?;
+        parse_messages_with_timeout(&mut buffers, Some(&cargo_process), &parsed_args)?;
 
     let exit_code = if parsed_messages.child_killed {
         buffers.writeln_to_stdout("")?;
-
-        let exit_code = child.wait()?.code().unwrap_or(NO_EXIT_CODE);
-
+        let exit_code = cargo_process.wait()?;
         parsed_messages.merge(parse_messages_with_timeout(
             &mut buffers,
             None,
@@ -75,7 +56,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     } else {
         process_messages(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
-        child.wait()?.code().unwrap_or(NO_EXIT_CODE)
+        cargo_process.wait()?
     };
 
     if parsed_args.help {
@@ -87,7 +68,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
 fn parse_messages_with_timeout(
     buffers: &mut Buffers,
-    cargo_pid: Option<u32>,
+    cargo_process: Option<&CargoProcess>,
     parsed_args: &Options,
 ) -> Result<ParsedMessages> {
     if parsed_args.help || parsed_args.version {
@@ -95,7 +76,7 @@ fn parse_messages_with_timeout(
     } else {
         ParsedMessages::parse_with_timeout(
             buffers.child_stdout_reader_mut(),
-            cargo_pid,
+            cargo_process,
             parsed_args,
         )
     }
@@ -157,10 +138,6 @@ fn open_in_external_app_for_affected_files(
         buffers.write_all_to_stderr(&output.stderr)?;
     }
     Ok(())
-}
-
-fn failed_to_execute_error_text<T: fmt::Debug>(app: T) -> String {
-    format!("failed to execute {:?}", app)
 }
 
 #[doc(hidden)]
