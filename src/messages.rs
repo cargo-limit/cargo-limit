@@ -5,6 +5,7 @@ use cargo_metadata::{
     CompilerMessage, Message,
 };
 use itertools::{Either, Itertools};
+use process::CargoProcess;
 use std::{
     collections::HashSet,
     io,
@@ -36,12 +37,12 @@ pub struct ProcessedMessages {
 impl ParsedMessages {
     pub fn parse_with_timeout<R: io::BufRead>(
         reader: &mut R,
-        cargo_pid: Option<u32>,
+        cargo_process: Option<&CargoProcess>,
         parsed_args: &Options,
     ) -> Result<Self> {
         let mut result = ParsedMessages::default();
         let mut kill_timer_started = false;
-        let (killed_sender, killed_receiver) = sync_channel(1);
+        let (killed_sender, killed_receiver) = sync_channel(1); // TODO: replace with atomic bool
 
         for message in Message::parse_stream(reader) {
             match message? {
@@ -61,14 +62,14 @@ impl ParsedMessages {
             }
 
             // TODO: extract?
-            if let Some(cargo_pid) = cargo_pid {
+            if let Some(cargo_process) = cargo_process {
                 if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
                     let time_limit = parsed_args.time_limit_after_error;
                     if time_limit > Duration::from_secs(0) && !kill_timer_started {
-                        kill_timer_started = true;
+                        kill_timer_started = true; // TODO: make it shared atomic
                         let killed_sender = killed_sender.clone();
-                        process::wait_in_background_and_kill(cargo_pid, time_limit, move || {
-                            let _ = killed_sender.send(());
+                        cargo_process.wait_in_background_and_kill(time_limit, move || {
+                            let _ = killed_sender.send(()); // TODO: don't block here, set child_killed atomic bool
                         });
                     }
                 }
@@ -80,7 +81,7 @@ impl ParsedMessages {
             Err(TryRecvError::Empty) => false,
             Err(error) => return Err(anyhow::Error::from(error)),
         };
-        result.child_killed = child_killed;
+        result.child_killed = child_killed; // TODO: remove from this struct?
 
         Ok(result)
     }

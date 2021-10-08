@@ -1,4 +1,4 @@
-use crate::{cargo_toml::CargoToml, CARGO_EXECUTABLE};
+use crate::{cargo_toml::CargoToml, process::CARGO_EXECUTABLE};
 use anyhow::{format_err, Context, Result};
 use const_format::concatcp;
 use itertools::Either;
