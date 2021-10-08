@@ -32,34 +32,29 @@ const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
 pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     let workspace_root = MetadataCommand::new().no_deps().exec()?.workspace_root;
     let workspace_root = workspace_root.as_ref();
-    let parsed_args = Options::from_os_env(current_exe, workspace_root)?;
-    // TODO: args => options?
+    let options = Options::from_os_env(current_exe, workspace_root)?;
 
-    let mut cargo_process = CargoProcess::run(&parsed_args)?;
+    let mut cargo_process = CargoProcess::run(&options)?;
 
     let mut buffers = Buffers::new(cargo_process.child_mut())?;
     let mut parsed_messages =
-        parse_messages_with_timeout(&mut buffers, Some(&cargo_process), &parsed_args)?;
+        parse_messages_with_timeout(&mut buffers, Some(&cargo_process), &options)?;
 
     let exit_code = if parsed_messages.child_killed {
         buffers.writeln_to_stdout("")?;
         let exit_code = cargo_process.wait()?;
-        parsed_messages.merge(parse_messages_with_timeout(
-            &mut buffers,
-            None,
-            &parsed_args,
-        )?);
-        process_messages(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
+        parsed_messages.merge(parse_messages_with_timeout(&mut buffers, None, &options)?);
+        process_messages(&mut buffers, parsed_messages, &options, workspace_root)?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
 
         exit_code
     } else {
-        process_messages(&mut buffers, parsed_messages, &parsed_args, workspace_root)?;
+        process_messages(&mut buffers, parsed_messages, &options, workspace_root)?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
         cargo_process.wait()?
     };
 
-    if parsed_args.help {
+    if options.help {
         buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
     }
 
@@ -69,15 +64,15 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 fn parse_messages_with_timeout(
     buffers: &mut Buffers,
     cargo_process: Option<&CargoProcess>,
-    parsed_args: &Options,
+    options: &Options,
 ) -> Result<ParsedMessages> {
-    if parsed_args.help || parsed_args.version {
+    if options.help || options.version {
         Ok(ParsedMessages::default())
     } else {
         ParsedMessages::parse_with_timeout(
             buffers.child_stdout_reader_mut(),
             cargo_process,
-            parsed_args,
+            options,
         )
     }
 }
@@ -85,16 +80,16 @@ fn parse_messages_with_timeout(
 fn process_messages(
     buffers: &mut Buffers,
     parsed_messages: ParsedMessages,
-    parsed_args: &Options,
+    options: &Options,
     workspace_root: &Path,
 ) -> Result<()> {
     let ProcessedMessages {
         messages,
         source_files_in_consistent_order,
-    } = ProcessedMessages::process(parsed_messages, &parsed_args, workspace_root)?;
+    } = ProcessedMessages::process(parsed_messages, &options, workspace_root)?;
     let processed_messages = messages.into_iter();
 
-    if parsed_args.json_message_format {
+    if options.json_message_format {
         for message in processed_messages {
             buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
         }
@@ -110,7 +105,7 @@ fn process_messages(
     open_in_external_app_for_affected_files(
         buffers,
         source_files_in_consistent_order,
-        parsed_args,
+        options,
         workspace_root,
     )
 }
@@ -118,10 +113,10 @@ fn process_messages(
 fn open_in_external_app_for_affected_files(
     buffers: &mut Buffers,
     source_files_in_consistent_order: Vec<SourceFile>,
-    parsed_args: &Options,
+    options: &Options,
     workspace_root: &Path,
 ) -> Result<()> {
-    let app = &parsed_args.open_in_external_app;
+    let app = &options.open_in_external_app;
     if !app.is_empty() {
         let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
         let mut child = Command::new(app).stdin(Stdio::piped()).spawn()?;

@@ -35,7 +35,7 @@ pub enum State {
 }
 
 impl CargoProcess {
-    pub fn run(parsed_args: &Options) -> Result<Self> {
+    pub fn run(options: &Options) -> Result<Self> {
         let cargo_path = env::var(CARGO_ENV_VAR)
             .map(PathBuf::from)
             .ok()
@@ -43,7 +43,7 @@ impl CargoProcess {
 
         let error_text = failed_to_execute_error_text(&cargo_path);
         let child = Command::new(cargo_path)
-            .args(parsed_args.all_args())
+            .args(options.all_args())
             .stdout(Stdio::piped())
             .spawn()
             .context(error_text)?;
