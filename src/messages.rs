@@ -6,7 +6,7 @@ use cargo_metadata::{
 };
 use itertools::{Either, Itertools};
 use process::CargoProcess;
-use std::{collections::HashSet, io, path::Path, thread, time::Duration};
+use std::{collections::HashSet, io, path::Path, time::Duration};
 
 // TODO: Default? pub?
 #[derive(Default)]
@@ -65,18 +65,11 @@ impl ParsedMessages {
         }
 
         result.child_killed = if let Some(cargo_process) = cargo_process {
-            // TODO: extract
-            loop {
-                let state = cargo_process.state();
-                if state == process::State::Killing {
-                    thread::yield_now();
-                } else {
-                    break state == process::State::Killed;
-                }
-            }
+            cargo_process.wait_if_killing_is_in_progress() == process::State::Killed
         } else {
             false
         };
+        dbg!(result.child_killed);
 
         Ok(result)
     }

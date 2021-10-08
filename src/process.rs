@@ -36,6 +36,7 @@ pub enum State {
 
 impl CargoProcess {
     pub fn run(parsed_args: &Options) -> Result<Self> {
+        dbg!("run cargo process");
         let cargo_path = env::var(CARGO_ENV_VAR)
             .map(PathBuf::from)
             .ok()
@@ -53,36 +54,51 @@ impl CargoProcess {
             let pid = child.id();
             let state = state.clone();
             move || {
+                dbg!("ctrl+c");
                 Self::kill(pid, state.clone());
+                dbg!("killed with ctrl+c");
             }
         })?;
 
         Ok(Self { child, state })
     }
 
-    pub fn state(&self) -> State {
-        self.state.load(Ordering::Acquire)
-    }
-
     pub fn wait(&mut self) -> Result<i32> {
         Ok(self.child.wait()?.code().unwrap_or(NO_EXIT_CODE))
     }
 
+    pub fn wait_if_killing_is_in_progress(&self) -> State {
+        loop {
+            let state = self.state.load(Ordering::Acquire);
+            dbg!(&state);
+            if state == State::Killing {
+                thread::yield_now();
+            } else {
+                break state;
+            }
+        }
+    }
+
     pub fn kill_after_timeout(&self, time_limit: Duration) {
+        dbg!("try kill_after_timeout");
         if self.can_start_kill_timer() {
+            dbg!("kill_after_timeout");
             thread::spawn({
                 let pid = self.child.id();
                 let state = self.state.clone();
                 move || {
                     thread::sleep(time_limit);
                     Self::kill(pid, state);
+                    dbg!("killed with timer");
                 }
             });
         }
     }
 
     fn kill(pid: u32, state: Arc<Atomic<State>>) {
+        dbg!("try kill");
         if Self::can_start_killing(state.clone()) {
+            dbg!("killing");
             #[cfg(unix)]
             {
                 let success = unsafe { libc::kill(pid as libc::pid_t, libc::SIGINT) == 0 };
@@ -137,6 +153,7 @@ impl CargoProcess {
     }
 
     fn killed(state: Arc<Atomic<State>>) {
+        dbg!("set killed");
         let _ = state.compare_exchange(
             State::Killing,
             State::Killed,
@@ -146,6 +163,7 @@ impl CargoProcess {
     }
 
     fn failed_to_kill(state: Arc<Atomic<State>>) {
+        dbg!("set FAILED to kill");
         let _ = state.compare_exchange(
             State::Killing,
             State::FailedToKill,
