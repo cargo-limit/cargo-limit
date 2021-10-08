@@ -44,6 +44,8 @@ cargo lrustdoc
 cargo ltest
 ```
 
+Also `llcheck`, `llrun`, etc.
+
 ## Neovim and other text editors/IDEs integration
 See [here](EDITOR-INTEGRATION.md#neovim-integration).
 
