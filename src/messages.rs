@@ -4,17 +4,19 @@ use cargo_metadata::{
     diagnostic::{DiagnosticLevel, DiagnosticSpan},
     CompilerMessage, Message,
 };
+use getset::CopyGetters;
 use itertools::{Either, Itertools};
 use process::CargoProcess;
 use std::{collections::HashSet, path::Path, time::Duration};
 
-// TODO: Default? pub?
-#[derive(Default)]
+#[derive(Default, CopyGetters)]
 pub struct ParsedMessages {
     internal_compiler_errors: Vec<CompilerMessage>,
     errors: Vec<CompilerMessage>,
     non_errors: Vec<CompilerMessage>,
-    pub child_killed: bool,
+
+    #[get_copy = "pub"]
+    child_killed: bool,
 }
 
 struct ErrorsAndWarnings {
