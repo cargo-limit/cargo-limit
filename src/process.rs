@@ -1,6 +1,6 @@
 use crate::options::Options;
 use anyhow::{Context, Result};
-use atomig::Atomic;
+use atomig::{Atom, Atomic};
 use getset::MutGetters;
 use std::{
     env, fmt,
@@ -24,12 +24,14 @@ pub struct CargoProcess {
     state: Arc<Atomic<State>>,
 }
 
-#[derive(Debug, atomig::Atom, PartialEq)]
+#[derive(Atom, Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
-enum State {
+pub enum State {
     Running,
     KillTimerStarted,
+    // TODO: Killing,
     Killed,
+    // TODO: FailedToKill,
 }
 
 impl CargoProcess {
@@ -58,6 +60,10 @@ impl CargoProcess {
         Ok(Self { child, state })
     }
 
+    pub fn state(&self) -> State {
+        self.state.load(Ordering::Acquire)
+    }
+
     pub fn wait(&mut self) -> Result<i32> {
         Ok(self.child.wait()?.code().unwrap_or(NO_EXIT_CODE))
     }
@@ -82,8 +88,8 @@ impl CargoProcess {
     fn kill(pid: u32, state: Arc<Atomic<State>>) {
         if Self::can_kill(state) {
             #[cfg(unix)]
-            unsafe {
-                libc::kill(pid as libc::pid_t, libc::SIGINT);
+            {
+                let success = unsafe { libc::kill(pid as libc::pid_t, libc::SIGINT) == 0 };
             }
 
             #[cfg(windows)]

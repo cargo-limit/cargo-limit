@@ -74,12 +74,20 @@ impl ParsedMessages {
             }
         }
 
-        let child_killed = match killed_receiver.try_recv() {
+        /*let child_killed = match killed_receiver.try_recv() {
             Ok(()) => true,
             Err(TryRecvError::Empty) => false,
             Err(error) => return Err(anyhow::Error::from(error)),
         };
-        result.child_killed = child_killed; // TODO: remove from this struct?
+        result.child_killed = child_killed; // TODO: remove from this struct?*/
+
+        // TODO: Killing => wait until it's killed / failed to kill
+        result.child_killed = if let Some(cargo_process) = cargo_process {
+            let state = cargo_process.state();
+            state == process::State::Killed
+        } else {
+            false
+        };
 
         Ok(result)
     }
