@@ -1,4 +1,4 @@
-use crate::{models::SourceFile, options::Options, process};
+use crate::{io::Buffers, models::SourceFile, options::Options, process};
 use anyhow::Result;
 use cargo_metadata::{
     diagnostic::{DiagnosticLevel, DiagnosticSpan},
@@ -6,7 +6,7 @@ use cargo_metadata::{
 };
 use itertools::{Either, Itertools};
 use process::CargoProcess;
-use std::{collections::HashSet, io, path::Path, time::Duration};
+use std::{collections::HashSet, path::Path, time::Duration};
 
 // TODO: Default? pub?
 #[derive(Default)]
@@ -29,14 +29,17 @@ pub struct ProcessedMessages {
 
 // TODO: rename
 impl ParsedMessages {
-    pub fn parse_with_timeout<R: io::BufRead>(
-        reader: &mut R,
+    pub fn parse_with_timeout(
+        buffers: &mut Buffers,
         cargo_process: Option<&CargoProcess>,
         options: &Options,
     ) -> Result<Self> {
         let mut result = ParsedMessages::default();
+        if options.help || options.version {
+            return Ok(result);
+        }
 
-        for message in Message::parse_stream(reader) {
+        for message in Message::parse_stream(buffers.child_stdout_reader_mut()) {
             match message? {
                 Message::CompilerMessage(compiler_message) => {
                     match compiler_message.message.level {

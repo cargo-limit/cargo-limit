@@ -38,12 +38,16 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
     let mut buffers = Buffers::new(cargo_process.child_mut())?;
     let mut parsed_messages =
-        parse_messages_with_timeout(&mut buffers, Some(&cargo_process), &options)?;
+        ParsedMessages::parse_with_timeout(&mut buffers, Some(&cargo_process), &options)?;
 
     let exit_code = if parsed_messages.child_killed {
         buffers.writeln_to_stdout("")?;
         let exit_code = cargo_process.wait()?;
-        parsed_messages.merge(parse_messages_with_timeout(&mut buffers, None, &options)?);
+        parsed_messages.merge(ParsedMessages::parse_with_timeout(
+            &mut buffers,
+            None,
+            &options,
+        )?);
         process_messages(&mut buffers, parsed_messages, &options, workspace_root)?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
 
@@ -59,22 +63,6 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     }
 
     Ok(exit_code)
-}
-
-fn parse_messages_with_timeout(
-    buffers: &mut Buffers,
-    cargo_process: Option<&CargoProcess>,
-    options: &Options,
-) -> Result<ParsedMessages> {
-    if options.help || options.version {
-        Ok(ParsedMessages::default())
-    } else {
-        ParsedMessages::parse_with_timeout(
-            buffers.child_stdout_reader_mut(),
-            cargo_process,
-            options,
-        )
-    }
 }
 
 fn process_messages(
