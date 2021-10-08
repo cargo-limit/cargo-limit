@@ -53,7 +53,6 @@ impl ParsedMessages {
                 _ => (),
             }
 
-            // TODO: extract?
             if let Some(cargo_process) = cargo_process {
                 if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
                     let time_limit = options.time_limit_after_error;
