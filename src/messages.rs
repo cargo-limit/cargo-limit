@@ -6,13 +6,7 @@ use cargo_metadata::{
 };
 use itertools::{Either, Itertools};
 use process::CargoProcess;
-use std::{
-    collections::HashSet,
-    io,
-    path::Path,
-    sync::mpsc::{sync_channel, TryRecvError},
-    time::Duration,
-};
+use std::{collections::HashSet, io, path::Path, time::Duration};
 
 // TODO: Default? pub?
 #[derive(Default)]
@@ -41,7 +35,6 @@ impl ParsedMessages {
         parsed_args: &Options,
     ) -> Result<Self> {
         let mut result = ParsedMessages::default();
-        let (killed_sender, killed_receiver) = sync_channel(1); // TODO: replace with atomic bool
 
         for message in Message::parse_stream(reader) {
             match message? {
@@ -65,21 +58,17 @@ impl ParsedMessages {
                 if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
                     let time_limit = parsed_args.time_limit_after_error;
                     if time_limit > Duration::from_secs(0) {
-                        let killed_sender = killed_sender.clone();
-                        cargo_process.kill_after_timeout(time_limit, move || {
-                            let _ = killed_sender.send(()); // TODO: don't block here, set child_killed atomic bool
-                        });
+                        cargo_process.kill_after_timeout(time_limit);
                     }
                 }
             }
         }
 
-        let child_killed = match killed_receiver.try_recv() {
-            Ok(()) => true,
-            Err(TryRecvError::Empty) => false,
-            Err(error) => return Err(anyhow::Error::from(error)),
+        result.child_killed = if let Some(cargo_process) = cargo_process {
+            cargo_process.wait_if_killing_is_in_progress() == process::State::Killed
+        } else {
+            false
         };
-        result.child_killed = child_killed; // TODO: remove from this struct?
 
         Ok(result)
     }
