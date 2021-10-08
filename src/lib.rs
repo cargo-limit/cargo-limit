@@ -49,7 +49,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
             .child_mut()
             .wait()?
             .code()
-            .unwrap_or(NO_EXIT_CODE);
+            .unwrap_or(NO_EXIT_CODE); // TODO: extract
 
         parsed_messages.merge(parse_messages_with_timeout(
             &mut buffers,
@@ -67,7 +67,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
             .child_mut()
             .wait()?
             .code()
-            .unwrap_or(NO_EXIT_CODE)
+            .unwrap_or(NO_EXIT_CODE) // TODO: extract
     };
 
     if parsed_args.help {

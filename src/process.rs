@@ -38,15 +38,18 @@ impl CargoProcess {
         ctrlc::set_handler(move || {
             // TODO: check child_killed
             Self::kill(pid);
+            dbg!("killed on ctrl+c");
         })?;
 
         Ok(Self { child })
     }
 
+    // TODO: rename: start_kill_timer?
     pub fn wait_in_background_and_kill<F: 'static>(&self, time_limit: Duration, after_kill: F)
     where
         F: Fn() + Send,
     {
+        dbg!("kill timer has started");
         let pid = self.child.id();
         thread::spawn(move || {
             thread::sleep(time_limit);
