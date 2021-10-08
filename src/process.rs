@@ -1,6 +1,6 @@
 use crate::options::Options;
 use anyhow::{format_err, Context, Result};
-use atomic_enum::atomic_enum;
+use atomig::{Atom, Atomic};
 use getset::MutGetters;
 use std::{
     env, fmt,
@@ -19,11 +19,11 @@ const CARGO_ENV_VAR: &str = "CARGO";
 pub struct CargoProcess {
     #[get_mut = "pub"]
     child: Child,
-    state: Arc<AtomicState>,
+    state: Arc<Atomic<State>>,
 }
 
-#[atomic_enum]
-#[derive(PartialEq)]
+#[derive(Debug, atomig::Atom, PartialEq)]
+#[repr(u8)]
 enum State {
     Running,
     KillTimerStarted,
@@ -44,7 +44,7 @@ impl CargoProcess {
             .spawn()
             .context(error_text)?;
 
-        let state = Arc::new(AtomicState::new(State::Running));
+        let state = Arc::new(Atomic::new(State::Running));
         ctrlc::set_handler({
             let pid = child.id();
             let state = state.clone();
@@ -77,7 +77,7 @@ impl CargoProcess {
         }
     }
 
-    fn kill(pid: u32, state: Arc<AtomicState>) {
+    fn kill(pid: u32, state: Arc<Atomic<State>>) {
         dbg!("trying to kill");
         if Self::can_kill(state) {
             dbg!("killing");
@@ -109,7 +109,7 @@ impl CargoProcess {
             .is_ok()
     }
 
-    fn can_kill(state: Arc<AtomicState>) -> bool {
+    fn can_kill(state: Arc<Atomic<State>>) -> bool {
         state
             .compare_exchange(
                 State::Running,
