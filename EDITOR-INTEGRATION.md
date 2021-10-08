@@ -22,16 +22,22 @@ If you want something different than opening/switching tabs with affected files 
 ```viml
 set errorformat =%f:%l:%c:%m
 
-function! g:CargoLimitOpen(result)
+function! g:CargoLimitOpen(editor_data)
+  let l:winnr = winnr()
+
   cgetexpr []
-  for file in a:result['files']
+  for file in a:editor_data['files']
     caddexpr file['path'] . ':' . file['line'] . ':' . file['column'] . ':' . file['message']
   endfor
 
-  if empty(a:result['files'])
+  if empty(a:editor_data['files'])
     cclose
   else
     copen
+  endif
+
+  if l:winnr !=# winnr()
+    wincmd p
   endif
 endfunction
 ```
