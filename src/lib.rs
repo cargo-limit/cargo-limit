@@ -12,13 +12,13 @@ mod process;
 #[doc(hidden)]
 pub use process::NO_EXIT_CODE;
 
-use anyhow::{Context, Result};
-use cargo_metadata::{Message, MetadataCommand};
+use anyhow::Result;
+use cargo_metadata::MetadataCommand;
 use io::Buffers;
 use messages::{MessageProcessor, ParsedMessages};
-use models::{EditorData, SourceFile};
+
 use options::Options;
-use process::{failed_to_execute_error_text, CargoProcess};
+use process::CargoProcess;
 use std::{
     io::Write,
     path::Path,
