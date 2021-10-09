@@ -31,7 +31,7 @@ pub struct ProcessedMessages {
 
 // TODO: rename: MessageProcessor?
 impl ParsedMessages {
-    pub fn parse_with_timeout(
+    pub fn parse_with_timeout_on_error(
         buffers: &mut Buffers,
         cargo_process: Option<&CargoProcess>,
         options: &Options,

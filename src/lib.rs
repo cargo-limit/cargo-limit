@@ -38,12 +38,12 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
     let mut buffers = Buffers::new(cargo_process.child_mut())?;
     let mut parsed_messages =
-        ParsedMessages::parse_with_timeout(&mut buffers, Some(&cargo_process), &options)?;
+        ParsedMessages::parse_with_timeout_on_error(&mut buffers, Some(&cargo_process), &options)?;
 
     let exit_code = if parsed_messages.child_killed() {
         buffers.writeln_to_stdout("")?;
         let exit_code = cargo_process.wait()?;
-        parsed_messages.merge(ParsedMessages::parse_with_timeout(
+        parsed_messages.merge(ParsedMessages::parse_with_timeout_on_error(
             &mut buffers,
             None,
             &options,
