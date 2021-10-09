@@ -1,13 +1,26 @@
-use crate::{io::Buffers, models::SourceFile, options::Options, process};
-use anyhow::Result;
+use crate::{
+    io::Buffers,
+    models::{EditorData, SourceFile},
+    options::Options,
+    process,
+};
+use anyhow::{Context, Result};
 use cargo_metadata::{
     diagnostic::{DiagnosticLevel, DiagnosticSpan},
     CompilerMessage, Message,
 };
 use getset::CopyGetters;
 use itertools::{Either, Itertools};
-use process::CargoProcess;
-use std::{collections::HashSet, path::Path, time::Duration};
+use process::{failed_to_execute_error_text, CargoProcess};
+use std::{
+    collections::HashSet,
+    io::Write,
+    path::Path,
+    process::{Command, Stdio},
+    time::Duration,
+};
+
+// TODO: split module?
 
 #[derive(Default, CopyGetters)]
 pub struct ParsedMessages {
@@ -24,10 +37,7 @@ struct ErrorsAndWarnings {
     warnings: Vec<CompilerMessage>,
 }
 
-pub struct MessageProcessor {
-    pub messages: Vec<Message>,
-    pub source_files_in_consistent_order: Vec<SourceFile>,
-}
+pub struct MessageProcessor;
 
 // TODO: rename: MessageParser?
 impl ParsedMessages {
@@ -109,12 +119,69 @@ impl ErrorsAndWarnings {
 }
 
 impl MessageProcessor {
-    // TODO: transform?
+    // TODO: builder?
     pub fn process(
+        buffers: &mut Buffers,
         parsed_messages: ParsedMessages,
         options: &Options,
         workspace_root: &Path,
-    ) -> Result<Self> {
+    ) -> Result<()> {
+        let (messages, source_files_in_consistent_order) =
+            Self::transform_messages(parsed_messages, options, workspace_root)?;
+
+        let processed_messages = messages.into_iter();
+        if options.json_message_format() {
+            for message in processed_messages {
+                buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
+            }
+        } else {
+            for message in processed_messages.filter_map(|message| match message {
+                Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
+                _ => None,
+            }) {
+                buffers.write_to_stderr(message)?;
+            }
+        }
+
+        Self::open_in_external_app_for_affected_files(
+            buffers,
+            source_files_in_consistent_order,
+            options,
+            workspace_root,
+        )
+    }
+
+    fn open_in_external_app_for_affected_files(
+        buffers: &mut Buffers,
+        source_files_in_consistent_order: Vec<SourceFile>,
+        options: &Options,
+        workspace_root: &Path,
+    ) -> Result<()> {
+        let app = &options.open_in_external_app();
+        if !app.is_empty() {
+            let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
+            // TODO: Command in messages.rs?
+            let mut child = Command::new(app).stdin(Stdio::piped()).spawn()?;
+            child
+                .stdin
+                .take()
+                .context("no stdin")?
+                .write_all(serde_json::to_string(&editor_data)?.as_bytes())?;
+
+            let error_text = failed_to_execute_error_text(app);
+            let output = child.wait_with_output().context(error_text)?;
+
+            buffers.write_all_to_stderr(&output.stdout)?;
+            buffers.write_all_to_stderr(&output.stderr)?;
+        }
+        Ok(())
+    }
+
+    fn transform_messages(
+        parsed_messages: ParsedMessages,
+        options: &Options,
+        workspace_root: &Path,
+    ) -> Result<(Vec<Message>, Vec<SourceFile>)> {
         let has_warnings_only = parsed_messages.internal_compiler_errors.is_empty()
             && parsed_messages.errors.is_empty();
 
@@ -160,10 +227,7 @@ impl MessageProcessor {
         .map(Message::CompilerMessage)
         .collect();
 
-        Ok(Self {
-            messages,
-            source_files_in_consistent_order,
-        })
+        Ok((messages, source_files_in_consistent_order))
     }
 
     fn filter_and_order_messages(

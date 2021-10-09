@@ -72,56 +72,7 @@ fn process_messages(
     options: &Options,
     workspace_root: &Path,
 ) -> Result<()> {
-    let MessageProcessor {
-        messages,
-        source_files_in_consistent_order,
-    } = MessageProcessor::process(parsed_messages, &options, workspace_root)?; // TODO: pass closure?
-    let processed_messages = messages.into_iter();
-
-    if options.json_message_format() {
-        for message in processed_messages {
-            buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
-        }
-    } else {
-        for message in processed_messages.filter_map(|message| match message {
-            Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
-            _ => None,
-        }) {
-            buffers.write_to_stderr(message)?;
-        }
-    }
-
-    open_in_external_app_for_affected_files(
-        buffers,
-        source_files_in_consistent_order,
-        options,
-        workspace_root,
-    )
-}
-
-fn open_in_external_app_for_affected_files(
-    buffers: &mut Buffers,
-    source_files_in_consistent_order: Vec<SourceFile>,
-    options: &Options,
-    workspace_root: &Path,
-) -> Result<()> {
-    let app = &options.open_in_external_app();
-    if !app.is_empty() {
-        let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
-        let mut child = Command::new(app).stdin(Stdio::piped()).spawn()?;
-        child
-            .stdin
-            .take()
-            .context("no stdin")?
-            .write_all(serde_json::to_string(&editor_data)?.as_bytes())?;
-
-        let error_text = failed_to_execute_error_text(app);
-        let output = child.wait_with_output().context(error_text)?;
-
-        buffers.write_all_to_stderr(&output.stdout)?;
-        buffers.write_all_to_stderr(&output.stderr)?;
-    }
-    Ok(())
+    MessageProcessor::process(buffers, parsed_messages, &options, workspace_root)
 }
 
 #[doc(hidden)]
