@@ -29,7 +29,7 @@ pub struct ProcessedMessages {
     pub source_files_in_consistent_order: Vec<SourceFile>,
 }
 
-// TODO: rename
+// TODO: rename: MessageProcessor?
 impl ParsedMessages {
     pub fn parse_with_timeout(
         buffers: &mut Buffers,
