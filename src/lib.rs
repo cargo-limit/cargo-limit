@@ -15,7 +15,7 @@ pub use process::NO_EXIT_CODE;
 use anyhow::{Context, Result};
 use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
-use messages::{ParsedMessages, ProcessedMessages};
+use messages::{MessageProcessor, ParsedMessages};
 use models::{EditorData, SourceFile};
 use options::Options;
 use process::{failed_to_execute_error_text, CargoProcess};
@@ -65,17 +65,17 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     Ok(exit_code)
 }
 
-// TODO: move to ProcessedMessages?
+// TODO: move to MessageProcessor?
 fn process_messages(
     buffers: &mut Buffers,
     parsed_messages: ParsedMessages,
     options: &Options,
     workspace_root: &Path,
 ) -> Result<()> {
-    let ProcessedMessages {
+    let MessageProcessor {
         messages,
         source_files_in_consistent_order,
-    } = ProcessedMessages::process(parsed_messages, &options, workspace_root)?; // TODO: pass closure?
+    } = MessageProcessor::process(parsed_messages, &options, workspace_root)?; // TODO: pass closure?
     let processed_messages = messages.into_iter();
 
     if options.json_message_format() {

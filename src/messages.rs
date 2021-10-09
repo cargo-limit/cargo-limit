@@ -24,12 +24,12 @@ struct ErrorsAndWarnings {
     warnings: Vec<CompilerMessage>,
 }
 
-pub struct ProcessedMessages {
+pub struct MessageProcessor {
     pub messages: Vec<Message>,
     pub source_files_in_consistent_order: Vec<SourceFile>,
 }
 
-// TODO: rename: MessageProcessor?
+// TODO: rename: MessageParser?
 impl ParsedMessages {
     pub fn parse_with_timeout_on_error(
         buffers: &mut Buffers,
@@ -108,7 +108,8 @@ impl ErrorsAndWarnings {
     }
 }
 
-impl ProcessedMessages {
+impl MessageProcessor {
+    // TODO: transform?
     pub fn process(
         parsed_messages: ParsedMessages,
         options: &Options,
