@@ -19,11 +19,7 @@ use messages::{MessageProcessor, ParsedMessages};
 
 use options::Options;
 use process::CargoProcess;
-use std::{
-    io::Write,
-    path::Path,
-    process::{Command, Stdio},
-};
+use std::path::Path;
 
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     include_str!("../additional_environment_variables.txt");
