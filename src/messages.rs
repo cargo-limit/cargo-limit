@@ -143,7 +143,7 @@ impl MessageProcessor {
             }
         }
 
-        Self::open_in_external_app_for_affected_files(
+        Self::open_affected_files_in_external_app(
             buffers,
             source_files_in_consistent_order,
             options,
@@ -151,7 +151,7 @@ impl MessageProcessor {
         )
     }
 
-    fn open_in_external_app_for_affected_files(
+    fn open_affected_files_in_external_app(
         buffers: &mut Buffers,
         source_files_in_consistent_order: Vec<SourceFile>,
         options: &Options,
