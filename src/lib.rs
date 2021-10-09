@@ -19,7 +19,6 @@ use messages::{MessageProcessor, ParsedMessages};
 
 use options::Options;
 use process::CargoProcess;
-use std::path::Path;
 
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     include_str!("../additional_environment_variables.txt");
@@ -44,12 +43,12 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
             None,
             &options,
         )?);
-        process_messages(&mut buffers, parsed_messages, &options, workspace_root)?;
+        MessageProcessor::process(&mut buffers, parsed_messages, &options, workspace_root)?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
 
         exit_code
     } else {
-        process_messages(&mut buffers, parsed_messages, &options, workspace_root)?;
+        MessageProcessor::process(&mut buffers, parsed_messages, &options, workspace_root)?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
         cargo_process.wait()?
     };
@@ -59,16 +58,6 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     }
 
     Ok(exit_code)
-}
-
-// TODO: move to MessageProcessor?
-fn process_messages(
-    buffers: &mut Buffers,
-    parsed_messages: ParsedMessages,
-    options: &Options,
-    workspace_root: &Path,
-) -> Result<()> {
-    MessageProcessor::process(buffers, parsed_messages, &options, workspace_root)
 }
 
 #[doc(hidden)]
