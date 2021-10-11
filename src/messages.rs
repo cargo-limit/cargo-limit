@@ -97,7 +97,7 @@ impl ParsedMessages {
 }
 
 impl ErrorsAndWarnings {
-    fn process(parsed_messages: ParsedMessages, options: &Options, workspace_root: &Path) -> Self {
+    fn filter(parsed_messages: ParsedMessages, options: &Options, workspace_root: &Path) -> Self {
         let warnings = if options.show_dependencies_warnings() {
             parsed_messages.non_errors
         } else {
@@ -186,7 +186,7 @@ impl MessageProcessor {
             && parsed_messages.errors.is_empty();
 
         let ErrorsAndWarnings { errors, warnings } =
-            ErrorsAndWarnings::process(parsed_messages, options, workspace_root);
+            ErrorsAndWarnings::filter(parsed_messages, options, workspace_root);
 
         let errors = Self::filter_and_order_messages(errors, workspace_root);
         let warnings = Self::filter_and_order_messages(warnings, workspace_root);
