@@ -94,6 +94,10 @@ impl MessageParser {
         self.non_errors.extend(other.non_errors);
         self.child_killed |= other.child_killed;
     }
+
+    pub fn has_warnings_only(&self) -> bool {
+        self.internal_compiler_errors.is_empty() && self.errors.is_empty()
+    }
 }
 
 impl ErrorsAndWarnings {
@@ -182,9 +186,7 @@ impl MessageProcessor {
         options: &Options,
         workspace_root: &Path,
     ) -> Result<(Vec<Message>, Vec<SourceFile>)> {
-        let has_warnings_only = parsed_messages.internal_compiler_errors.is_empty()
-            && parsed_messages.errors.is_empty();
-
+        let has_warnings_only = parsed_messages.has_warnings_only();
         let ErrorsAndWarnings { errors, warnings } =
             ErrorsAndWarnings::filter(parsed_messages, options, workspace_root);
 
