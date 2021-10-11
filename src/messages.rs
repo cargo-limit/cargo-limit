@@ -23,7 +23,7 @@ use std::{
 // TODO: split module?
 
 #[derive(Default, CopyGetters)]
-pub struct ParsedMessages {
+pub struct MessageParser {
     internal_compiler_errors: Vec<CompilerMessage>,
     errors: Vec<CompilerMessage>,
     non_errors: Vec<CompilerMessage>,
@@ -37,16 +37,16 @@ struct ErrorsAndWarnings {
     warnings: Vec<CompilerMessage>,
 }
 
+// TODO: remove?
 pub struct MessageProcessor;
 
-// TODO: rename: MessageParser?
-impl ParsedMessages {
+impl MessageParser {
     pub fn parse_with_timeout_on_error(
         buffers: &mut Buffers,
         cargo_process: Option<&CargoProcess>,
         options: &Options,
     ) -> Result<Self> {
-        let mut result = ParsedMessages::default();
+        let mut result = MessageParser::default();
         if options.help() || options.version() {
             return Ok(result);
         }
@@ -97,7 +97,7 @@ impl ParsedMessages {
 }
 
 impl ErrorsAndWarnings {
-    fn filter(parsed_messages: ParsedMessages, options: &Options, workspace_root: &Path) -> Self {
+    fn filter(parsed_messages: MessageParser, options: &Options, workspace_root: &Path) -> Self {
         let warnings = if options.show_dependencies_warnings() {
             parsed_messages.non_errors
         } else {
@@ -122,7 +122,7 @@ impl MessageProcessor {
     // TODO: builder?
     pub fn process(
         buffers: &mut Buffers,
-        parsed_messages: ParsedMessages,
+        parsed_messages: MessageParser,
         options: &Options,
         workspace_root: &Path,
     ) -> Result<()> {
@@ -178,7 +178,7 @@ impl MessageProcessor {
     }
 
     fn transform_messages(
-        parsed_messages: ParsedMessages,
+        parsed_messages: MessageParser,
         options: &Options,
         workspace_root: &Path,
     ) -> Result<(Vec<Message>, Vec<SourceFile>)> {

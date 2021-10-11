@@ -15,7 +15,7 @@ pub use process::NO_EXIT_CODE;
 use anyhow::Result;
 use cargo_metadata::MetadataCommand;
 use io::Buffers;
-use messages::{MessageProcessor, ParsedMessages};
+use messages::{MessageParser, MessageProcessor};
 
 use options::Options;
 use process::CargoProcess;
@@ -33,12 +33,12 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
     let mut buffers = Buffers::new(cargo_process.child_mut())?;
     let mut parsed_messages =
-        ParsedMessages::parse_with_timeout_on_error(&mut buffers, Some(&cargo_process), &options)?;
+        MessageParser::parse_with_timeout_on_error(&mut buffers, Some(&cargo_process), &options)?;
 
     let exit_code = if parsed_messages.child_killed() {
         buffers.writeln_to_stdout("")?;
         let exit_code = cargo_process.wait()?;
-        parsed_messages.merge(ParsedMessages::parse_with_timeout_on_error(
+        parsed_messages.merge(MessageParser::parse_with_timeout_on_error(
             &mut buffers,
             None,
             &options,
