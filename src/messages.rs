@@ -140,6 +140,7 @@ impl MessageProcessor {
         } = TransformedMessages::transform(parsed_messages, options, workspace_root)?;
 
         let processed_messages = messages.into_iter();
+        // TODO: closure?
         if options.json_message_format() {
             for message in processed_messages {
                 buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
