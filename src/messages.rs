@@ -37,6 +37,11 @@ struct FilteredMessages {
     warnings: Vec<CompilerMessage>,
 }
 
+struct TransformedMessages {
+    messages: Vec<Message>,
+    source_files_in_consistent_order: Vec<SourceFile>,
+}
+
 // TODO: remove?
 pub struct MessageProcessor;
 
@@ -129,8 +134,10 @@ impl MessageProcessor {
         options: &Options,
         workspace_root: &Path,
     ) -> Result<()> {
-        let (messages, source_files_in_consistent_order) =
-            Self::transform_messages(parsed_messages, options, workspace_root)?;
+        let TransformedMessages {
+            messages,
+            source_files_in_consistent_order,
+        } = Self::transform_messages(parsed_messages, options, workspace_root)?;
 
         let processed_messages = messages.into_iter();
         if options.json_message_format() {
@@ -184,7 +191,7 @@ impl MessageProcessor {
         parsed_messages: Messages,
         options: &Options,
         workspace_root: &Path,
-    ) -> Result<(Vec<Message>, Vec<SourceFile>)> {
+    ) -> Result<TransformedMessages> {
         let has_errors = parsed_messages.has_errors();
         let FilteredMessages { errors, warnings } =
             FilteredMessages::filter(parsed_messages, options, workspace_root);
@@ -228,7 +235,10 @@ impl MessageProcessor {
         .map(Message::CompilerMessage)
         .collect();
 
-        Ok((messages, source_files_in_consistent_order))
+        Ok(TransformedMessages {
+            messages,
+            source_files_in_consistent_order,
+        })
     }
 
     fn filter_and_order_messages(
