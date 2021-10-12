@@ -72,7 +72,7 @@ impl Messages {
                 if result.has_errors() {
                     let time_limit = options.time_limit_after_error();
                     if time_limit > Duration::from_secs(0) {
-                        cargo_process.kill_after_timeout(time_limit);
+                        cargo_process.kill_after_timeout(time_limit); // TODO: closure?
                     }
                 }
             }
@@ -163,7 +163,7 @@ impl MessageProcessor {
         let app = &options.open_in_external_app();
         if !app.is_empty() {
             let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
-            // TODO: Command in messages.rs?
+            // TODO: Command in messages.rs? closure?
             let mut child = Command::new(app).stdin(Stdio::piped()).spawn()?;
             child
                 .stdin
