@@ -95,7 +95,7 @@ impl Messages {
         self.child_killed |= other.child_killed;
     }
 
-    pub fn has_errors(&self) -> bool {
+    fn has_errors(&self) -> bool {
         !self.errors.is_empty() || !self.internal_compiler_errors.is_empty()
     }
 }
