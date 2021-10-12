@@ -19,7 +19,7 @@ pub struct Messages {
     child_killed: bool,
 }
 
-struct FilteredMessages {
+struct FilteredAndOrderedMessages {
     errors: Vec<CompilerMessage>,
     warnings: Vec<CompilerMessage>,
 }
@@ -103,25 +103,61 @@ impl Messages {
     }
 }
 
-impl FilteredMessages {
+impl FilteredAndOrderedMessages {
     fn filter(messages: Messages, options: &Options, workspace_root: &Path) -> Self {
+        let non_errors = messages.non_errors.into_iter();
         let warnings = if options.show_dependencies_warnings() {
-            messages.non_errors
+            Either::Left(non_errors)
         } else {
-            messages
-                .non_errors
-                .into_iter()
-                .filter(|i| i.target.src_path.starts_with(workspace_root))
-                .collect()
+            Either::Right(non_errors.filter(|i| i.target.src_path.starts_with(workspace_root)))
         };
+        let warnings = Self::filter_and_order_messages(warnings, workspace_root);
 
         let errors = messages
             .internal_compiler_errors
             .into_iter()
-            .chain(messages.errors.into_iter())
-            .collect();
+            .chain(messages.errors);
+        let errors = Self::filter_and_order_messages(errors, workspace_root);
 
         Self { errors, warnings }
+    }
+
+    fn filter_and_order_messages(
+        messages: impl IntoIterator<Item = CompilerMessage>,
+        workspace_root: &Path,
+    ) -> Vec<CompilerMessage> {
+        let messages = messages
+            .into_iter()
+            .unique()
+            .filter(|i| !i.message.spans.is_empty())
+            .map(|i| {
+                let key = i
+                    .message
+                    .spans
+                    .iter()
+                    .map(|span| (span.file_name.clone(), span.line_start))
+                    .collect::<Vec<_>>();
+                (key, i)
+            })
+            .into_group_map()
+            .into_iter()
+            .sorted_by_key(|(paths, _messages)| paths.clone())
+            .flat_map(|(_paths, messages)| messages.into_iter());
+
+        let mut project_messages = Vec::new();
+        let mut dependencies_messages = Vec::new();
+        for i in messages {
+            if i.target.src_path.starts_with(workspace_root) {
+                project_messages.push(i);
+            } else {
+                dependencies_messages.push(i);
+            }
+        }
+
+        project_messages
+            .into_iter()
+            .chain(dependencies_messages)
+            .collect()
     }
 }
 
@@ -132,12 +168,11 @@ impl TransformedMessages {
         workspace_root: &Path,
     ) -> Result<TransformedMessages> {
         let has_errors = messages.has_errors();
-        let FilteredMessages { errors, warnings } =
-            FilteredMessages::filter(messages, options, workspace_root);
+        let FilteredAndOrderedMessages { errors, warnings } =
+            FilteredAndOrderedMessages::filter(messages, options, workspace_root);
 
-        let errors = Self::filter_and_order_messages(errors, workspace_root);
-        let warnings = Self::filter_and_order_messages(warnings, workspace_root);
-
+        let errors = errors.into_iter();
+        let warnings = warnings.into_iter();
         let messages = if options.show_warnings_if_errors_exist() {
             Either::Left(errors.chain(warnings))
         } else {
@@ -178,41 +213,6 @@ impl TransformedMessages {
             messages,
             source_files_in_consistent_order,
         })
-    }
-
-    fn filter_and_order_messages(
-        messages: impl IntoIterator<Item = CompilerMessage>,
-        workspace_root: &Path,
-    ) -> impl Iterator<Item = CompilerMessage> {
-        let messages = messages
-            .into_iter()
-            .unique()
-            .filter(|i| !i.message.spans.is_empty())
-            .map(|i| {
-                let key = i
-                    .message
-                    .spans
-                    .iter()
-                    .map(|span| (span.file_name.clone(), span.line_start))
-                    .collect::<Vec<_>>();
-                (key, i)
-            })
-            .into_group_map()
-            .into_iter()
-            .sorted_by_key(|(paths, _messages)| paths.clone())
-            .flat_map(|(_paths, messages)| messages.into_iter());
-
-        let mut project_messages = Vec::new();
-        let mut dependencies_messages = Vec::new();
-        for i in messages {
-            if i.target.src_path.starts_with(workspace_root) {
-                project_messages.push(i);
-            } else {
-                dependencies_messages.push(i);
-            }
-        }
-
-        project_messages.into_iter().chain(dependencies_messages)
     }
 
     fn extract_source_files_for_external_app(
