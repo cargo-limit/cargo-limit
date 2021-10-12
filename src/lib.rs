@@ -12,11 +12,11 @@ mod process;
 #[doc(hidden)]
 pub use process::NO_EXIT_CODE;
 
+use crate::models::{EditorData, SourceFile};
 use anyhow::{Context, Result};
 use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
-use messages::{ParsedMessages, ProcessedMessages};
-use models::{EditorData, SourceFile};
+use messages::{process_parsed_messages, Messages};
 use options::Options;
 use process::{failed_to_execute_error_text, CargoProcess};
 use std::{
@@ -37,23 +37,61 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     let mut cargo_process = CargoProcess::run(&options)?;
 
     let mut buffers = Buffers::new(cargo_process.child_mut())?;
+
+    let process_messages = |buffers: &mut Buffers,
+                            messages: Vec<Message>,
+                            source_files_in_consistent_order: Vec<SourceFile>|
+     -> Result<()> {
+        let messages = messages.into_iter();
+        if options.json_message_format() {
+            for message in messages {
+                buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
+            }
+        } else {
+            for message in messages.filter_map(|message| match message {
+                Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
+                _ => None,
+            }) {
+                buffers.write_to_stderr(message)?;
+            }
+        }
+        open_affected_files_in_external_app(
+            buffers,
+            source_files_in_consistent_order,
+            &options,
+            workspace_root,
+        )
+    };
+
     let mut parsed_messages =
-        ParsedMessages::parse_with_timeout(&mut buffers, Some(&cargo_process), &options)?;
+        Messages::parse_with_timeout_on_error(&mut buffers, Some(&cargo_process), &options)?;
 
     let exit_code = if parsed_messages.child_killed() {
         buffers.writeln_to_stdout("")?;
         let exit_code = cargo_process.wait()?;
-        parsed_messages.merge(ParsedMessages::parse_with_timeout(
+        parsed_messages.merge(Messages::parse_with_timeout_on_error(
             &mut buffers,
             None,
             &options,
         )?);
-        process_messages(&mut buffers, parsed_messages, &options, workspace_root)?;
+        process_parsed_messages(
+            &mut buffers,
+            parsed_messages,
+            &options,
+            workspace_root,
+            process_messages,
+        )?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
 
         exit_code
     } else {
-        process_messages(&mut buffers, parsed_messages, &options, workspace_root)?;
+        process_parsed_messages(
+            &mut buffers,
+            parsed_messages,
+            &options,
+            workspace_root,
+            process_messages,
+        )?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
         cargo_process.wait()?
     };
@@ -65,40 +103,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     Ok(exit_code)
 }
 
-fn process_messages(
-    buffers: &mut Buffers,
-    parsed_messages: ParsedMessages,
-    options: &Options,
-    workspace_root: &Path,
-) -> Result<()> {
-    let ProcessedMessages {
-        messages,
-        source_files_in_consistent_order,
-    } = ProcessedMessages::process(parsed_messages, options, workspace_root)?;
-    let processed_messages = messages.into_iter();
-
-    if options.json_message_format() {
-        for message in processed_messages {
-            buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
-        }
-    } else {
-        for message in processed_messages.filter_map(|message| match message {
-            Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
-            _ => None,
-        }) {
-            buffers.write_to_stderr(message)?;
-        }
-    }
-
-    open_in_external_app_for_affected_files(
-        buffers,
-        source_files_in_consistent_order,
-        options,
-        workspace_root,
-    )
-}
-
-fn open_in_external_app_for_affected_files(
+fn open_affected_files_in_external_app(
     buffers: &mut Buffers,
     source_files_in_consistent_order: Vec<SourceFile>,
     options: &Options,

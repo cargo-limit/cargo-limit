@@ -10,7 +10,7 @@ use process::CargoProcess;
 use std::{collections::HashSet, path::Path, time::Duration};
 
 #[derive(Default, CopyGetters)]
-pub struct ParsedMessages {
+pub struct Messages {
     internal_compiler_errors: Vec<CompilerMessage>,
     errors: Vec<CompilerMessage>,
     non_errors: Vec<CompilerMessage>,
@@ -19,24 +19,37 @@ pub struct ParsedMessages {
     child_killed: bool,
 }
 
-struct ErrorsAndWarnings {
+struct FilteredMessages {
     errors: Vec<CompilerMessage>,
     warnings: Vec<CompilerMessage>,
 }
 
-pub struct ProcessedMessages {
-    pub messages: Vec<Message>,
-    pub source_files_in_consistent_order: Vec<SourceFile>,
+struct TransformedMessages {
+    messages: Vec<Message>,
+    source_files_in_consistent_order: Vec<SourceFile>,
 }
 
-// TODO: rename
-impl ParsedMessages {
-    pub fn parse_with_timeout(
+pub fn process_parsed_messages(
+    buffers: &mut Buffers,
+    parsed_messages: Messages,
+    options: &Options,
+    workspace_root: &Path,
+    mut process: impl FnMut(&mut Buffers, Vec<Message>, Vec<SourceFile>) -> Result<()>,
+) -> Result<()> {
+    let TransformedMessages {
+        messages,
+        source_files_in_consistent_order,
+    } = TransformedMessages::transform(parsed_messages, options, workspace_root)?;
+    process(buffers, messages, source_files_in_consistent_order)
+}
+
+impl Messages {
+    pub fn parse_with_timeout_on_error(
         buffers: &mut Buffers,
         cargo_process: Option<&CargoProcess>,
         options: &Options,
     ) -> Result<Self> {
-        let mut result = ParsedMessages::default();
+        let mut result = Messages::default();
         if options.help() || options.version() {
             return Ok(result);
         }
@@ -59,7 +72,7 @@ impl ParsedMessages {
             }
 
             if let Some(cargo_process) = cargo_process {
-                if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
+                if result.has_errors() {
                     let time_limit = options.time_limit_after_error();
                     if time_limit > Duration::from_secs(0) {
                         cargo_process.kill_after_timeout(time_limit);
@@ -84,41 +97,43 @@ impl ParsedMessages {
         self.non_errors.extend(other.non_errors);
         self.child_killed |= other.child_killed;
     }
+
+    fn has_errors(&self) -> bool {
+        !self.errors.is_empty() || !self.internal_compiler_errors.is_empty()
+    }
 }
 
-impl ErrorsAndWarnings {
-    fn process(parsed_messages: ParsedMessages, options: &Options, workspace_root: &Path) -> Self {
+impl FilteredMessages {
+    fn filter(messages: Messages, options: &Options, workspace_root: &Path) -> Self {
         let warnings = if options.show_dependencies_warnings() {
-            parsed_messages.non_errors
+            messages.non_errors
         } else {
-            parsed_messages
+            messages
                 .non_errors
                 .into_iter()
                 .filter(|i| i.target.src_path.starts_with(workspace_root))
                 .collect()
         };
 
-        let errors = parsed_messages
+        let errors = messages
             .internal_compiler_errors
             .into_iter()
-            .chain(parsed_messages.errors.into_iter())
+            .chain(messages.errors.into_iter())
             .collect();
 
         Self { errors, warnings }
     }
 }
 
-impl ProcessedMessages {
-    pub fn process(
-        parsed_messages: ParsedMessages,
+impl TransformedMessages {
+    fn transform(
+        messages: Messages,
         options: &Options,
         workspace_root: &Path,
-    ) -> Result<Self> {
-        let has_warnings_only = parsed_messages.internal_compiler_errors.is_empty()
-            && parsed_messages.errors.is_empty();
-
-        let ErrorsAndWarnings { errors, warnings } =
-            ErrorsAndWarnings::process(parsed_messages, options, workspace_root);
+    ) -> Result<TransformedMessages> {
+        let has_errors = messages.has_errors();
+        let FilteredMessages { errors, warnings } =
+            FilteredMessages::filter(messages, options, workspace_root);
 
         let errors = Self::filter_and_order_messages(errors, workspace_root);
         let warnings = Self::filter_and_order_messages(warnings, workspace_root);
@@ -126,10 +141,10 @@ impl ProcessedMessages {
         let messages = if options.show_warnings_if_errors_exist() {
             Either::Left(errors.chain(warnings))
         } else {
-            let messages = if has_warnings_only {
-                Either::Left(warnings)
+            let messages = if has_errors {
+                Either::Left(errors)
             } else {
-                Either::Right(errors)
+                Either::Right(warnings)
             };
             Either::Right(messages)
         };
@@ -159,7 +174,7 @@ impl ProcessedMessages {
         .map(Message::CompilerMessage)
         .collect();
 
-        Ok(Self {
+        Ok(TransformedMessages {
             messages,
             source_files_in_consistent_order,
         })
