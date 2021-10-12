@@ -29,8 +29,19 @@ struct TransformedMessages {
     source_files_in_consistent_order: Vec<SourceFile>,
 }
 
-// TODO: remove?
-pub struct MessageProcessor;
+pub fn process_parsed_messages(
+    buffers: &mut Buffers,
+    parsed_messages: Messages,
+    options: &Options,
+    workspace_root: &Path,
+    mut process: impl FnMut(&mut Buffers, Vec<Message>, Vec<SourceFile>) -> Result<()>,
+) -> Result<()> {
+    let TransformedMessages {
+        messages,
+        source_files_in_consistent_order,
+    } = TransformedMessages::transform(parsed_messages, options, workspace_root)?;
+    process(buffers, messages, source_files_in_consistent_order)
+}
 
 impl Messages {
     pub fn parse_with_timeout_on_error(
@@ -111,22 +122,6 @@ impl FilteredMessages {
             .collect();
 
         Self { errors, warnings }
-    }
-}
-
-impl MessageProcessor {
-    pub fn process_parsed_messages(
-        buffers: &mut Buffers,
-        parsed_messages: Messages,
-        options: &Options,
-        workspace_root: &Path,
-        mut process: impl FnMut(&mut Buffers, Vec<Message>, Vec<SourceFile>) -> Result<()>,
-    ) -> Result<()> {
-        let TransformedMessages {
-            messages,
-            source_files_in_consistent_order,
-        } = TransformedMessages::transform(parsed_messages, options, workspace_root)?;
-        process(buffers, messages, source_files_in_consistent_order)
     }
 }
 
