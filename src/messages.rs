@@ -1,26 +1,13 @@
-use crate::{
-    io::Buffers,
-    models::{EditorData, SourceFile},
-    options::Options,
-    process,
-};
-use anyhow::{Context, Result};
+use crate::{io::Buffers, models::SourceFile, options::Options, process};
+use anyhow::Result;
 use cargo_metadata::{
     diagnostic::{DiagnosticLevel, DiagnosticSpan},
     CompilerMessage, Message,
 };
 use getset::CopyGetters;
 use itertools::{Either, Itertools};
-use process::{failed_to_execute_error_text, CargoProcess};
-use std::{
-    collections::HashSet,
-    io::Write,
-    path::Path,
-    process::{Command, Stdio},
-    time::Duration,
-};
-
-// TODO: split module?
+use process::CargoProcess;
+use std::{collections::HashSet, path::Path, time::Duration};
 
 #[derive(Default, CopyGetters)]
 pub struct Messages {
@@ -133,59 +120,13 @@ impl MessageProcessor {
         parsed_messages: Messages,
         options: &Options,
         workspace_root: &Path,
+        mut process: impl FnMut(&mut Buffers, Vec<Message>, Vec<SourceFile>) -> Result<()>,
     ) -> Result<()> {
         let TransformedMessages {
             messages,
             source_files_in_consistent_order,
         } = TransformedMessages::transform(parsed_messages, options, workspace_root)?;
-
-        let processed_messages = messages.into_iter();
-        // TODO: closure?
-        if options.json_message_format() {
-            for message in processed_messages {
-                buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
-            }
-        } else {
-            for message in processed_messages.filter_map(|message| match message {
-                Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
-                _ => None,
-            }) {
-                buffers.write_to_stderr(message)?;
-            }
-        }
-
-        Self::open_affected_files_in_external_app(
-            buffers,
-            source_files_in_consistent_order,
-            options,
-            workspace_root,
-        )
-    }
-
-    fn open_affected_files_in_external_app(
-        buffers: &mut Buffers,
-        source_files_in_consistent_order: Vec<SourceFile>,
-        options: &Options,
-        workspace_root: &Path,
-    ) -> Result<()> {
-        let app = &options.open_in_external_app();
-        if !app.is_empty() {
-            let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
-            // TODO: Command in messages.rs? closure?
-            let mut child = Command::new(app).stdin(Stdio::piped()).spawn()?;
-            child
-                .stdin
-                .take()
-                .context("no stdin")?
-                .write_all(serde_json::to_string(&editor_data)?.as_bytes())?;
-
-            let error_text = failed_to_execute_error_text(app);
-            let output = child.wait_with_output().context(error_text)?;
-
-            buffers.write_all_to_stderr(&output.stdout)?;
-            buffers.write_all_to_stderr(&output.stderr)?;
-        }
-        Ok(())
+        process(buffers, messages, source_files_in_consistent_order)
     }
 }
 

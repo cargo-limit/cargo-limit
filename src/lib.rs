@@ -12,13 +12,18 @@ mod process;
 #[doc(hidden)]
 pub use process::NO_EXIT_CODE;
 
-use anyhow::Result;
-use cargo_metadata::MetadataCommand;
+use crate::models::{EditorData, SourceFile};
+use anyhow::{Context, Result};
+use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
 use messages::{MessageProcessor, Messages};
-
 use options::Options;
-use process::CargoProcess;
+use process::{failed_to_execute_error_text, CargoProcess};
+use std::{
+    io::Write,
+    path::Path,
+    process::{Command, Stdio},
+};
 
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     include_str!("../additional_environment_variables.txt");
@@ -32,6 +37,33 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     let mut cargo_process = CargoProcess::run(&options)?;
 
     let mut buffers = Buffers::new(cargo_process.child_mut())?;
+
+    let process_messages = |buffers: &mut Buffers,
+                            messages: Vec<Message>,
+                            source_files_in_consistent_order: Vec<SourceFile>|
+     -> Result<()> {
+        let processed_messages = messages.into_iter();
+        if options.json_message_format() {
+            for message in processed_messages {
+                buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
+            }
+        } else {
+            for message in processed_messages.filter_map(|message| match message {
+                Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
+                _ => None,
+            }) {
+                buffers.write_to_stderr(message)?;
+            }
+        }
+
+        open_affected_files_in_external_app(
+            buffers,
+            source_files_in_consistent_order,
+            &options,
+            workspace_root,
+        )
+    };
+
     let mut parsed_messages =
         Messages::parse_with_timeout_on_error(&mut buffers, Some(&cargo_process), &options)?;
 
@@ -43,12 +75,24 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
             None,
             &options,
         )?);
-        MessageProcessor::process(&mut buffers, parsed_messages, &options, workspace_root)?;
+        MessageProcessor::process(
+            &mut buffers,
+            parsed_messages,
+            &options,
+            workspace_root,
+            process_messages,
+        )?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
 
         exit_code
     } else {
-        MessageProcessor::process(&mut buffers, parsed_messages, &options, workspace_root)?;
+        MessageProcessor::process(
+            &mut buffers,
+            parsed_messages,
+            &options,
+            workspace_root,
+            process_messages,
+        )?;
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
         cargo_process.wait()?
     };
@@ -58,6 +102,32 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     }
 
     Ok(exit_code)
+}
+
+fn open_affected_files_in_external_app(
+    buffers: &mut Buffers,
+    source_files_in_consistent_order: Vec<SourceFile>,
+    options: &Options,
+    workspace_root: &Path,
+) -> Result<()> {
+    let app = &options.open_in_external_app();
+    if !app.is_empty() {
+        let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
+        // TODO: Command in messages.rs? closure?
+        let mut child = Command::new(app).stdin(Stdio::piped()).spawn()?;
+        child
+            .stdin
+            .take()
+            .context("no stdin")?
+            .write_all(serde_json::to_string(&editor_data)?.as_bytes())?;
+
+        let error_text = failed_to_execute_error_text(app);
+        let output = child.wait_with_output().context(error_text)?;
+
+        buffers.write_all_to_stderr(&output.stdout)?;
+        buffers.write_all_to_stderr(&output.stderr)?;
+    }
+    Ok(())
 }
 
 #[doc(hidden)]
