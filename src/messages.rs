@@ -123,7 +123,6 @@ impl ErrorsAndWarnings {
 }
 
 impl MessageProcessor {
-    // TODO: builder?
     pub fn process(
         buffers: &mut Buffers,
         parsed_messages: MessageParser,
