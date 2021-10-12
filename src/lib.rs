@@ -42,20 +42,19 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
                             messages: Vec<Message>,
                             source_files_in_consistent_order: Vec<SourceFile>|
      -> Result<()> {
-        let processed_messages = messages.into_iter();
+        let messages = messages.into_iter();
         if options.json_message_format() {
-            for message in processed_messages {
+            for message in messages {
                 buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
             }
         } else {
-            for message in processed_messages.filter_map(|message| match message {
+            for message in messages.filter_map(|message| match message {
                 Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
                 _ => None,
             }) {
                 buffers.write_to_stderr(message)?;
             }
         }
-
         open_affected_files_in_external_app(
             buffers,
             source_files_in_consistent_order,
