@@ -74,7 +74,7 @@ fn process_messages(
     let ProcessedMessages {
         messages,
         source_files_in_consistent_order,
-    } = ProcessedMessages::process(parsed_messages, &options, workspace_root)?;
+    } = ProcessedMessages::process(parsed_messages, options, workspace_root)?;
     let processed_messages = messages.into_iter();
 
     if options.json_message_format() {

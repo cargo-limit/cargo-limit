@@ -193,10 +193,10 @@ impl Options {
                 *color = passed_args.next().context(
                     "the argument '--color <WHEN>' requires a value but none was supplied",
                 )?;
-                Self::validate_color(&color)?;
+                Self::validate_color(color)?;
             } else if let Some(color_value) = arg.strip_prefix(COLOR) {
                 *color = color_value.to_owned();
-                Self::validate_color(&color)?;
+                Self::validate_color(color)?;
             } else if arg == MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1] {
                 let format = passed_args.next().context(
                     "the argument '--message-format <FMT>' requires a value but none was supplied",
@@ -208,7 +208,7 @@ impl Options {
                     self.short_message_format = true;
                 }
             } else if let Some(format) = arg.strip_prefix(MESSAGE_FORMAT) {
-                Self::validate_message_format(&format)?;
+                Self::validate_message_format(format)?;
                 if format.starts_with(JSON_FORMAT) {
                     self.json_message_format = true;
                 } else if format == SHORT_FORMAT {
