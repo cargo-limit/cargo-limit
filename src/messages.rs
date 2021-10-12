@@ -32,7 +32,7 @@ pub struct Messages {
     child_killed: bool,
 }
 
-struct ErrorsAndWarnings {
+struct FilteredMessages {
     errors: Vec<CompilerMessage>,
     warnings: Vec<CompilerMessage>,
 }
@@ -100,7 +100,7 @@ impl Messages {
     }
 }
 
-impl ErrorsAndWarnings {
+impl FilteredMessages {
     fn filter(parsed_messages: Messages, options: &Options, workspace_root: &Path) -> Self {
         let warnings = if options.show_dependencies_warnings() {
             parsed_messages.non_errors
@@ -186,8 +186,8 @@ impl MessageProcessor {
         workspace_root: &Path,
     ) -> Result<(Vec<Message>, Vec<SourceFile>)> {
         let has_errors = parsed_messages.has_errors();
-        let ErrorsAndWarnings { errors, warnings } =
-            ErrorsAndWarnings::filter(parsed_messages, options, workspace_root);
+        let FilteredMessages { errors, warnings } =
+            FilteredMessages::filter(parsed_messages, options, workspace_root);
 
         let errors = Self::filter_and_order_messages(errors, workspace_root);
         let warnings = Self::filter_and_order_messages(warnings, workspace_root);
