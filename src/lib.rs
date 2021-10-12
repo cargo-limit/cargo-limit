@@ -113,7 +113,6 @@ fn open_affected_files_in_external_app(
     let app = &options.open_in_external_app();
     if !app.is_empty() {
         let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
-        // TODO: Command in messages.rs? closure?
         let mut child = Command::new(app).stdin(Stdio::piped()).spawn()?;
         child
             .stdin

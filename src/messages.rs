@@ -64,7 +64,7 @@ impl Messages {
                 if result.has_errors() {
                     let time_limit = options.time_limit_after_error();
                     if time_limit > Duration::from_secs(0) {
-                        cargo_process.kill_after_timeout(time_limit); // TODO: closure?
+                        cargo_process.kill_after_timeout(time_limit);
                     }
                 }
             }
