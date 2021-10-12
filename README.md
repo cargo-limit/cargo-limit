@@ -15,7 +15,7 @@ Cargo with less noise:
 
 This tool is especially useful in combination with [cargo-watch](https://crates.io/crates/cargo-watch).
 
-[![asciicast](https://asciinema.org/a/nyvaHJS0TKnKOdoK1oWDVHCkd.svg)](https://asciinema.org/a/nyvaHJS0TKnKOdoK1oWDVHCkd)
+[![asciicast](https://asciinema.org/a/441673.svg)](https://asciinema.org/a/441673)
 
 ## Installation
 
