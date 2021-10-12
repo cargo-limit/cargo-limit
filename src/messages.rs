@@ -101,21 +101,21 @@ impl Messages {
 }
 
 impl FilteredMessages {
-    fn filter(parsed_messages: Messages, options: &Options, workspace_root: &Path) -> Self {
+    fn filter(messages: Messages, options: &Options, workspace_root: &Path) -> Self {
         let warnings = if options.show_dependencies_warnings() {
-            parsed_messages.non_errors
+            messages.non_errors
         } else {
-            parsed_messages
+            messages
                 .non_errors
                 .into_iter()
                 .filter(|i| i.target.src_path.starts_with(workspace_root))
                 .collect()
         };
 
-        let errors = parsed_messages
+        let errors = messages
             .internal_compiler_errors
             .into_iter()
-            .chain(parsed_messages.errors.into_iter())
+            .chain(messages.errors.into_iter())
             .collect();
 
         Self { errors, warnings }
