@@ -69,7 +69,7 @@ impl MessageParser {
             }
 
             if let Some(cargo_process) = cargo_process {
-                if !result.errors.is_empty() || !result.internal_compiler_errors.is_empty() {
+                if result.has_errors() {
                     let time_limit = options.time_limit_after_error();
                     if time_limit > Duration::from_secs(0) {
                         cargo_process.kill_after_timeout(time_limit);
@@ -95,8 +95,12 @@ impl MessageParser {
         self.child_killed |= other.child_killed;
     }
 
-    pub fn has_warnings_only(&self) -> bool {
-        self.internal_compiler_errors.is_empty() && self.errors.is_empty()
+    pub fn has_no_errors(&self) -> bool {
+        !self.has_errors()
+    }
+
+    fn has_errors(&self) -> bool {
+        !self.errors.is_empty() || !self.internal_compiler_errors.is_empty()
     }
 }
 
@@ -186,7 +190,7 @@ impl MessageProcessor {
         options: &Options,
         workspace_root: &Path,
     ) -> Result<(Vec<Message>, Vec<SourceFile>)> {
-        let has_warnings_only = parsed_messages.has_warnings_only();
+        let has_no_errors = parsed_messages.has_no_errors();
         let ErrorsAndWarnings { errors, warnings } =
             ErrorsAndWarnings::filter(parsed_messages, options, workspace_root);
 
@@ -196,7 +200,7 @@ impl MessageProcessor {
         let messages = if options.show_warnings_if_errors_exist() {
             Either::Left(errors.chain(warnings))
         } else {
-            let messages = if has_warnings_only {
+            let messages = if has_no_errors {
                 Either::Left(warnings)
             } else {
                 Either::Right(errors)
