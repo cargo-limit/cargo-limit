@@ -95,11 +95,7 @@ impl MessageParser {
         self.child_killed |= other.child_killed;
     }
 
-    pub fn has_no_errors(&self) -> bool {
-        !self.has_errors()
-    }
-
-    fn has_errors(&self) -> bool {
+    pub fn has_errors(&self) -> bool {
         !self.errors.is_empty() || !self.internal_compiler_errors.is_empty()
     }
 }
@@ -190,7 +186,7 @@ impl MessageProcessor {
         options: &Options,
         workspace_root: &Path,
     ) -> Result<(Vec<Message>, Vec<SourceFile>)> {
-        let has_no_errors = parsed_messages.has_no_errors();
+        let has_errors = parsed_messages.has_errors();
         let ErrorsAndWarnings { errors, warnings } =
             ErrorsAndWarnings::filter(parsed_messages, options, workspace_root);
 
@@ -200,10 +196,10 @@ impl MessageProcessor {
         let messages = if options.show_warnings_if_errors_exist() {
             Either::Left(errors.chain(warnings))
         } else {
-            let messages = if has_no_errors {
-                Either::Left(warnings)
+            let messages = if has_errors {
+                Either::Left(errors)
             } else {
-                Either::Right(errors)
+                Either::Right(warnings)
             };
             Either::Right(messages)
         };
