@@ -137,7 +137,7 @@ impl MessageProcessor {
         let TransformedMessages {
             messages,
             source_files_in_consistent_order,
-        } = Self::transform_messages(parsed_messages, options, workspace_root)?;
+        } = TransformedMessages::transform(parsed_messages, options, workspace_root)?;
 
         let processed_messages = messages.into_iter();
         if options.json_message_format() {
@@ -186,15 +186,17 @@ impl MessageProcessor {
         }
         Ok(())
     }
+}
 
-    fn transform_messages(
-        parsed_messages: Messages,
+impl TransformedMessages {
+    fn transform(
+        messages: Messages,
         options: &Options,
         workspace_root: &Path,
     ) -> Result<TransformedMessages> {
-        let has_errors = parsed_messages.has_errors();
+        let has_errors = messages.has_errors();
         let FilteredMessages { errors, warnings } =
-            FilteredMessages::filter(parsed_messages, options, workspace_root);
+            FilteredMessages::filter(messages, options, workspace_root);
 
         let errors = Self::filter_and_order_messages(errors, workspace_root);
         let warnings = Self::filter_and_order_messages(warnings, workspace_root);
