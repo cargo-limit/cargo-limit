@@ -115,7 +115,7 @@ impl FilteredMessages {
 }
 
 impl MessageProcessor {
-    pub fn process(
+    pub fn process_parsed_messages(
         buffers: &mut Buffers,
         parsed_messages: Messages,
         options: &Options,

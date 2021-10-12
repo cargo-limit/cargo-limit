@@ -74,7 +74,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
             None,
             &options,
         )?);
-        MessageProcessor::process(
+        MessageProcessor::process_parsed_messages(
             &mut buffers,
             parsed_messages,
             &options,
@@ -85,7 +85,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
         exit_code
     } else {
-        MessageProcessor::process(
+        MessageProcessor::process_parsed_messages(
             &mut buffers,
             parsed_messages,
             &options,
