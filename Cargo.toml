@@ -6,7 +6,7 @@ edition = "2018"
 license = "MIT OR Apache-2.0"
 description = "Cargo with less noise: warnings are skipped until errors are fixed, Neovim integration, etc."
 repository = "https://github.com/alopatindev/cargo-limit"
-keywords = ["cargo", "limit", "filter", "wrapper", "dedup"]
+keywords = ["cargo", "neovim", "filter", "wrapper", "dedup"]
 readme = "README.md"
 documentation = "https://github.com/alopatindev/cargo-limit#readme"
 
