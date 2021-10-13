@@ -189,7 +189,7 @@ impl Options {
             } else if arg == "-V" || arg == "--version" {
                 self.version = true;
                 args_before_app_args_delimiter.push(arg);
-            } else if arg == COLOR[0..COLOR.len() - 1] {
+            } else if arg == COLOR[..COLOR.len() - 1] {
                 *color = passed_args.next().context(
                     "the argument '--color <WHEN>' requires a value but none was supplied",
                 )?;
@@ -197,7 +197,7 @@ impl Options {
             } else if let Some(color_value) = arg.strip_prefix(COLOR) {
                 *color = color_value.to_owned();
                 Self::validate_color(color)?;
-            } else if arg == MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1] {
+            } else if arg == MESSAGE_FORMAT[..MESSAGE_FORMAT.len() - 1] {
                 let format = passed_args.next().context(
                     "the argument '--message-format <FMT>' requires a value but none was supplied",
                 )?;
@@ -279,7 +279,7 @@ impl Options {
         app_color_is_set: &mut bool,
     ) {
         for arg in passed_args {
-            if arg == COLOR[0..COLOR.len() - 1] || arg.starts_with(COLOR) {
+            if arg == COLOR[..COLOR.len() - 1] || arg.starts_with(COLOR) {
                 *app_color_is_set = true;
             }
             self.args_after_app_args_delimiter.push(arg);
@@ -302,7 +302,7 @@ impl Options {
         if !VALID_COLORS.contains(&color) {
             return Err(format_err!(
                 "argument for {} must be {} (was {})",
-                &COLOR[0..COLOR.len() - 1],
+                &COLOR[..COLOR.len() - 1],
                 VALID_COLORS.join(", "),
                 color,
             ));
@@ -314,7 +314,7 @@ impl Options {
         if !VALID_MESSAGE_FORMATS.contains(&format) {
             return Err(format_err!(
                 "argument for {} must be {} (was {})",
-                &MESSAGE_FORMAT[0..MESSAGE_FORMAT.len() - 1],
+                &MESSAGE_FORMAT[..MESSAGE_FORMAT.len() - 1],
                 VALID_MESSAGE_FORMATS.join(", "),
                 format,
             ));
