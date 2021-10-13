@@ -17,7 +17,7 @@ atty = "0.2"
 cargo_metadata = "0.14"
 const_format = "^0.2.8"
 ctrlc = { version = "3", features = ["termination"] }
-getset = "0.1.1"
+getset = "0.1"
 itertools = "0.10"
 serde = "1"
 serde_json = "1"
@@ -27,4 +27,4 @@ toml = "0.5"
 libc = "0.2"
 
 [dev-dependencies]
-pretty_assertions = "0.7.2"
+pretty_assertions = "1"
