@@ -131,11 +131,8 @@ impl FilteredAndOrderedMessages {
             .unique()
             .filter(|i| !i.message.spans.is_empty())
             .map(|i| {
-                let key = i
-                    .message
-                    .spans
-                    .iter()
-                    .rev()
+                let spans_from_leaf_to_root = i.message.spans.iter().rev();
+                let key = spans_from_leaf_to_root
                     .map(|span| (span.file_name.clone(), span.line_start))
                     .collect::<Vec<_>>();
                 (key, i)
