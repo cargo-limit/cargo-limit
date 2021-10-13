@@ -142,7 +142,7 @@ impl FilteredAndOrderedMessages {
             .into_group_map()
             .into_iter()
             .sorted_by_key(|(paths, _messages)| paths.clone())
-            .flat_map(|(_paths, messages)| messages.into_iter());
+            .flat_map(|(_paths, messages)| messages);
 
         let mut project_messages = Vec::new();
         let mut dependencies_messages = Vec::new();
