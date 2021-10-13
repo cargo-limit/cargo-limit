@@ -135,6 +135,7 @@ impl FilteredAndOrderedMessages {
                     .message
                     .spans
                     .iter()
+                    .rev()
                     .map(|span| (span.file_name.clone(), span.line_start))
                     .collect::<Vec<_>>();
                 (key, i)
