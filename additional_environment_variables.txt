@@ -3,5 +3,5 @@ Additional environment variables:
     CARGO_TIME_LIMIT    Execution time limit in seconds after encountering first compiling error (0 means no limit, 1 is default)
     CARGO_ASC           Show compiler messages in ascending order (false is default)
     CARGO_FORCE_WARN    Show warnings even if errors still exist (false is default)
-    CARGO_DEPS_WARN     Show dependencies' warnings (false is default)
+    CARGO_DEPS_WARN     Show path dependencies' warnings (false is default)
     CARGO_EDITOR        Open affected files in external app ("_cargo-limit-open-in-nvim" is default)
