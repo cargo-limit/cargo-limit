@@ -15,7 +15,7 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 
 In order to not disrupt from text editing, this will work only if
 - current mode is normal
-- current tab is either empty or contains some existing and unmodified (saved) file.
+- current buffer is either empty or contains some existing and unmodified (saved) file.
 
 ## Custom open handler
 If you want something different than opening/switching tabs with affected files — then you can add your own handler to `init.vim`:
@@ -43,13 +43,13 @@ endfunction
 ```
 
 # Other text editors/IDEs integration
-cargo-limit can run external app/script and provide affected files to stdin in the following format:
+cargo-limit can run external app/script and provide affected files to stdin in the following JSON format:
 ```json
 {
   "workspace_root": "/full/path/to/project",
   "files": [
     {
-      "path": "/full/path/to/file.rs",
+      "path": "/full/path/to/project/file.rs",
       "line": 4,
       "column": 1,
       "message": "unused import: `diagnostic::DiagnosticSpan`",
