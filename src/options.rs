@@ -555,6 +555,30 @@ mod tests {
             STUB_MINIMAL,
         )?;
 
+        assert_options(
+            vec![
+                "cargo-lrun",
+                "-v",
+                "--message-format",
+                "short",
+                "-v",
+                "app-arg",
+            ],
+            vec![
+                "run",
+                "--message-format=json-diagnostic-short",
+                "-v",
+                "-v",
+                "app-arg",
+            ],
+            vec![],
+            Options {
+                short_message_format: true,
+                ..Options::default()
+            },
+            STUB_MINIMAL,
+        )?;
+
         assert_cargo_args(
             vec![
                 "cargo-lrun",
