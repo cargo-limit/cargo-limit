@@ -29,9 +29,9 @@ struct TransformedMessages {
     source_files_in_consistent_order: Vec<SourceFile>,
 }
 
-pub fn process_parsed_messages(
+pub fn transform_and_process_messages(
     buffers: &mut Buffers,
-    parsed_messages: Messages,
+    messages: Messages,
     options: &Options,
     workspace_root: &Path,
     mut process: impl FnMut(&mut Buffers, Vec<Message>, Vec<SourceFile>) -> Result<()>,
@@ -39,7 +39,7 @@ pub fn process_parsed_messages(
     let TransformedMessages {
         messages,
         source_files_in_consistent_order,
-    } = TransformedMessages::transform(parsed_messages, options, workspace_root)?;
+    } = TransformedMessages::transform(messages, options, workspace_root)?;
     process(buffers, messages, source_files_in_consistent_order)
 }
 

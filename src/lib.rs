@@ -16,7 +16,7 @@ use crate::models::{EditorData, SourceFile};
 use anyhow::{Context, Result};
 use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
-use messages::{process_parsed_messages, Messages};
+use messages::{transform_and_process_messages, Messages};
 use options::Options;
 use process::{failed_to_execute_error_text, CargoProcess};
 use std::{
@@ -74,7 +74,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
             None,
             &options,
         )?);
-        process_parsed_messages(
+        transform_and_process_messages(
             &mut buffers,
             parsed_messages,
             &options,
@@ -85,7 +85,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
         exit_code
     } else {
-        process_parsed_messages(
+        transform_and_process_messages(
             &mut buffers,
             parsed_messages,
             &options,
