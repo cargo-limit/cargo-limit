@@ -13,7 +13,7 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 5. In case of compiling errors `nvim` will open new or existing tabs with the files on affected lines and columns
 6. `cargo llrun` (`cargo llcheck`, etc.) will open them in case of warnings as well.
 
-In order to not disrupt from text editing, this will work only if
+In order to not disrupt from text editing or file navigation, this will work only if
 - current mode is normal
 - current buffer is either empty or contains some existing and unmodified (saved) file.
 
