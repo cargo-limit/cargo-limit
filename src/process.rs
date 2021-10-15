@@ -35,10 +35,10 @@ pub enum State {
 }
 
 trait StateExt {
-    fn can_start_killing(self) -> bool;
-    fn not_running(self);
-    fn force_not_running(self);
-    fn failed_to_kill(self);
+    fn try_start_killing(self) -> bool;
+    fn set_not_running(self);
+    fn force_set_not_running(self);
+    fn set_failed_to_kill(self);
 }
 
 impl CargoProcess {
@@ -69,7 +69,7 @@ impl CargoProcess {
 
     pub fn wait(&mut self) -> Result<i32> {
         let exit_status = self.child.wait()?;
-        self.state.clone().force_not_running();
+        self.state.clone().force_set_not_running();
         Ok(exit_status.code().unwrap_or(NO_EXIT_CODE))
     }
 
@@ -85,7 +85,7 @@ impl CargoProcess {
     }
 
     pub fn kill_after_timeout(&self, time_limit: Duration) {
-        if self.can_start_kill_timer() {
+        if self.try_start_kill_timer() {
             thread::spawn({
                 let pid = self.child.id();
                 let state = self.state.clone();
@@ -98,7 +98,7 @@ impl CargoProcess {
     }
 
     fn kill(pid: u32, state: Arc<Atomic<State>>) {
-        if state.clone().can_start_killing() {
+        if state.clone().try_start_killing() {
             let success = {
                 #[cfg(unix)]
                 unsafe {
@@ -123,14 +123,14 @@ impl CargoProcess {
             };
 
             if success {
-                state.not_running()
+                state.set_not_running()
             } else {
-                state.failed_to_kill()
+                state.set_failed_to_kill()
             }
         }
     }
 
-    fn can_start_kill_timer(&self) -> bool {
+    fn try_start_kill_timer(&self) -> bool {
         self.state
             .compare_exchange(
                 State::Running,
@@ -143,7 +143,7 @@ impl CargoProcess {
 }
 
 impl StateExt for Arc<Atomic<State>> {
-    fn can_start_killing(self) -> bool {
+    fn try_start_killing(self) -> bool {
         self.compare_exchange(
             State::Running,
             State::Killing,
@@ -161,7 +161,7 @@ impl StateExt for Arc<Atomic<State>> {
                 .is_ok()
     }
 
-    fn not_running(self) {
+    fn set_not_running(self) {
         let _ = self.compare_exchange(
             State::Killing,
             State::NotRunning,
@@ -170,11 +170,11 @@ impl StateExt for Arc<Atomic<State>> {
         );
     }
 
-    fn force_not_running(self) {
+    fn force_set_not_running(self) {
         self.store(State::NotRunning, Ordering::Release);
     }
 
-    fn failed_to_kill(self) {
+    fn set_failed_to_kill(self) {
         let _ = self.compare_exchange(
             State::Killing,
             State::FailedToKill,
