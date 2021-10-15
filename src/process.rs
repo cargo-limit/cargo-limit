@@ -40,6 +40,7 @@ trait StateExt {
     fn set_not_running(&self);
     fn force_set_not_running(&self);
     fn set_failed_to_kill(&self);
+    fn transit(&self, current: State, new: State) -> bool;
 }
 
 impl CargoProcess {
@@ -134,40 +135,16 @@ impl CargoProcess {
 
 impl StateExt for Arc<Atomic<State>> {
     fn try_set_killing(&self) -> bool {
-        self.compare_exchange(
-            State::Running,
-            State::Killing,
-            Ordering::AcqRel,
-            Ordering::Acquire,
-        )
-        .is_ok()
-            || self
-                .compare_exchange(
-                    State::KillTimerStarted,
-                    State::Killing,
-                    Ordering::AcqRel,
-                    Ordering::Acquire,
-                )
-                .is_ok()
+        self.transit(State::Running, State::Killing)
+            || self.transit(State::KillTimerStarted, State::Killing)
     }
 
     fn try_set_start_kill_timer(&self) -> bool {
-        self.compare_exchange(
-            State::Running,
-            State::KillTimerStarted,
-            Ordering::AcqRel,
-            Ordering::Acquire,
-        )
-        .is_ok()
+        self.transit(State::Running, State::KillTimerStarted)
     }
 
     fn set_not_running(&self) {
-        let _ = self.compare_exchange(
-            State::Killing,
-            State::NotRunning,
-            Ordering::AcqRel,
-            Ordering::Acquire,
-        );
+        let _ = self.transit(State::Killing, State::NotRunning);
     }
 
     fn force_set_not_running(&self) {
@@ -175,12 +152,12 @@ impl StateExt for Arc<Atomic<State>> {
     }
 
     fn set_failed_to_kill(&self) {
-        let _ = self.compare_exchange(
-            State::Killing,
-            State::FailedToKill,
-            Ordering::AcqRel,
-            Ordering::Acquire,
-        );
+        let _ = self.transit(State::Killing, State::FailedToKill);
+    }
+
+    fn transit(&self, current: State, new: State) -> bool {
+        self.compare_exchange(current, new, Ordering::AcqRel, Ordering::Acquire)
+            .is_ok()
     }
 }
 
