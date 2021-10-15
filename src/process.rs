@@ -61,7 +61,9 @@ impl CargoProcess {
     }
 
     pub fn wait(&mut self) -> Result<i32> {
-        Ok(self.child.wait()?.code().unwrap_or(NO_EXIT_CODE))
+        let exit_status = self.child.wait()?;
+        Self::force_killed(self.state.clone());
+        Ok(exit_status.code().unwrap_or(NO_EXIT_CODE))
     }
 
     pub fn wait_if_killing_is_in_progress(&self) -> State {
@@ -158,6 +160,10 @@ impl CargoProcess {
             Ordering::AcqRel,
             Ordering::Acquire,
         );
+    }
+
+    fn force_killed(state: Arc<Atomic<State>>) {
+        state.store(State::Killed, Ordering::Release);
     }
 
     fn failed_to_kill(state: Arc<Atomic<State>>) {
