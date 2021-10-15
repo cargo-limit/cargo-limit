@@ -35,8 +35,8 @@ pub enum State {
 }
 
 trait StateExt {
-    fn try_start_killing(&self) -> bool;
-    fn try_start_kill_timer(&self) -> bool;
+    fn try_set_killing(&self) -> bool;
+    fn try_set_start_kill_timer(&self) -> bool;
     fn set_not_running(&self);
     fn force_set_not_running(&self);
     fn set_failed_to_kill(&self);
@@ -86,7 +86,7 @@ impl CargoProcess {
     }
 
     pub fn kill_after_timeout(&self, time_limit: Duration) {
-        if self.state.try_start_kill_timer() {
+        if self.state.try_set_start_kill_timer() {
             thread::spawn({
                 let pid = self.child.id();
                 let state = self.state.clone();
@@ -99,7 +99,7 @@ impl CargoProcess {
     }
 
     fn kill(pid: u32, state: Arc<Atomic<State>>) {
-        if state.try_start_killing() {
+        if state.try_set_killing() {
             let success = {
                 #[cfg(unix)]
                 unsafe {
@@ -133,7 +133,7 @@ impl CargoProcess {
 }
 
 impl StateExt for Arc<Atomic<State>> {
-    fn try_start_killing(&self) -> bool {
+    fn try_set_killing(&self) -> bool {
         self.compare_exchange(
             State::Running,
             State::Killing,
@@ -151,7 +151,7 @@ impl StateExt for Arc<Atomic<State>> {
                 .is_ok()
     }
 
-    fn try_start_kill_timer(&self) -> bool {
+    fn try_set_start_kill_timer(&self) -> bool {
         self.compare_exchange(
             State::Running,
             State::KillTimerStarted,
