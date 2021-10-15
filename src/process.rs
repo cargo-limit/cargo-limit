@@ -30,7 +30,7 @@ pub enum State {
     Running,
     KillTimerStarted,
     Killing,
-    Killed,
+    NotRunning,
     FailedToKill,
 }
 
@@ -62,7 +62,7 @@ impl CargoProcess {
 
     pub fn wait(&mut self) -> Result<i32> {
         let exit_status = self.child.wait()?;
-        Self::force_killed(self.state.clone());
+        Self::force_not_running(self.state.clone());
         Ok(exit_status.code().unwrap_or(NO_EXIT_CODE))
     }
 
@@ -116,7 +116,7 @@ impl CargoProcess {
             };
 
             if success {
-                Self::killed(state)
+                Self::not_running(state)
             } else {
                 Self::failed_to_kill(state)
             }
@@ -153,17 +153,17 @@ impl CargoProcess {
                 .is_ok()
     }
 
-    fn killed(state: Arc<Atomic<State>>) {
+    fn not_running(state: Arc<Atomic<State>>) {
         let _ = state.compare_exchange(
             State::Killing,
-            State::Killed,
+            State::NotRunning,
             Ordering::AcqRel,
             Ordering::Acquire,
         );
     }
 
-    fn force_killed(state: Arc<Atomic<State>>) {
-        state.store(State::Killed, Ordering::Release);
+    fn force_not_running(state: Arc<Atomic<State>>) {
+        state.store(State::NotRunning, Ordering::Release);
     }
 
     fn failed_to_kill(state: Arc<Atomic<State>>) {

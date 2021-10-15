@@ -82,7 +82,7 @@ impl Messages {
         }
 
         result.child_killed = if let Some(cargo_process) = cargo_process {
-            cargo_process.wait_if_killing_is_in_progress() == process::State::Killed
+            cargo_process.wait_if_killing_is_in_progress() == process::State::NotRunning
         } else {
             false
         };
