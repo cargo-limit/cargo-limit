@@ -34,6 +34,13 @@ pub enum State {
     FailedToKill,
 }
 
+trait StateExt {
+    fn can_start_killing(self) -> bool;
+    fn not_running(self);
+    fn force_not_running(self);
+    fn failed_to_kill(self);
+}
+
 impl CargoProcess {
     pub fn run(options: &Options) -> Result<Self> {
         let cargo_path = env::var(CARGO_ENV_VAR)
@@ -62,7 +69,7 @@ impl CargoProcess {
 
     pub fn wait(&mut self) -> Result<i32> {
         let exit_status = self.child.wait()?;
-        Self::force_not_running(self.state.clone());
+        self.state.clone().force_not_running();
         Ok(exit_status.code().unwrap_or(NO_EXIT_CODE))
     }
 
@@ -91,7 +98,7 @@ impl CargoProcess {
     }
 
     fn kill(pid: u32, state: Arc<Atomic<State>>) {
-        if Self::can_start_killing(state.clone()) {
+        if state.clone().can_start_killing() {
             let success = {
                 #[cfg(unix)]
                 unsafe {
@@ -116,9 +123,9 @@ impl CargoProcess {
             };
 
             if success {
-                Self::not_running(state)
+                state.not_running()
             } else {
-                Self::failed_to_kill(state)
+                state.failed_to_kill()
             }
         }
     }
@@ -133,17 +140,18 @@ impl CargoProcess {
             )
             .is_ok()
     }
+}
 
-    fn can_start_killing(state: Arc<Atomic<State>>) -> bool {
-        state
-            .compare_exchange(
-                State::Running,
-                State::Killing,
-                Ordering::AcqRel,
-                Ordering::Acquire,
-            )
-            .is_ok()
-            || state
+impl StateExt for Arc<Atomic<State>> {
+    fn can_start_killing(self) -> bool {
+        self.compare_exchange(
+            State::Running,
+            State::Killing,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        )
+        .is_ok()
+            || self
                 .compare_exchange(
                     State::KillTimerStarted,
                     State::Killing,
@@ -153,8 +161,8 @@ impl CargoProcess {
                 .is_ok()
     }
 
-    fn not_running(state: Arc<Atomic<State>>) {
-        let _ = state.compare_exchange(
+    fn not_running(self) {
+        let _ = self.compare_exchange(
             State::Killing,
             State::NotRunning,
             Ordering::AcqRel,
@@ -162,12 +170,12 @@ impl CargoProcess {
         );
     }
 
-    fn force_not_running(state: Arc<Atomic<State>>) {
-        state.store(State::NotRunning, Ordering::Release);
+    fn force_not_running(self) {
+        self.store(State::NotRunning, Ordering::Release);
     }
 
-    fn failed_to_kill(state: Arc<Atomic<State>>) {
-        let _ = state.compare_exchange(
+    fn failed_to_kill(self) {
+        let _ = self.compare_exchange(
             State::Killing,
             State::FailedToKill,
             Ordering::AcqRel,
