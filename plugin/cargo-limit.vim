@@ -4,9 +4,11 @@ function! s:on_cargo_metadata(_job_id, data, event)
   if a:event == 'stdout'
     call add(s:data_chunks, join(a:data, ''))
   elseif a:event == 'stderr' && type(a:data) == v:t_list && a:data != ['']
-    let l:stderr = join(a:data, '')
+    let l:stderr = join(a:data, "\n")
     if l:stderr !~ 'could not find `Cargo.toml`'
-      echoerr l:stderr
+      echohl Error
+      echon l:stderr
+      echohl None
     endif
   elseif a:event == 'exit'
     let l:stdout = join(s:data_chunks, '')
