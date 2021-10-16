@@ -18,9 +18,13 @@ In order to not disrupt from text editing or file navigation, this will work onl
 - current buffer is either empty or contains some existing and unmodified (saved) file.
 
 ## Custom open handler
-If you want something different than opening/switching tabs with affected files — you can add your own handler to `init.vim`.
+⚠️ If you want something different than opening/switching tabs with affected files — you can add your own handler to `init.vim`.
 
-If you want to open files **in buffers instead of tabs** — try this:
+For example:
+<details>
+<summary>Open files in buffers instead of tabs</summary>
+<p>
+
 ```viml
 function! g:CargoLimitOpen(editor_data)
   let l:initial_file = resolve(expand('%:p'))
@@ -39,7 +43,13 @@ function! g:CargoLimitOpen(editor_data)
 endfunction
 ```
 
-If you want to populate a **quickfix list** — try that:
+</p>
+</details>
+
+<details>
+<summary>Populate a quickfix list</summary>
+<p>
+
 ```viml
 set errorformat =%f:%l:%c:%m
 
@@ -62,6 +72,9 @@ function! g:CargoLimitOpen(editor_data)
   endif
 endfunction
 ```
+
+</p>
+</details>
 
 # Other text editors/IDEs integration
 cargo-limit can run external app/script and provide affected files to stdin in the following JSON format:
