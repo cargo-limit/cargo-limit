@@ -5,7 +5,7 @@ Cargo with less noise:
 - errors have highest priority
     - they never appear in the middle of warnings
     - warnings are skipped by default until errors are fixed
-    - all dependencies' warnings are skipped by default
+    - external [path dependencies'](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#specifying-path-dependencies) warnings are skipped by default
 - all messages come in reversed order by default
     - to avoid extra scrolling
 - messages are grouped by filenames
@@ -64,7 +64,7 @@ See [here](EDITOR-INTEGRATION.md#neovim-integration).
     - show warnings even if errors still exist
     - `false` is default
 - `CARGO_DEPS_WARN`
-    - show [path dependencies'](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#specifying-path-dependencies) warnings
+    - show external path dependencies' warnings
     - `false` is default
 - `CARGO_EDITOR`
     - opens affected files in external app
