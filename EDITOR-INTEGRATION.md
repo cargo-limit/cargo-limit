@@ -1,7 +1,7 @@
 # Neovim integration
 Enable the plugin in your `init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
 ```viml
-Plug 'alopatindev/cargo-limit', { 'do': 'cargo install nvim-send' }
+Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
 ```
 and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 
