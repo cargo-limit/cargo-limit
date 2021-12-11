@@ -9,7 +9,7 @@ use itertools::{Either, Itertools};
 use process::CargoProcess;
 use std::{collections::HashSet, path::Path, time::Duration};
 
-#[derive(Default, CopyGetters)]
+#[derive(Default, CopyGetters, Debug)]
 pub struct Messages {
     internal_compiler_errors: Vec<CompilerMessage>,
     errors: Vec<CompilerMessage>,
@@ -113,13 +113,54 @@ impl FilteredAndOrderedMessages {
         };
         let warnings = Self::filter_and_order_messages(warnings, workspace_root);
 
+        let cargo_errors = Self::filter_cargo_errors(&messages.errors);
         let errors = messages
             .internal_compiler_errors
             .into_iter()
             .chain(messages.errors);
         let errors = Self::filter_and_order_messages(errors, workspace_root);
+        let errors = if errors.is_empty() {
+            cargo_errors
+        } else {
+            errors
+        };
 
         Self { errors, warnings }
+    }
+
+    fn filter_cargo_errors(messages: &[CompilerMessage]) -> Vec<CompilerMessage> {
+        let (good, bad): (Vec<_>, Vec<_>) = messages
+            .iter()
+            .filter_map(|i| {
+                if i.message.spans.is_empty() && i.message.rendered.is_some() {
+                    let i = i.clone();
+                    let item = if i.message.message.contains("aborting due to previous error") {
+                        (None, Some(i))
+                    } else {
+                        (Some(i), None)
+                    };
+                    Some(item)
+                } else {
+                    None
+                }
+            })
+            .unzip();
+
+        let filter = |items: Vec<Option<CompilerMessage>>| -> Vec<CompilerMessage> {
+            items
+                .into_iter()
+                .flatten()
+                .unique_by(|i| i.message.rendered.clone())
+                .collect()
+        };
+        let good = filter(good);
+        let bad = filter(bad);
+
+        if good.is_empty() {
+            bad
+        } else {
+            good
+        }
     }
 
     fn filter_and_order_messages(
@@ -165,9 +206,9 @@ impl TransformedMessages {
         options: &Options,
         workspace_root: &Path,
     ) -> Result<TransformedMessages> {
-        let has_errors = messages.has_errors();
         let FilteredAndOrderedMessages { errors, warnings } =
             FilteredAndOrderedMessages::filter(messages, options, workspace_root);
+        let has_errors = !errors.is_empty();
 
         let errors = errors.into_iter();
         let warnings = warnings.into_iter();
