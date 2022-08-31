@@ -75,6 +75,9 @@ See [here](EDITOR-INTEGRATION.md#neovim-integration).
 ## Why "limit"?
 Initially it was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189).
 
+## Similar Projects
+- [bacon](https://github.com/Canop/bacon) is a background rust code checker
+
 ## Thanks to all contributors ❤️
 Thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for NixOS package.
 
