@@ -1,4 +1,5 @@
 let s:data_chunks = []
+let s:source_files = []
 
 function! s:on_cargo_metadata(_job_id, data, event)
   if a:event == 'stdout'
@@ -38,26 +39,45 @@ function! s:create_server_address(escaped_workspace_root)
   endif
 endfunction
 
-function! s:open_in_new_or_existing_tabs(editor_data)
+function! s:open_next_source_file_in_new_or_existing_tab()
   let l:initial_file = resolve(expand('%:p'))
   if l:initial_file != '' && !filereadable(l:initial_file)
     return
   endif
-  for source_file in reverse(a:editor_data.files)
-    let l:path = fnameescape(source_file.path)
+
+  " TODO
+  " :w !git diff --no-index % -
+  " 1. remove edited lines from s:source_files
+  " 2. correct line numbers
+
+  if !empty(s:source_files)
+    let l:source_file = s:source_files[0]
+    let l:path = fnameescape(l:source_file.path)
     if mode() == 'n' && &l:modified == 0
       execute 'tab drop ' . l:path
-      call cursor((source_file.line), (source_file.column))
-    else
-      break
+      call cursor((l:source_file.line), (l:source_file.column))
+      let s:source_files = s:source_files[1:]
     endif
-  endfor
+  endif
+endfunction
+
+function! s:open_source_files_sequentially(editor_data)
+  let s:source_files = a:editor_data.files
+  call s:open_next_source_file_in_new_or_existing_tab()
+endfunction
+
+function! s:call_after_event_finished(function)
+  call timer_start(0, { tid -> a:function() })
 endfunction
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
-    call s:open_in_new_or_existing_tabs(a:editor_data)
+    call s:open_source_files_sequentially(a:editor_data)
   endfunction
+
+  autocmd BufWritePre *.rs call s:call_after_event_finished(
+    \ {-> execute('call s:open_next_source_file_in_new_or_existing_tab()') })
+  " TODO: function('s:open_next_source_file_in_new_or_existing_tab')
 endif
 
 if has('nvim')
