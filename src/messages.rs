@@ -282,11 +282,16 @@ impl TransformedMessages {
             })
             .map(|(span, message)| (Self::find_leaf_project_expansion(span), &message.message));
 
+        // FIXME: if line contains error and warning we may drop
+        // error and leave warning, which will be dropped later
+        // as well (if we run llcheck)?
+
         let mut source_files_in_consistent_order = Vec::new();
-        let mut used_file_names = HashSet::new();
+        let mut used_file_names_and_lines = HashSet::new();
         for (span, message) in spans_and_messages {
-            if !used_file_names.contains(&span.file_name) {
-                used_file_names.insert(span.file_name.clone());
+            let file_name = span.file_name.clone();
+            if !used_file_names_and_lines.contains(&(file_name.clone(), span.line_start)) {
+                used_file_names_and_lines.insert((file_name, span.line_start));
                 source_files_in_consistent_order.push(SourceFile::new(
                     span,
                     message,
