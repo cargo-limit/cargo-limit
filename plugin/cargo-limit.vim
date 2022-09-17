@@ -52,11 +52,11 @@ function! s:parse_line_and_delta(text)
   return result
 endfunction
 
-function! s:correct_lines(lines_changed)
+function! s:correct_lines(lines_changed, initial_file)
   " FIXME: ungly but works; filter does something weird
   let s:new_source_files = []
   for i in s:source_files
-    let l:is_changed_file = get(a:lines_changed, i['line']) && i['path'] == l:initial_file
+    let l:is_changed_file = get(a:lines_changed, i['line']) && i['path'] == a:initial_file
     if l:is_changed_file
       " TODO: naming
       for j in l:lines_deltas
@@ -108,7 +108,7 @@ function! s:on_buffer_changed()
         let l:diff_stdout_line_number += 1
       endwhile
 
-      call s:correct_lines(l:lines_changed)
+      call s:correct_lines(l:lines_changed, l:initial_file)
 
     endif
   endif
@@ -130,24 +130,17 @@ function! s:open_all_tabs()
 endfunction
 
 " TODO: naming
-function! s:open_next_source_file_in_new_or_existing_tab(allow_not_normal_mode)
-  " TODO: naming: current_file?
+function! s:open_next_source_file_in_new_or_existing_tab()
+  " TODO: naming: current_file? extract?
   let l:initial_file = resolve(expand('%:p'))
   if l:initial_file != '' && !filereadable(l:initial_file)
-    return
-  endif
-
-  " TODO: naming?
-  if !a:allow_not_normal_mode
-    call s:open_all_tabs()
     return
   endif
 
   if !empty(s:source_files)
     let l:source_file = s:source_files[0]
     let l:path = fnameescape(l:source_file.path)
-    let l:allowed_mode = a:allow_not_normal_mode || mode() == 'n'
-    if l:allowed_mode && &l:modified == 0
+    if &l:modified == 0
       execute 'tab drop ' . l:path
       call cursor((l:source_file.line), (l:source_file.column))
       let s:source_files = s:source_files[1:]
@@ -155,9 +148,10 @@ function! s:open_next_source_file_in_new_or_existing_tab(allow_not_normal_mode)
   endif
 endfunction
 
+" TODO: naming
 function! s:open_source_files_sequentially(editor_data)
   let s:source_files = reverse(a:editor_data.files)
-  call s:open_next_source_file_in_new_or_existing_tab(0)
+  call s:open_all_tabs()
 endfunction
 
 function! s:call_after_event_finished(function)
@@ -173,7 +167,7 @@ if !exists('*CargoLimitOpen')
   autocmd TextChanged,InsertLeave,FilterReadPost *.rs call s:on_buffer_changed()
 
   autocmd BufWritePre *.rs call s:call_after_event_finished(
-    \ {-> execute('call s:open_next_source_file_in_new_or_existing_tab(1)') })
+    \ {-> execute('call s:open_next_source_file_in_new_or_existing_tab()') })
 endif
 
 if has('nvim')
