@@ -43,6 +43,7 @@ function! s:starts_with(longer, shorter)
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
 
+" TODO: remove delta
 function! s:parse_line_and_delta(text)
   let l:items = split(a:text, ',')
   let result = {'line': l:items[0][1:], 'delta': 0}
@@ -52,21 +53,14 @@ function! s:parse_line_and_delta(text)
   return result
 endfunction
 
-function! s:correct_lines(lines_changed, lines_deltas, initial_file)
-  " TODO: ensure we don't run this multiple times in a row
+" TODO: naming
+function! s:correct_lines(diff, initial_file)
   let s:new_source_files = []
   for i in s:source_files
-    let l:is_changed_file = get(a:lines_changed, i.line) && i.path == a:initial_file
-    if l:is_changed_file
-      " TODO: naming
-      for j in a:lines_deltas
-        let l:new_line = i.line
-        if l:new_line >= j.line
-          let l:new_line -= j.delta
-        endif
-        let i.line = l:new_line
-      endfor
-    else
+"    " TODO: naming: is_changed_line?
+    let l:is_changed_file = get(a:diff.lines_changed, i.line) && i.path == a:initial_file
+    if !l:is_changed_file
+"    " TODO: naming
       call add(s:new_source_files, i)
     endif
   endfor
@@ -74,7 +68,7 @@ function! s:correct_lines(lines_changed, lines_deltas, initial_file)
 endfunction
 
 function! s:execute_and_parse_diff()
-  let result = {'lines_changed': {}, 'lines_deltas': []}
+  let result = {'lines_changed': {}}
 
   let l:diff_stdout_lines = split(execute('w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'), "\n")
   let l:diff_change_pattern = '@@ '
@@ -84,13 +78,13 @@ function! s:execute_and_parse_diff()
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
     if s:starts_with(l:diff_line, l:diff_change_pattern)
       let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, l:diff_change_pattern)[0])
+      " TODO: remove added
       let [l:removed, l:added] = map(split(l:changed_line_numbers_with_offsets, ' '), 's:parse_line_and_delta(v:val)')
-      let l:delta = l:added.delta - l:removed.delta
-      call add(result.lines_deltas, {'line': l:removed.line, 'delta': l:delta})
 
       let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
       let l:removed_text = l:next_diff_line[1:]
-      if !empty(l:removed_text)
+      let l:removed_new_line = empty(l:removed_text)
+      if !l:removed_new_line
         let result.lines_changed[l:removed.line] = 1
       endif
       let l:diff_stdout_line_number += 1
@@ -106,7 +100,7 @@ function! s:on_buffer_changed()
   if l:initial_file != ''
     if filereadable(l:initial_file)
       let diff = s:execute_and_parse_diff()
-      call s:correct_lines(diff.lines_changed, diff.lines_deltas, l:initial_file)
+      call s:correct_lines(diff, l:initial_file)
     endif
   endif
 endfunction
@@ -125,7 +119,6 @@ function! s:open_all_files_in_new_or_existing_tabs()
 endfunction
 
 function! s:open_next_file_in_new_or_existing_tab()
-  " FIXME: don't call it several times in a row
   " TODO: naming: current_file? extract?
   let l:initial_file = resolve(expand('%:p'))
   if l:initial_file != '' && !filereadable(l:initial_file)
@@ -150,6 +143,7 @@ endfunction
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
     let s:source_files = reverse(a:editor_data.files)
+    " TODO: add orig line
     call s:open_all_files_in_new_or_existing_tabs()
   endfunction
 
