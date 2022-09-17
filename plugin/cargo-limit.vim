@@ -1,5 +1,4 @@
 let s:data_chunks = []
-let s:data_chunks1 = [] " TODO: naming
 let s:source_files = []
 
 function! s:on_cargo_metadata(_job_id, data, event)
@@ -26,22 +25,6 @@ function! s:on_cargo_metadata(_job_id, data, event)
   endif
 endfunction
 
-function! s:on_git_diff(_job_id, data, event)
-  if a:event == 'stdout'
-    call add(s:data_chunks1, join(a:data, ''))
-  elseif a:event == 'stderr' && type(a:data) == v:t_list && a:data != [''] " TODO: extract?
-    let l:stderr = join(a:data, "\n")
-    echohl Error
-    echon l:stderr
-    echohl None
-  elseif a:event == 'exit'
-    let l:stdout = join(s:data_chunks1, "\n")
-    if len(l:stdout) > 0
-      echo l:stdout
-    endif
-  endif
-endfunction
-
 function! s:create_server_address(escaped_workspace_root)
   let l:prefix = 'nvim-cargo-limit-'
   if has('win32')
@@ -55,10 +38,6 @@ function! s:create_server_address(escaped_workspace_root)
     throw 'unsupported OS'
   endif
 endfunction
-
-"function! s:get_diff_lines() abort
-"  return range(1, line('$'))->filter({_, v -> diff_hlID(v, 1)->synIDattr('name') =~# 'Diff*'})
-"endfunction
 
 function! s:starts_with(longer, shorter)
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
@@ -82,9 +61,9 @@ function! s:on_buffer_changed()
     return
   endif
 
+  " TODO: extract parsing
   if l:initial_file != ''
     let l:diff_stdout_lines = split(execute('w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'), "\n")
-    "echo join(l:diff_stdout_lines, "\n")
     let l:lines_changed = {}
     let l:lines_deltas = []
     let l:lines_moved = {}
@@ -112,15 +91,13 @@ function! s:on_buffer_changed()
 
     " FIXME: ungly but works; filter does something weird
     let s:new_source_files = []
-    let l:acc_delta = 0
     for i in s:source_files
       let l:is_changed_file = get(l:lines_changed, i['line']) && i['path'] == l:initial_file
       if l:is_changed_file
         for j in l:lines_deltas
           let l:new_line = i['line']
           if l:new_line >= j[0]
-            let l:new_line -= j[1] - l:acc_delta
-            "let l:acc_delta -= j[1]
+            let l:new_line -= j[1]
           endif
           let i.line = l:new_line
         endfor
@@ -128,7 +105,6 @@ function! s:on_buffer_changed()
         call add(s:new_source_files, i)
       endif
     endfor
-    echo l:lines_deltas
     let s:source_files = s:new_source_files
   endif
 endfunction
@@ -172,7 +148,6 @@ endfunction
 
 function! s:open_source_files_sequentially(editor_data)
   let s:source_files = reverse(a:editor_data.files)
-  "echo s:source_files
   call s:open_next_source_file_in_new_or_existing_tab(0)
 endfunction
 
@@ -185,12 +160,9 @@ if !exists('*CargoLimitOpen')
     call s:open_source_files_sequentially(a:editor_data)
   endfunction
 
-  " TODO: TextChanged, TextChangedI, TextChangedP
-  "autocmd InsertCharPre *.rs call s:on_buffer_changed()
   " TODO: augroup?
   autocmd TextChanged,InsertLeave,FilterReadPost *.rs call s:on_buffer_changed()
 
-  "autocmd BufWritePost *.rs call s:call_after_event_finished(
   autocmd BufWritePre *.rs call s:call_after_event_finished(
     \ {-> execute('call s:open_next_source_file_in_new_or_existing_tab(1)') })
 endif
