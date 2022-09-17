@@ -60,14 +60,15 @@ function! s:on_buffer_changed()
 
       " TODO: extract parsing
       let l:diff_stdout_lines = split(execute('w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'), "\n")
+      let l:diff_change_pattern = '@@ '
       let l:lines_changed = {}
       let l:lines_deltas = []
       let l:lines_moved = {}
       let l:diff_stdout_line_number = 0
       while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
         let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
-        if s:starts_with(l:diff_line, '@@ ')
-          let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, '@@ ')[0])
+        if s:starts_with(l:diff_line, l:diff_change_pattern)
+          let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, l:diff_change_pattern)[0])
           " TODO: naming
           let l:wat = split(l:changed_line_numbers_with_offsets, ' ')
           let l:removed = s:parse_line_and_delta(l:wat[0])
