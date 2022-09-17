@@ -115,6 +115,21 @@ function! s:on_buffer_changed()
 endfunction
 
 " TODO: naming
+function! s:open_all_tabs()
+  for source_file in s:source_files
+    let l:path = fnameescape(source_file.path)
+    if mode() == 'n' && &l:modified == 0
+      execute 'tab drop ' . l:path
+      call cursor((source_file.line), (source_file.column))
+    else
+      break
+    endif
+  endfor
+  " FIXME: why second reverse?
+  let s:source_files = reverse(s:source_files)[1:]
+endfunction
+
+" TODO: naming
 function! s:open_next_source_file_in_new_or_existing_tab(allow_not_normal_mode)
   " TODO: naming: current_file?
   let l:initial_file = resolve(expand('%:p'))
@@ -124,18 +139,7 @@ function! s:open_next_source_file_in_new_or_existing_tab(allow_not_normal_mode)
 
   " TODO: naming?
   if !a:allow_not_normal_mode
-    "for source_file in reverse(s:source_files)
-    for source_file in s:source_files
-      let l:path = fnameescape(source_file.path)
-      if mode() == 'n' && &l:modified == 0
-        execute 'tab drop ' . l:path
-        call cursor((source_file.line), (source_file.column))
-      else
-        break
-      endif
-    endfor
-    " FIXME: why second reverse?
-    let s:source_files = reverse(s:source_files)[1:]
+    call s:open_all_tabs()
     return
   endif
 
