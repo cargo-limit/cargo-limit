@@ -53,14 +53,14 @@ function! s:parse_line_and_delta(text)
 endfunction
 
 function! s:correct_lines(lines_changed, lines_deltas, initial_file)
-  " FIXME: ungly but works; filter does something weird
+  " TODO: ensure we don't run this multiple times in a row
   let s:new_source_files = []
   for i in s:source_files
-    let l:is_changed_file = get(a:lines_changed, i['line']) && i['path'] == a:initial_file
+    let l:is_changed_file = get(a:lines_changed, i.line) && i.path == a:initial_file
     if l:is_changed_file
       " TODO: naming
       for j in a:lines_deltas
-        let l:new_line = i['line']
+        let l:new_line = i.line
         if l:new_line >= j.line
           let l:new_line -= j.delta
         endif
@@ -125,6 +125,7 @@ function! s:open_all_files_in_new_or_existing_tabs()
 endfunction
 
 function! s:open_next_file_in_new_or_existing_tab()
+  " FIXME: don't call it several times in a row
   " TODO: naming: current_file? extract?
   let l:initial_file = resolve(expand('%:p'))
   if l:initial_file != '' && !filereadable(l:initial_file)
@@ -155,6 +156,7 @@ if !exists('*CargoLimitOpen')
   " TODO: augroup?
   autocmd TextChanged,InsertLeave,FilterReadPost *.rs call s:on_buffer_changed()
 
+  " TODO: event for case when we try to save already unmodified file?
   autocmd BufWritePre *.rs call s:call_after_event_finished(
     \ {-> execute('call s:open_next_file_in_new_or_existing_tab()') })
 endif
