@@ -48,19 +48,19 @@ cargo ltest
 
 Also `llcheck`, `llrun`, etc.
 
-## Neovim and other text editors/IDEs integration
+## Neovim and other Text Editors/IDEs integration
 See [here](EDITOR-INTEGRATION.md#neovim-integration).
 
-## Environment variables
+## Environment Variables
 See [here](ENVIRONMENT-VARIABLES.md#environment-variables).
 
 ## Similar Projects
-- [bacon](https://github.com/Canop/bacon) is a background rust code checker
+[bacon](https://github.com/Canop/bacon) is a background rust code checker.
 
-## Thanks to all contributors ❤️
+## Thanks to all Contributors ❤️
 Thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for NixOS package.
 
-## Wanna contribute?
+## Wanna Contribute?
 Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban board](https://github.com/alopatindev/cargo-limit/projects/1).
 
 ## License

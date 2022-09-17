@@ -1,22 +1,28 @@
-# Environment variables
-- `CARGO_MSG_LIMIT`
-    - limit compiler messages number
-    - `0` means no limit, which is default
-- `CARGO_TIME_LIMIT`
-    - `cargo` execution time limit in seconds after encountering first compiling error
-    - `1` is default
-    - `0` means no limit
-- `CARGO_ASC`
-    - show compiler messages in ascending order
-    - `false` is default
-- `CARGO_FORCE_WARN`
-    - show warnings even if errors still exist
-    - `false` is default
-- `CARGO_DEPS_WARN`
-    - show external path dependencies' warnings
-    - `false` is default
-- `CARGO_EDITOR`
-    - opens affected files in external app
-        - see [neovim integration](EDITOR-INTEGRATION.md#neovim-integration)
-    - empty (`""`) means don't run external app
-    - `"_cargo-limit-open-in-nvim"` is default
+# Environment Variables
+
+## CARGO_MSG_LIMIT
+- limit compiler messages number
+- `0` means no limit, which is default
+
+## CARGO_TIME_LIMIT
+- `cargo` execution time limit in seconds after encountering first compiling error
+- `1` is default
+- `0` means no limit
+
+## CARGO_ASC
+- show compiler messages in ascending order
+- `false` is default
+
+## CARGO_FORCE_WARN
+- show warnings even if errors still exist
+- `false` is default
+
+## CARGO_DEPS_WARN
+- show external path dependencies' warnings
+- `false` is default
+
+## CARGO_EDITOR
+- opens affected files in external app
+    - see [neovim integration](EDITOR-INTEGRATION.md#neovim-integration)
+- empty (`""`) means don't run external app
+- `"_cargo-limit-open-in-nvim"` is default
