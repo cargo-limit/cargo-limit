@@ -43,16 +43,13 @@ function! s:starts_with(longer, shorter)
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
 
-" TODO: offset => delta
-function! s:parse_line_and_offset(text)
+function! s:parse_line_and_delta(text)
   let l:items = split(a:text, ',')
-  let l:line = l:items[0][1:]
-  if len(l:items) < 2
-    let l:offset = 0
-  else
-    let l:offset = l:items[1] - 1
+  let result = {'line': l:items[0][1:], 'delta': 0}
+  if len(l:items) >= 2
+    let result.delta = l:items[1] - 1
   endif
-  return [l:line, l:offset] " TODO: return hashmap
+  return result
 endfunction
 
 function! s:on_buffer_changed()
@@ -72,12 +69,13 @@ function! s:on_buffer_changed()
       let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
       if s:starts_with(l:diff_line, '@@ ')
         let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, '@@ ')[0])
+        " TODO: naming
         let l:wat = split(l:changed_line_numbers_with_offsets, ' ')
-        let l:removed = s:parse_line_and_offset(l:wat[0])
-        let l:removed_source_file_line = l:removed[0]
-        let l:added = s:parse_line_and_offset(l:wat[1])
-        let l:delta = l:added[1] - l:removed[1]
-        call add(l:lines_deltas, [l:removed[0], l:delta])
+        let l:removed = s:parse_line_and_delta(l:wat[0])
+        let l:removed_source_file_line = l:removed.line
+        let l:added = s:parse_line_and_delta(l:wat[1])
+        let l:delta = l:added.delta - l:removed.delta
+        call add(l:lines_deltas, [l:removed.line, l:delta])
 
         let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
         let l:removed_text = l:next_diff_line[1:]
