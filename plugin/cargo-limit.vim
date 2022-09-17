@@ -105,15 +105,13 @@ function! s:on_buffer_changed()
   let l:initial_file = resolve(expand('%:p'))
   if l:initial_file != ''
     if filereadable(l:initial_file)
-      " TODO: naming
-      let watwat = s:execute_and_parse_diff()
-      call s:correct_lines(watwat.lines_changed, watwat.lines_deltas, l:initial_file)
+      let diff = s:execute_and_parse_diff()
+      call s:correct_lines(diff.lines_changed, diff.lines_deltas, l:initial_file)
     endif
   endif
 endfunction
 
-" TODO: naming
-function! s:open_all_tabs()
+function! s:open_all_files_in_new_or_existing_tabs()
   for source_file in s:source_files
     let l:path = fnameescape(source_file.path)
     if mode() == 'n' && &l:modified == 0
@@ -123,12 +121,10 @@ function! s:open_all_tabs()
       break
     endif
   endfor
-  " FIXME: why second reverse?
   let s:source_files = reverse(s:source_files)[1:]
 endfunction
 
-" TODO: naming
-function! s:open_next_source_file_in_new_or_existing_tab()
+function! s:open_next_file_in_new_or_existing_tab()
   " TODO: naming: current_file? extract?
   let l:initial_file = resolve(expand('%:p'))
   if l:initial_file != '' && !filereadable(l:initial_file)
@@ -146,26 +142,21 @@ function! s:open_next_source_file_in_new_or_existing_tab()
   endif
 endfunction
 
-" TODO: naming
-function! s:open_source_files_sequentially(editor_data)
-  let s:source_files = reverse(a:editor_data.files)
-  call s:open_all_tabs()
-endfunction
-
 function! s:call_after_event_finished(function)
   call timer_start(0, { tid -> a:function() })
 endfunction
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
-    call s:open_source_files_sequentially(a:editor_data)
+    let s:source_files = reverse(a:editor_data.files)
+    call s:open_all_files_in_new_or_existing_tabs()
   endfunction
 
   " TODO: augroup?
   autocmd TextChanged,InsertLeave,FilterReadPost *.rs call s:on_buffer_changed()
 
   autocmd BufWritePre *.rs call s:call_after_event_finished(
-    \ {-> execute('call s:open_next_source_file_in_new_or_existing_tab()') })
+    \ {-> execute('call s:open_next_file_in_new_or_existing_tab()') })
 endif
 
 if has('nvim')
