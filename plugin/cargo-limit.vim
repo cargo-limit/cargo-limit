@@ -61,8 +61,8 @@ function! s:correct_lines(lines_changed, initial_file)
       " TODO: naming
       for j in l:lines_deltas
         let l:new_line = i['line']
-        if l:new_line >= j[0]
-          let l:new_line -= j[1]
+        if l:new_line >= j.line
+          let l:new_line -= j.delta
         endif
         let i.line = l:new_line
       endfor
@@ -96,7 +96,7 @@ function! s:on_buffer_changed()
           let l:removed_source_file_line = l:removed.line
           let l:added = s:parse_line_and_delta(l:wat[1])
           let l:delta = l:added.delta - l:removed.delta
-          call add(l:lines_deltas, [l:removed.line, l:delta])
+          call add(l:lines_deltas, {'line': l:removed.line, 'delta': l:delta})
 
           let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
           let l:removed_text = l:next_diff_line[1:]
