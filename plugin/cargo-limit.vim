@@ -73,43 +73,45 @@ function! s:correct_lines(lines_changed, initial_file)
   let s:source_files = s:new_source_files
 endfunction
 
+function! s:execute_and_parse_diff()
+  " TODO: extract parsing
+  let l:diff_stdout_lines = split(execute('w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'), "\n")
+  let l:diff_change_pattern = '@@ '
+  let l:lines_changed = {}
+  let l:lines_deltas = []
+  let l:lines_moved = {}
+  let l:diff_stdout_line_number = 0
+  while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
+    let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
+    if s:starts_with(l:diff_line, l:diff_change_pattern)
+      let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, l:diff_change_pattern)[0])
+      " TODO: naming
+      let l:wat = split(l:changed_line_numbers_with_offsets, ' ')
+      let l:removed = s:parse_line_and_delta(l:wat[0])
+      let l:removed_source_file_line = l:removed.line
+      let l:added = s:parse_line_and_delta(l:wat[1])
+      let l:delta = l:added.delta - l:removed.delta
+      call add(l:lines_deltas, {'line': l:removed.line, 'delta': l:delta})
+
+      let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
+      let l:removed_text = l:next_diff_line[1:]
+      if !empty(l:removed_text)
+        let l:lines_changed[l:removed_source_file_line] = 1
+      endif
+      let l:diff_stdout_line_number += 1
+    endif
+    let l:diff_stdout_line_number += 1
+  endwhile
+
+  return l:lines_changed
+endfunction
+
 function! s:on_buffer_changed()
   let l:initial_file = resolve(expand('%:p'))
   if l:initial_file != ''
     if filereadable(l:initial_file)
-
-
-      " TODO: extract parsing
-      let l:diff_stdout_lines = split(execute('w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'), "\n")
-      let l:diff_change_pattern = '@@ '
-      let l:lines_changed = {}
-      let l:lines_deltas = []
-      let l:lines_moved = {}
-      let l:diff_stdout_line_number = 0
-      while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
-        let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
-        if s:starts_with(l:diff_line, l:diff_change_pattern)
-          let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, l:diff_change_pattern)[0])
-          " TODO: naming
-          let l:wat = split(l:changed_line_numbers_with_offsets, ' ')
-          let l:removed = s:parse_line_and_delta(l:wat[0])
-          let l:removed_source_file_line = l:removed.line
-          let l:added = s:parse_line_and_delta(l:wat[1])
-          let l:delta = l:added.delta - l:removed.delta
-          call add(l:lines_deltas, {'line': l:removed.line, 'delta': l:delta})
-
-          let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
-          let l:removed_text = l:next_diff_line[1:]
-          if !empty(l:removed_text)
-            let l:lines_changed[l:removed_source_file_line] = 1
-          endif
-          let l:diff_stdout_line_number += 1
-        endif
-        let l:diff_stdout_line_number += 1
-      endwhile
-
+      let l:lines_changed = s:execute_and_parse_diff()
       call s:correct_lines(l:lines_changed, l:initial_file)
-
     endif
   endif
 endfunction
