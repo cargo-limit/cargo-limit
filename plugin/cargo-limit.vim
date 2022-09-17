@@ -141,6 +141,23 @@ function! s:open_next_source_file_in_new_or_existing_tab(allow_not_normal_mode)
     return
   endif
 
+  " TODO: naming?
+  if !a:allow_not_normal_mode
+    "for source_file in reverse(s:source_files)
+    for source_file in s:source_files
+      let l:path = fnameescape(source_file.path)
+      if mode() == 'n' && &l:modified == 0
+        execute 'tab drop ' . l:path
+        call cursor((source_file.line), (source_file.column))
+      else
+        break
+      endif
+    endfor
+    " FIXME: why second reverse?
+    let s:source_files = reverse(s:source_files)[1:]
+    return
+  endif
+
   if !empty(s:source_files)
     let l:source_file = s:source_files[0]
     let l:path = fnameescape(l:source_file.path)
@@ -154,7 +171,7 @@ function! s:open_next_source_file_in_new_or_existing_tab(allow_not_normal_mode)
 endfunction
 
 function! s:open_source_files_sequentially(editor_data)
-  let s:source_files = a:editor_data.files
+  let s:source_files = reverse(a:editor_data.files)
   "echo s:source_files
   call s:open_next_source_file_in_new_or_existing_tab(0)
 endfunction
@@ -165,9 +182,6 @@ endfunction
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
-    " TODO: combine old and new approaches:
-    " first open all files in reverse in new tabs
-    " and then go sequentially through them after each save
     call s:open_source_files_sequentially(a:editor_data)
   endfunction
 
