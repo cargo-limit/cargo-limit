@@ -52,14 +52,14 @@ function! s:parse_line_and_delta(text)
   return result
 endfunction
 
-function! s:correct_lines(lines_changed, initial_file)
+function! s:correct_lines(lines_changed, lines_deltas, initial_file)
   " FIXME: ungly but works; filter does something weird
   let s:new_source_files = []
   for i in s:source_files
     let l:is_changed_file = get(a:lines_changed, i['line']) && i['path'] == a:initial_file
     if l:is_changed_file
       " TODO: naming
-      for j in l:lines_deltas
+      for j in a:lines_deltas
         let l:new_line = i['line']
         if l:new_line >= j.line
           let l:new_line -= j.delta
@@ -74,11 +74,11 @@ function! s:correct_lines(lines_changed, initial_file)
 endfunction
 
 function! s:execute_and_parse_diff()
-  " TODO: extract parsing
+  let result = {'lines_changed': {}, 'lines_deltas': []}
+
   let l:diff_stdout_lines = split(execute('w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'), "\n")
   let l:diff_change_pattern = '@@ '
-  let l:lines_changed = {}
-  let l:lines_deltas = []
+
   let l:diff_stdout_line_number = 0
   while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
@@ -90,27 +90,28 @@ function! s:execute_and_parse_diff()
       let l:removed_source_file_line = l:removed.line
       let l:added = s:parse_line_and_delta(l:wat[1])
       let l:delta = l:added.delta - l:removed.delta
-      call add(l:lines_deltas, {'line': l:removed.line, 'delta': l:delta})
+      call add(result.lines_deltas, {'line': l:removed.line, 'delta': l:delta})
 
       let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
       let l:removed_text = l:next_diff_line[1:]
       if !empty(l:removed_text)
-        let l:lines_changed[l:removed_source_file_line] = 1
+        let result.lines_changed[l:removed_source_file_line] = 1
       endif
       let l:diff_stdout_line_number += 1
     endif
     let l:diff_stdout_line_number += 1
   endwhile
 
-  return l:lines_changed
+  return result
 endfunction
 
 function! s:on_buffer_changed()
   let l:initial_file = resolve(expand('%:p'))
   if l:initial_file != ''
     if filereadable(l:initial_file)
-      let l:lines_changed = s:execute_and_parse_diff()
-      call s:correct_lines(l:lines_changed, l:initial_file)
+      " TODO: naming
+      let watwat = s:execute_and_parse_diff()
+      call s:correct_lines(watwat.lines_changed, watwat.lines_deltas, l:initial_file)
     endif
   endif
 endfunction
