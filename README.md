@@ -15,6 +15,8 @@ Cargo with less noise:
 
 This tool is especially useful in combination with [cargo-watch](https://crates.io/crates/cargo-watch).
 
+Initially this project was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189).
+
 [![asciicast](https://asciinema.org/a/441673.svg)](https://asciinema.org/a/441673)
 
 ## Installation
@@ -50,36 +52,16 @@ Also `llcheck`, `llrun`, etc.
 See [here](EDITOR-INTEGRATION.md#neovim-integration).
 
 ## Environment variables
-- `CARGO_MSG_LIMIT`
-    - limit compiler messages number
-    - `0` means no limit, which is default
-- `CARGO_TIME_LIMIT`
-    - `cargo` execution time limit in seconds after encountering first compiling error
-    - `1` is default
-    - `0` means no limit
-- `CARGO_ASC`
-    - show compiler messages in ascending order
-    - `false` is default
-- `CARGO_FORCE_WARN`
-    - show warnings even if errors still exist
-    - `false` is default
-- `CARGO_DEPS_WARN`
-    - show external path dependencies' warnings
-    - `false` is default
-- `CARGO_EDITOR`
-    - opens affected files in external app
-        - see [neovim integration](EDITOR-INTEGRATION.md#neovim-integration)
-    - empty (`""`) means don't run external app
-    - `"_cargo-limit-open-in-nvim"` is default
-
-## Why "limit"?
-Initially it was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189).
+See [here](ENVIRONMENT-VARIABLES.md).
 
 ## Similar Projects
 - [bacon](https://github.com/Canop/bacon) is a background rust code checker
 
 ## Thanks to all contributors ❤️
 Thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for NixOS package.
+
+## Wanna contribute?
+Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban](https://github.com/alopatindev/cargo-limit/projects/1).
 
 ## License
 MIT/Apache-2.0
