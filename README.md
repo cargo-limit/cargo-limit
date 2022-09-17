@@ -52,7 +52,7 @@ Also `llcheck`, `llrun`, etc.
 See [here](EDITOR-INTEGRATION.md#neovim-integration).
 
 ## Environment variables
-See [here](ENVIRONMENT-VARIABLES.md).
+See [here](ENVIRONMENT-VARIABLES.md#environment-variables).
 
 ## Similar Projects
 - [bacon](https://github.com/Canop/bacon) is a background rust code checker
@@ -61,7 +61,7 @@ See [here](ENVIRONMENT-VARIABLES.md).
 Thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for NixOS package.
 
 ## Wanna contribute?
-Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban](https://github.com/alopatindev/cargo-limit/projects/1).
+Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban board](https://github.com/alopatindev/cargo-limit/projects/1).
 
 ## License
 MIT/Apache-2.0
