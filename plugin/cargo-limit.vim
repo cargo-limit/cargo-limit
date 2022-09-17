@@ -52,6 +52,27 @@ function! s:parse_line_and_delta(text)
   return result
 endfunction
 
+function! s:correct_lines(lines_changed)
+  " FIXME: ungly but works; filter does something weird
+  let s:new_source_files = []
+  for i in s:source_files
+    let l:is_changed_file = get(a:lines_changed, i['line']) && i['path'] == l:initial_file
+    if l:is_changed_file
+      " TODO: naming
+      for j in l:lines_deltas
+        let l:new_line = i['line']
+        if l:new_line >= j[0]
+          let l:new_line -= j[1]
+        endif
+        let i.line = l:new_line
+      endfor
+    else
+      call add(s:new_source_files, i)
+    endif
+  endfor
+  let s:source_files = s:new_source_files
+endfunction
+
 function! s:on_buffer_changed()
   let l:initial_file = resolve(expand('%:p'))
   if l:initial_file != ''
@@ -87,24 +108,7 @@ function! s:on_buffer_changed()
         let l:diff_stdout_line_number += 1
       endwhile
 
-      " FIXME: ungly but works; filter does something weird
-      let s:new_source_files = []
-      for i in s:source_files
-        let l:is_changed_file = get(l:lines_changed, i['line']) && i['path'] == l:initial_file
-        if l:is_changed_file
-          for j in l:lines_deltas
-            let l:new_line = i['line']
-            if l:new_line >= j[0]
-              let l:new_line -= j[1]
-            endif
-            let i.line = l:new_line
-          endfor
-        else
-          call add(s:new_source_files, i)
-        endif
-      endfor
-      let s:source_files = s:new_source_files
-
+      call s:correct_lines(l:lines_changed)
 
     endif
   endif
