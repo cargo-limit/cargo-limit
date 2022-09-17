@@ -43,14 +43,8 @@ function! s:starts_with(longer, shorter)
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
 
-" TODO: remove delta
-function! s:parse_line_and_delta(text)
-  let l:items = split(a:text, ',')
-  let result = {'line': l:items[0][1:], 'delta': 0}
-  if len(l:items) >= 2
-    let result.delta = l:items[1] - 1
-  endif
-  return result
+function! s:parse_line(text)
+  return split(a:text, ',')[0][1:]
 endfunction
 
 " TODO: naming
@@ -78,14 +72,12 @@ function! s:execute_and_parse_diff()
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
     if s:starts_with(l:diff_line, l:diff_change_pattern)
       let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, l:diff_change_pattern)[0])
-      " TODO: remove added
-      let [l:removed, l:added] = map(split(l:changed_line_numbers_with_offsets, ' '), 's:parse_line_and_delta(v:val)')
-
+      let l:removed_line = s:parse_line(split(l:changed_line_numbers_with_offsets, ' ')[0])
       let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
       let l:removed_text = l:next_diff_line[1:]
       let l:removed_new_line = empty(l:removed_text)
       if !l:removed_new_line
-        let result.lines_changed[l:removed.line] = 1
+        let result.lines_changed[l:removed_line] = 1
       endif
       let l:diff_stdout_line_number += 1
     endif
@@ -143,7 +135,6 @@ endfunction
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
     let s:source_files = reverse(a:editor_data.files)
-    " TODO: add orig line
     call s:open_all_files_in_new_or_existing_tabs()
   endfunction
 
