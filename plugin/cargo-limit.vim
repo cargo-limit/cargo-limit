@@ -1,4 +1,5 @@
 let s:data_chunks = []
+let s:data_chunks1 = [] " TODO: naming
 let s:source_files = []
 
 function! s:on_cargo_metadata(_job_id, data, event)
@@ -25,6 +26,22 @@ function! s:on_cargo_metadata(_job_id, data, event)
   endif
 endfunction
 
+function! s:on_git_diff(_job_id, data, event)
+  if a:event == 'stdout'
+    call add(s:data_chunks1, join(a:data, ''))
+  elseif a:event == 'stderr' && type(a:data) == v:t_list && a:data != [''] " TODO: extract?
+    let l:stderr = join(a:data, "\n")
+    echohl Error
+    echon l:stderr
+    echohl None
+  elseif a:event == 'exit'
+    let l:stdout = join(s:data_chunks1, "\n")
+    if len(l:stdout) > 0
+      echo l:stdout
+    endif
+  endif
+endfunction
+
 function! s:create_server_address(escaped_workspace_root)
   let l:prefix = 'nvim-cargo-limit-'
   if has('win32')
@@ -39,21 +56,65 @@ function! s:create_server_address(escaped_workspace_root)
   endif
 endfunction
 
-function! s:open_next_source_file_in_new_or_existing_tab()
+"function! s:get_diff_lines() abort
+"  return range(1, line('$'))->filter({_, v -> diff_hlID(v, 1)->synIDattr('name') =~# 'Diff*'})
+"endfunction
+
+function! s:starts_with(longer, shorter)
+  return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
+endfunction
+
+function! s:on_buffer_changed()
   let l:initial_file = resolve(expand('%:p'))
   if l:initial_file != '' && !filereadable(l:initial_file)
     return
   endif
 
-  " TODO
-  " :w !git diff --no-index % -
-  " 1. remove edited lines from s:source_files
-  " 2. correct line numbers
+"  TODO: correct line numbers
+
+  if l:initial_file != ''
+    let l:diff_stdout_lines = split(execute('w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'), "\n")
+    let l:lines_changed = {}
+    let l:diff_stdout_line_number = 0
+    while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
+      let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
+      if s:starts_with(l:diff_line, '@@ -')
+        let l:removed_source_file_line = split(split(split(l:diff_line, '@@ -')[0], ' ')[0], ',')[0]
+        let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
+        let l:removed_text = l:next_diff_line[1:]
+        if !empty(l:removed_text)
+          let l:lines_changed[l:removed_source_file_line] = 1
+        endif
+        let l:diff_stdout_line_number += 1
+      endif
+      let l:diff_stdout_line_number += 1
+    endwhile
+
+    " FIXME: ungly but works; filter does something weird
+    let s:new_source_files = []
+    for i in s:source_files
+      let l:is_changed_file = get(l:lines_changed, i['line']) && i['path'] == l:initial_file
+      if !l:is_changed_file
+        call add(s:new_source_files, i)
+      endif
+    endfor
+    let s:source_files = s:new_source_files
+  endif
+endfunction
+
+" TODO: naming
+function! s:open_next_source_file_in_new_or_existing_tab(allow_not_normal_mode)
+  " TODO: naming: current_file?
+  let l:initial_file = resolve(expand('%:p'))
+  if l:initial_file != '' && !filereadable(l:initial_file)
+    return
+  endif
 
   if !empty(s:source_files)
     let l:source_file = s:source_files[0]
     let l:path = fnameescape(l:source_file.path)
-    if mode() == 'n' && &l:modified == 0
+    let l:allowed_mode = a:allow_not_normal_mode || mode() == 'n'
+    if l:allowed_mode && &l:modified == 0
       execute 'tab drop ' . l:path
       call cursor((l:source_file.line), (l:source_file.column))
       let s:source_files = s:source_files[1:]
@@ -63,7 +124,8 @@ endfunction
 
 function! s:open_source_files_sequentially(editor_data)
   let s:source_files = a:editor_data.files
-  call s:open_next_source_file_in_new_or_existing_tab()
+  "echo s:source_files
+  call s:open_next_source_file_in_new_or_existing_tab(0)
 endfunction
 
 function! s:call_after_event_finished(function)
@@ -75,9 +137,14 @@ if !exists('*CargoLimitOpen')
     call s:open_source_files_sequentially(a:editor_data)
   endfunction
 
+  " TODO: TextChanged, TextChangedI, TextChangedP
+  "autocmd InsertCharPre *.rs call s:on_buffer_changed()
+  " TODO: augroup?
+  autocmd TextChanged,InsertLeave,FilterReadPost *.rs call s:on_buffer_changed()
+
+  "autocmd BufWritePost *.rs call s:call_after_event_finished(
   autocmd BufWritePre *.rs call s:call_after_event_finished(
-    \ {-> execute('call s:open_next_source_file_in_new_or_existing_tab()') })
-  " TODO: function('s:open_next_source_file_in_new_or_existing_tab')
+    \ {-> execute('call s:open_next_source_file_in_new_or_existing_tab(1)') })
 endif
 
 if has('nvim')
