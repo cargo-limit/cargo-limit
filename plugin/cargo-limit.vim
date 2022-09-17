@@ -79,7 +79,6 @@ function! s:execute_and_parse_diff()
   let l:diff_change_pattern = '@@ '
   let l:lines_changed = {}
   let l:lines_deltas = []
-  let l:lines_moved = {}
   let l:diff_stdout_line_number = 0
   while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
