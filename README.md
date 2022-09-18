@@ -11,7 +11,7 @@ Cargo with less noise:
 - messages are grouped by filenames
 - number of messages can be limited
 - after encountering first error the rest of build time is limited by default
-- files can be [automatically opened](EDITOR-INTEGRATION.md#neovim-integration) in your text editor on affected lines
+- files can be [automatically opened](#neovim-and-other-text-editorsides-integration) in your text editor on affected lines
 
 This tool is especially useful in combination with [cargo-watch](https://crates.io/crates/cargo-watch).
 
@@ -154,6 +154,9 @@ endfunction
 </p>
 </details>
 
+</p>
+</details>
+
 <details>
 <summary><b>💡 Other Text Editors/IDEs Integration 👁️</b></summary>
 <p>
@@ -204,9 +207,6 @@ jq --raw-output '.files |= unique_by(.path) | .files[] | [
 </p>
 </details>
 
-</p>
-</details>
-
 ## Environment Variables
 <details>
 <summary><b>💡 See 👁️</b></summary>
@@ -235,7 +235,7 @@ jq --raw-output '.files |= unique_by(.path) | .files[] | [
 
 ## CARGO_EDITOR
 - opens affected files in external app
-    - see [neovim integration](EDITOR-INTEGRATION.md#neovim-integration)
+    - see [neovim integration](#neovim-and-other-text-editorsides-integration)
 - empty (`""`) means don't run external app
 - `"_cargo-limit-open-in-nvim"` is default
 
