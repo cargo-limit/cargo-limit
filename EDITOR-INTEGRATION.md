@@ -21,7 +21,7 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 </details>
 
 <details>
-<summary><b>Known Limitations! 👁️</b></summary>
+<summary><b>⚠️ Known Limitations! 👁️</b></summary>
 <p>
 
 ### 1. In order to not disrupt from text editing or file navigation, auto jumps work only if
