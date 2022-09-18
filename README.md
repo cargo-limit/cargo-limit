@@ -1,17 +1,17 @@
 # cargo-limit
 [![Crates.io](https://img.shields.io/crates/v/cargo-limit.svg)](https://crates.io/crates/cargo-limit)
 
-Cargo with less noise:
+🚀 Cargo with less noise:
 - errors have highest priority
     - they never appear in the middle of warnings
-    - warnings are skipped by default until errors are fixed
+    - **warnings are skipped** by default until errors are fixed
     - external [path dependencies'](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#specifying-path-dependencies) warnings are skipped by default
-- all messages come in reversed order by default
+- all messages come **in reversed order** by default
     - to avoid extra scrolling
 - messages are grouped by filenames
 - number of messages can be limited
-- after encountering first error the rest of build time is limited by default
-- files can be [automatically opened](#text-editoride-integrations) in your text editor on affected lines
+- after encountering **first error** the rest of **build time is limited** by default
+- files can be **[automatically opened](#text-editoride-integrations) in your text editor on affected lines**
 
 This tool is especially useful in combination with [cargo-watch](https://crates.io/crates/cargo-watch).
 
