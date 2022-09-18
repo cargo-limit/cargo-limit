@@ -36,6 +36,10 @@ Why? — In order to **not disrupt** from active text editing process or file na
 
 For precise jump please rerun `cargo ll{check,run,etc.}`.
 
+### 3. Before running `nvim`, current directory should be project (sub)directory
+- that's required so cargo-limit could [figure out](https://github.com/alopatindev/cargo-limit/issues/30#issuecomment-1219793195) which exact `nvim` instance should be controlled
+- only first `nvim` instance with current project (sub)directory will be controlled by cargo-limit.
+
 </p>
 </details>
 
