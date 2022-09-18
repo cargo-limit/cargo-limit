@@ -33,6 +33,15 @@ function! s:create_server_address(escaped_workspace_root)
     let l:server_address_dir =  '/tmp/' . l:prefix . $USER
     call mkdir(l:server_address_dir, 'p', 0700)
     let l:server_address = l:server_address_dir . '/' . a:escaped_workspace_root
+
+    call system('socat UNIX-CONNECT:' . l:server_address . ' /dev/null')
+    let l:socket_is_dead = v:shell_error != 0
+    let g:cargo_limit_server_address = l:server_address
+    if l:socket_is_dead
+      lua os.remove(vim.g.cargo_limit_server_address)
+    endif
+    unlet g:cargo_limit_server_address
+
     return l:server_address
   else
     throw 'unsupported OS'
