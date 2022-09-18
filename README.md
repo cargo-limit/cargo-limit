@@ -192,7 +192,7 @@ endfunction
 </details>
 
 <details>
-<summary><b>💡 Other Text Editor/IDE Integrations 👁️</b></summary>
+<summary><b>💡 Other Text Editors/IDEs 👁️</b></summary>
 <p>
 
 **cargo-limit** can run external app/script and provide affected locations to stdin in the following JSON format:
