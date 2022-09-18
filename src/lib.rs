@@ -12,7 +12,7 @@ mod process;
 #[doc(hidden)]
 pub use process::NO_EXIT_CODE;
 
-use crate::models::{EditorData, SourceFile};
+use crate::models::{EditorData, Location};
 use anyhow::{Context, Result};
 use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
@@ -40,7 +40,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
     let process_messages = |buffers: &mut Buffers,
                             messages: Vec<Message>,
-                            source_files_in_consistent_order: Vec<SourceFile>|
+                            locations_in_consistent_order: Vec<Location>|
      -> Result<()> {
         let messages = messages.into_iter();
         if options.json_message_format() {
@@ -57,7 +57,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
         }
         open_affected_files_in_external_app(
             buffers,
-            source_files_in_consistent_order,
+            locations_in_consistent_order,
             &options,
             workspace_root,
         )
@@ -105,13 +105,13 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
 fn open_affected_files_in_external_app(
     buffers: &mut Buffers,
-    source_files_in_consistent_order: Vec<SourceFile>,
+    locations_in_consistent_order: Vec<Location>,
     options: &Options,
     workspace_root: &Path,
 ) -> Result<()> {
     let app = &options.open_in_external_app();
     if !app.is_empty() {
-        let editor_data = EditorData::new(workspace_root, source_files_in_consistent_order);
+        let editor_data = EditorData::new(workspace_root, locations_in_consistent_order);
         let mut child = Command::new(app).stdin(Stdio::piped()).spawn()?;
         child
             .stdin

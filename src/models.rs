@@ -7,11 +7,11 @@ use std::path::{Path, PathBuf};
 pub struct EditorData {
     #[get = "pub"]
     workspace_root: PathBuf,
-    files: Vec<SourceFile>,
+    locations: Vec<Location>,
 }
 
 #[derive(Deserialize, Serialize)]
-pub struct SourceFile {
+pub struct Location {
     path: PathBuf,
     line: usize,
     column: usize,
@@ -20,16 +20,16 @@ pub struct SourceFile {
 }
 
 impl EditorData {
-    pub fn new(workspace_root: &Path, source_files_in_consistent_order: Vec<SourceFile>) -> Self {
+    pub fn new(workspace_root: &Path, locations_in_consistent_order: Vec<Location>) -> Self {
         let workspace_root = workspace_root.to_path_buf();
         Self {
             workspace_root,
-            files: source_files_in_consistent_order,
+            locations: locations_in_consistent_order,
         }
     }
 }
 
-impl SourceFile {
+impl Location {
     pub fn new(span: DiagnosticSpan, diagnostic: &Diagnostic, workspace_root: &Path) -> Self {
         let path = PathBuf::from(span.file_name);
         let path = if path.is_relative() {

@@ -1,5 +1,5 @@
 let s:data_chunks = []
-let s:source_files = []
+let s:locations = []
 
 function! s:on_cargo_metadata(_job_id, data, event)
   if a:event == 'stdout'
@@ -48,45 +48,45 @@ function! s:on_buffer_changed()
   endif
 endfunction
 
-function! s:open_all_files_in_new_or_existing_tabs(files)
+function! s:open_all_locations_in_new_or_existing_tabs(locations)
   let l:current_file = s:current_file()
   if l:current_file == '' || filereadable(l:current_file)
-    let s:source_files = reverse(a:files)
-    for source_file in s:source_files
-      let l:path = fnameescape(source_file.path)
+    let s:locations = reverse(a:locations)
+    for location in s:locations
+      let l:path = fnameescape(location.path)
       if mode() == 'n' && &l:modified == 0
         execute 'tab drop ' . l:path
-        call cursor((source_file.line), (source_file.column))
+        call cursor((location.line), (location.column))
       else
         break
       endif
     endfor
-    let s:source_files = reverse(s:source_files)[1:]
+    let s:locations = reverse(s:locations)[1:]
   endif
 endfunction
 
-function! s:open_next_file_in_new_or_existing_tab()
+function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
-  if l:current_file == '' || filereadable(l:current_file) && !empty(s:source_files)
-    let l:source_file = s:source_files[0]
-    let l:path = fnameescape(l:source_file.path)
+  if l:current_file == '' || filereadable(l:current_file) && !empty(s:locations)
+    let l:location = s:locations[0]
+    let l:path = fnameescape(l:location.path)
     if &l:modified == 0
       execute 'tab drop ' . l:path
-      call cursor((l:source_file.line), (l:source_file.column))
-      let s:source_files = s:source_files[1:]
+      call cursor((l:location.line), (l:location.column))
+      let s:locations = s:locations[1:]
     endif
   endif
 endfunction
 
 function! s:ignore_changed_lines_of_current_file(changed_line_numbers, current_file)
-  let s:new_source_files = []
-  for i in s:source_files
+  let s:new_locations = []
+  for i in s:locations
     let l:is_changed_line = get(a:changed_line_numbers, i.line) && i.path == a:current_file
     if !l:is_changed_line
-      call add(s:new_source_files, i)
+      call add(s:new_locations, i)
     endif
   endfor
-  let s:source_files = s:new_source_files
+  let s:locations = s:new_locations
 endfunction
 
 function! s:compute_changed_line_numbers()
@@ -152,14 +152,14 @@ endfunction
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
-    call s:open_all_files_in_new_or_existing_tabs(a:editor_data.files)
+    call s:open_all_locations_in_new_or_existing_tabs(a:editor_data.locations)
   endfunction
 
   augroup CargoLimitAutocommands
     autocmd!
     autocmd TextChanged,InsertLeave,FilterReadPost *.rs call s:on_buffer_changed()
     autocmd BufWritePre *.rs call s:call_after_event_finished(
-      \ {-> execute('call s:open_next_file_in_new_or_existing_tab()') })
+      \ {-> execute('call s:open_next_location_in_new_or_existing_tab()') })
   augroup END
 endif
 
