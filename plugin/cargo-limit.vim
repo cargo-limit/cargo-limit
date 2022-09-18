@@ -79,7 +79,6 @@ function! s:open_next_file_in_new_or_existing_tab()
 endfunction
 
 function! s:ignore_changed_lines_of_current_file(changed_line_numbers, current_file)
-  " TODO: try filter?
   let s:new_source_files = []
   for i in s:source_files
     let l:is_changed_line = get(a:changed_line_numbers, i.line) && i.path == a:current_file
