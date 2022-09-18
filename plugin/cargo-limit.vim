@@ -39,31 +39,33 @@ function! s:create_server_address(escaped_workspace_root)
   endif
 endfunction
 
+" TODO: move boring helpers down?
+function! s:current_file()
+  return resolve(expand('%:p'))
+endfunction
+
 function! s:starts_with(longer, shorter)
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
 
-function! s:parse_line(text)
+function! s:parse_line_number(text)
   return split(a:text, ',')[0][1:]
 endfunction
 
-" TODO: naming
-function! s:correct_lines(diff, initial_file)
+function! s:ignore_changed_lines_of_current_file(changed_line_numbers, current_file)
+  " TODO: try filter?
   let s:new_source_files = []
   for i in s:source_files
-"    " TODO: naming: is_changed_line?
-    let l:is_changed_file = get(a:diff.lines_changed, i.line) && i.path == a:initial_file
-    if !l:is_changed_file
-"    " TODO: naming
+    let l:is_changed_line = get(a:changed_line_numbers, i.line) && i.path == a:current_file
+    if !l:is_changed_line
       call add(s:new_source_files, i)
     endif
   endfor
   let s:source_files = s:new_source_files
 endfunction
 
-function! s:execute_and_parse_diff()
-  let result = {'lines_changed': {}}
-
+function! s:compute_changed_line_numbers()
+  let l:changed_line_numbers = {}
   let l:diff_stdout_lines = split(execute('w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'), "\n")
   let l:diff_change_pattern = '@@ '
 
@@ -72,28 +74,26 @@ function! s:execute_and_parse_diff()
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
     if s:starts_with(l:diff_line, l:diff_change_pattern)
       let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, l:diff_change_pattern)[0])
-      let l:removed_line = s:parse_line(split(l:changed_line_numbers_with_offsets, ' ')[0])
+      let l:removed_line = s:parse_line_number(split(l:changed_line_numbers_with_offsets, ' ')[0])
       let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
       let l:removed_text = l:next_diff_line[1:]
       let l:removed_new_line = empty(l:removed_text)
       if !l:removed_new_line
-        let result.lines_changed[l:removed_line] = 1
+        let l:changed_line_numbers[l:removed_line] = 1
       endif
       let l:diff_stdout_line_number += 1
     endif
     let l:diff_stdout_line_number += 1
   endwhile
 
-  return result
+  return l:changed_line_numbers
 endfunction
 
 function! s:on_buffer_changed()
-  let l:initial_file = resolve(expand('%:p'))
-  if l:initial_file != ''
-    if filereadable(l:initial_file)
-      let diff = s:execute_and_parse_diff()
-      call s:correct_lines(diff, l:initial_file)
-    endif
+  let l:current_file = s:current_file()
+  if l:current_file != '' && filereadable(l:current_file)
+    let changed_line_numbers = s:compute_changed_line_numbers()
+    call s:ignore_changed_lines_of_current_file(changed_line_numbers, l:current_file)
   endif
 endfunction
 
@@ -111,9 +111,8 @@ function! s:open_all_files_in_new_or_existing_tabs()
 endfunction
 
 function! s:open_next_file_in_new_or_existing_tab()
-  " TODO: naming: current_file? extract?
-  let l:initial_file = resolve(expand('%:p'))
-  if l:initial_file != '' && !filereadable(l:initial_file)
+  let l:current_file = s:current_file()
+  if l:current_file != '' && !filereadable(l:current_file)
     return
   endif
 
