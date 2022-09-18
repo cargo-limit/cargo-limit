@@ -282,10 +282,6 @@ impl TransformedMessages {
             })
             .map(|(span, message)| (Self::find_leaf_project_expansion(span), &message.message));
 
-        // FIXME: if line contains error and warning we may drop
-        // error and leave warning, which will be dropped later
-        // as well (if we run llcheck)?
-
         let mut source_files_in_consistent_order = Vec::new();
         let mut used_file_names_and_lines = HashSet::new();
         for (span, message) in spans_and_messages {
