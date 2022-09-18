@@ -20,6 +20,8 @@ function! s:on_cargo_metadata(_job_id, data, event)
       let l:server_address = s:create_server_address(l:escaped_workspace_root)
       if !filereadable(l:server_address)
         call serverstart(l:server_address)
+        echohl None
+        echomsg 'cargo-limit is ready'
       endif
     endif
   endif
