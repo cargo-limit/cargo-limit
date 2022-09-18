@@ -122,16 +122,18 @@ endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
   if filereadable(a:server_address)
-    call system('which socat')
-    let l:socat_is_installed = v:shell_error == 0
-    if l:socat_is_installed
-      call system('socat UNIX-CONNECT:' . a:server_address . ' /dev/null')
-      let l:socket_is_dead = v:shell_error != 0
-      let g:cargo_limit_server_address = a:server_address
+    call system('which ss')
+    let l:ss_is_installed = v:shell_error == 0
+    if l:ss_is_installed
+      let l:ss_stdout = system('ss --all --listening --family=unix')
+      let l:socket_is_dead = stridx(l:ss_stdout, a:server_address) == -1
       if l:socket_is_dead
+        let g:cargo_limit_server_address = a:server_address
         lua os.remove(vim.g.cargo_limit_server_address)
+        unlet g:cargo_limit_server_address
+        echohl None
+        echomsg 'removed dead socket ' . a:server_address . ' '
       endif
-      unlet g:cargo_limit_server_address
     endif
   endif
 endfunction
