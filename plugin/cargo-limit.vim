@@ -47,7 +47,8 @@ function! s:on_buffer_changed()
   endif
 endfunction
 
-function! s:open_all_files_in_new_or_existing_tabs()
+function! s:open_all_files_in_new_or_existing_tabs(files)
+  let s:source_files = reverse(a:files)
   for source_file in s:source_files
     let l:path = fnameescape(source_file.path)
     if mode() == 'n' && &l:modified == 0
@@ -132,8 +133,7 @@ endfunction
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
-    let s:source_files = reverse(a:editor_data.files)
-    call s:open_all_files_in_new_or_existing_tabs()
+    call s:open_all_files_in_new_or_existing_tabs(a:editor_data.files)
   endfunction
 
   " TODO: augroup?
