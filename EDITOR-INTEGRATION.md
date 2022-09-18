@@ -26,7 +26,7 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 
 ### 1. Auto-jumps work only if
 - current **mode is normal**
-- current buffer is either **empty or contains some existing** and unmodified (saved) file.
+- current buffer is either **empty or contains some existing and unmodified** (saved) file.
 
 Why? — In order to not disrupt from text editing or file navigation.
 
