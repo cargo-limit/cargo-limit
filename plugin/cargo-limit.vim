@@ -1,3 +1,7 @@
+let s:diff_new_changes_command =
+  \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'
+let s:diff_change_pattern = '@@ '
+
 let s:data_chunks = []
 let s:source_files = []
 
@@ -87,8 +91,7 @@ endfunction
 
 function! s:compute_changed_line_numbers()
   let l:changed_line_numbers = {}
-  let l:diff_stdout_lines = split(execute('w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'), "\n")
-  let l:diff_change_pattern = '@@ '
+  let l:diff_stdout_lines = split(execute(s:diff_new_changes_command), "\n")
 
   function! s:parse_line_number(text)
     return split(a:text, ',')[0][1:]
@@ -97,8 +100,8 @@ function! s:compute_changed_line_numbers()
   let l:diff_stdout_line_number = 0
   while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
-    if s:starts_with(l:diff_line, l:diff_change_pattern)
-      let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, l:diff_change_pattern)[0])
+    if s:starts_with(l:diff_line, s:diff_change_pattern)
+      let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, s:diff_change_pattern)[0])
       let l:removed_line = s:parse_line_number(split(l:changed_line_numbers_with_offsets, ' ')[0])
       let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
       let l:removed_text = l:next_diff_line[1:]
