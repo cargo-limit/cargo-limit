@@ -22,13 +22,10 @@ In order to not disrupt from text editing or file navigation, this will work onl
 ⚠️ If you want other behavior than opening/switching tabs with affected files — you can add your custom open handler to `init.vim`.
 
 <details>
-<summary>Examples</summary>
+<summary>💡 Examples</summary>
 <p>
 
-<details>
-<summary>Open files in buffers instead of tabs</summary>
-<p>
-
+### Open Files in Buffers Instead of Tabs
 ```viml
 function! g:CargoLimitOpen(editor_data)
   let l:current_file = resolve(expand('%:p'))
@@ -47,13 +44,7 @@ function! g:CargoLimitOpen(editor_data)
 endfunction
 ```
 
-</p>
-</details>
-
-<details>
-<summary>Populate a quickfix list</summary>
-<p>
-
+### Populate a QuickFix List
 ```viml
 set errorformat =%f:%l:%c:%m
 
@@ -76,9 +67,6 @@ function! g:CargoLimitOpen(editor_data)
   endif
 endfunction
 ```
-
-</p>
-</details>
 
 </p>
 </details>
