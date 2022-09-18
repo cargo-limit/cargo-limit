@@ -28,7 +28,7 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 - current **mode is normal**
 - current buffer is either **empty or contains some existing and unmodified** (saved) file
 
-Why? — In order to **not disrupt** from active text editing process or file navigation.
+This is by design, in order to **not disrupt** from active text editing process or file navigation.
 
 ### 2. Auto-jump on each file save is currently imprecise
 - it may jump to a wrong line if it moved
