@@ -1,4 +1,5 @@
 let s:data_chunks = []
+let s:source_files = []
 
 function! s:on_cargo_metadata(_job_id, data, event)
   if a:event == 'stdout'
@@ -38,26 +39,109 @@ function! s:create_server_address(escaped_workspace_root)
   endif
 endfunction
 
-function! s:open_in_new_or_existing_tabs(editor_data)
-  let l:initial_file = resolve(expand('%:p'))
-  if l:initial_file != '' && !filereadable(l:initial_file)
-    return
+function! s:on_buffer_changed()
+  let l:current_file = s:current_file()
+  if l:current_file != '' && filereadable(l:current_file)
+    let changed_line_numbers = s:compute_changed_line_numbers()
+    call s:ignore_changed_lines_of_current_file(changed_line_numbers, l:current_file)
   endif
-  for source_file in reverse(a:editor_data.files)
-    let l:path = fnameescape(source_file.path)
-    if mode() == 'n' && &l:modified == 0
+endfunction
+
+function! s:open_all_files_in_new_or_existing_tabs(files)
+  let l:current_file = s:current_file()
+  if l:current_file == '' || filereadable(l:current_file)
+    let s:source_files = reverse(a:files)
+    for source_file in s:source_files
+      let l:path = fnameescape(source_file.path)
+      if mode() == 'n' && &l:modified == 0
+        execute 'tab drop ' . l:path
+        call cursor((source_file.line), (source_file.column))
+      else
+        break
+      endif
+    endfor
+    let s:source_files = reverse(s:source_files)[1:]
+  endif
+endfunction
+
+function! s:open_next_file_in_new_or_existing_tab()
+  let l:current_file = s:current_file()
+  if l:current_file == '' || filereadable(l:current_file) && !empty(s:source_files)
+    let l:source_file = s:source_files[0]
+    let l:path = fnameescape(l:source_file.path)
+    if &l:modified == 0
       execute 'tab drop ' . l:path
-      call cursor((source_file.line), (source_file.column))
-    else
-      break
+      call cursor((l:source_file.line), (l:source_file.column))
+      let s:source_files = s:source_files[1:]
+    endif
+  endif
+endfunction
+
+function! s:ignore_changed_lines_of_current_file(changed_line_numbers, current_file)
+  let s:new_source_files = []
+  for i in s:source_files
+    let l:is_changed_line = get(a:changed_line_numbers, i.line) && i.path == a:current_file
+    if !l:is_changed_line
+      call add(s:new_source_files, i)
     endif
   endfor
+  let s:source_files = s:new_source_files
+endfunction
+
+function! s:compute_changed_line_numbers()
+  const diff_new_changes_command =
+    \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'
+  const diff_change_pattern = '@@ '
+
+  function! s:parse_line_number(text)
+    return split(a:text, ',')[0][1:]
+  endfunction
+
+  let l:changed_line_numbers = {}
+  let l:diff_stdout_lines = split(execute(diff_new_changes_command), "\n")
+  let l:diff_stdout_line_number = 0
+  while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
+    let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
+    if s:starts_with(l:diff_line, diff_change_pattern)
+      let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, diff_change_pattern)[0])
+      let l:removed_line = s:parse_line_number(split(l:changed_line_numbers_with_offsets, ' ')[0])
+      let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
+      let l:removed_text = l:next_diff_line[1:]
+      let l:removed_new_line = empty(l:removed_text)
+      if !l:removed_new_line
+        let l:changed_line_numbers[l:removed_line] = 1
+      endif
+      let l:diff_stdout_line_number += 1
+    endif
+    let l:diff_stdout_line_number += 1
+  endwhile
+
+  return l:changed_line_numbers
+endfunction
+
+function! s:current_file()
+  return resolve(expand('%:p'))
+endfunction
+
+function! s:starts_with(longer, shorter)
+  return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
+endfunction
+
+function! s:call_after_event_finished(function)
+  call timer_start(0, { tid -> a:function() })
 endfunction
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
-    call s:open_in_new_or_existing_tabs(a:editor_data)
+    call s:open_all_files_in_new_or_existing_tabs(a:editor_data.files)
   endfunction
+
+  augroup CargoLimitAutocommands
+    autocmd!
+    autocmd TextChanged,InsertLeave,FilterReadPost *.rs call s:on_buffer_changed()
+    autocmd BufWritePre *.rs call s:call_after_event_finished(
+      \ {-> execute('call s:open_next_file_in_new_or_existing_tab()') })
+  augroup END
 endif
 
 if has('nvim')

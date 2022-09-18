@@ -283,10 +283,11 @@ impl TransformedMessages {
             .map(|(span, message)| (Self::find_leaf_project_expansion(span), &message.message));
 
         let mut source_files_in_consistent_order = Vec::new();
-        let mut used_file_names = HashSet::new();
+        let mut used_file_names_and_lines = HashSet::new();
         for (span, message) in spans_and_messages {
-            if !used_file_names.contains(&span.file_name) {
-                used_file_names.insert(span.file_name.clone());
+            let key = (span.file_name.clone(), span.line_start);
+            if !used_file_names_and_lines.contains(&key) {
+                used_file_names_and_lines.insert(key);
                 source_files_in_consistent_order.push(SourceFile::new(
                     span,
                     message,
