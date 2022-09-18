@@ -34,6 +34,6 @@ impl CargoToml {
     }
 
     fn all_have_harness<'i>(items: impl Iterator<Item = &'i Item>) -> bool {
-        items.map(|i| i.harness).flatten().all(identity)
+        items.filter_map(|i| i.harness).all(identity)
     }
 }
