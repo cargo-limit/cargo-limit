@@ -28,8 +28,8 @@ For example:
 
 ```viml
 function! g:CargoLimitOpen(editor_data)
-  let l:initial_file = resolve(expand('%:p'))
-  if l:initial_file != '' && !filereadable(l:initial_file)
+  let l:current_file = resolve(expand('%:p'))
+  if l:current_file != '' && !filereadable(l:current_file)
     return
   endif
   for source_file in reverse(a:editor_data.files)
@@ -102,7 +102,7 @@ Theoretically this can be used for any text editor or IDE, especially if it supp
 ```bash
 #!/bin/bash
 
-jq --raw-output '. as $root | $root | .files[] | unique_by(.path) | [
+jq --raw-output '.files |= unique_by(.path) | .files[] | [
     "gedit",
     .path,
     "+" + (.line | tostring) + ":" + (.column | tostring),
