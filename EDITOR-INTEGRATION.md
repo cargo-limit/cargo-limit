@@ -6,7 +6,7 @@ Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
 and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 
 ## Testing
-1. Open two terminals
+1. Open two terminals (or tmux windows, etc.)
 2. `cd your/project/directory` in both of them
 3. Run `nvim` in one of them
 4. Run `cargo lrun` in the other
