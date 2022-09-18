@@ -33,6 +33,7 @@ function! s:create_server_address(escaped_workspace_root)
     let l:server_address_dir =  '/tmp/' . l:prefix . $USER
     call mkdir(l:server_address_dir, 'p', 0700)
     let l:server_address = l:server_address_dir . '/' . a:escaped_workspace_root
+    call s:maybe_delete_dead_unix_socket(l:server_address)
     return l:server_address
   else
     throw 'unsupported OS'
@@ -117,6 +118,24 @@ function! s:compute_changed_line_numbers()
   endwhile
 
   return l:changed_line_numbers
+endfunction
+
+function! s:maybe_delete_dead_unix_socket(server_address)
+  if filereadable(a:server_address)
+    call system('which ss')
+    let l:ss_is_installed = v:shell_error == 0
+    if l:ss_is_installed
+      let l:ss_stdout = system('ss --all --listening --family=unix')
+      let l:socket_is_dead = stridx(l:ss_stdout, a:server_address) == -1
+      if l:socket_is_dead
+        let g:cargo_limit_server_address = a:server_address
+        lua os.remove(vim.g.cargo_limit_server_address)
+        unlet g:cargo_limit_server_address
+        echohl None
+        echomsg 'removed dead socket ' . a:server_address . ' '
+      endif
+    endif
+  endif
 endfunction
 
 function! s:current_file()
