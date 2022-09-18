@@ -32,7 +32,7 @@ nvim +PlugInstall +UpdateRemotePlugins +qa
 - current **mode is normal**
 - current buffer is either **empty or contains some existing and unmodified** (saved) file
 
-This is by design, in order to **not disrupt** from active text editing process or file navigation.
+This is by design, in order to **not disrupt** from active text editing or file navigation process.
 
 ### 2. Auto-jump on each file save is currently imprecise
 - it may jump to a wrong line if it moved
@@ -40,7 +40,7 @@ This is by design, in order to **not disrupt** from active text editing process 
 
 For precise jump please rerun `cargo ll{check,run,etc.}`.
 
-### 3. Before running `nvim`: current directory should be project (sub)directory
+### 3. Before running `nvim`: Current Directory should be Project (sub)directory
 - that's required so **cargo-limit** could [figure out](https://github.com/alopatindev/cargo-limit/issues/30#issuecomment-1219793195) which exact `nvim` instance should be controlled
 - only **first `nvim` instance** with current project (sub)directory will be **controlled by cargo-limit**.
 
