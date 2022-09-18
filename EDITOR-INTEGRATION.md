@@ -90,7 +90,10 @@ cargo-limit can run external app/script and provide affected files to stdin in t
 
 Theoretically this can be used for any text editor or IDE, especially if it supports client/server communication. To do that you need a wrapper app/script that parses the `files` and gives them to the text editor or IDE client.
 
-## Example: gedit
+<details>
+<summary>💡 Example: Gedit! 👁️</summary>
+<p>
+
 1. Install [`jq`](https://stedolan.github.io/jq/download/)
 2. Create `open-in-gedit.sh`:
 ```bash
@@ -108,3 +111,6 @@ jq --raw-output '.files |= unique_by(.path) | .files[] | [
 5. Run `cargo lrun` in your project directory
 6. In case of compiling errors `open-in-gedit.sh` will open files in `gedit` on affected lines and columns
 7. `cargo llrun` (`cargo llcheck`, etc.) will open them in case of warnings as well.
+
+</p>
+</details>
