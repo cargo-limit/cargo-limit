@@ -19,10 +19,10 @@ In order to not disrupt from text editing or file navigation, this will work onl
 - current buffer is either empty or contains some existing and unmodified (saved) file.
 
 ## Customizations
-⚠️ If you want other Neovim behavior — add a **custom open handler** to `init.vim`.
+⚠️ If you want other Neovim behavior — add a **custom open handler** to your `init.vim`.
 
 <details>
-<summary>Examples 💡</summary>
+<summary>💡 Examples!</summary>
 <p>
 
 ### Open Files in Buffers Instead of Tabs
