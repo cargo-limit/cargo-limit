@@ -8,6 +8,7 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 <details>
 <summary><b>💡 Test the plugin! 👁️</b></summary>
 <p>
+
 1. Open two terminals (or tmux windows, etc.)
 2. `cd your/project/directory` in both of them
 3. Run `nvim` in one of them
