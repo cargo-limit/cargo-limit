@@ -17,10 +17,14 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 6. Fix the error, save the file and `nvim` will jump to the next error location
 7. `cargo llrun` (`cargo llcheck`, etc.) will open them in case of warnings as well.
 
-In order to not disrupt from text editing or file navigation, this will work only if
-- current mode is normal
-- current buffer is either empty or contains some existing and unmodified (saved) file.
+## ⚠️ Special cases
+1. In order to not disrupt from text editing or file navigation, auto jumps work only if
+- current **mode is normal**
+- current buffer is either **empty or contains some existing** and unmodified (saved) file.
 
+2. Jumping on **each file save** is currently **imprecise**:
+- it may jump on a wrong line if it moved or not jump at all, if the next affected line is supposed to be modified already
+- for precise jump please rerun `cargo ll{check,run,etc.}`.
 </p>
 </details>
 
