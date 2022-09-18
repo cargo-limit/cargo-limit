@@ -5,7 +5,9 @@ Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
 ```
 and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 
-## Testing
+<details>
+<summary>💡 Test the plugin 👁️</summary>
+<p>
 1. Open two terminals (or tmux windows, etc.)
 2. `cd your/project/directory` in both of them
 3. Run `nvim` in one of them
@@ -17,6 +19,9 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 In order to not disrupt from text editing or file navigation, this will work only if
 - current mode is normal
 - current buffer is either empty or contains some existing and unmodified (saved) file.
+
+</p>
+</details>
 
 ## Customizations
 ⚠️ If you want other Neovim behavior — add a **custom open handler** to your `init.vim`.
