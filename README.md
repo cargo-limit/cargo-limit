@@ -11,7 +11,7 @@ Cargo with less noise:
 - messages are grouped by filenames
 - number of messages can be limited
 - after encountering first error the rest of build time is limited by default
-- files can be [automatically opened](#neovim-and-other-text-editorsides-integration) in your text editor on affected lines
+- files can be [automatically opened](#text-editoride-integrations) in your text editor on affected lines
 
 This tool is especially useful in combination with [cargo-watch](https://crates.io/crates/cargo-watch).
 
@@ -48,9 +48,43 @@ cargo ltest
 
 Also `llcheck`, `llrun`, etc.
 
-## Neovim and other Text Editors/IDEs integration
 <details>
-<summary><b>💡 Neovim Integration 👁️</b></summary>
+<summary><b>💡 Environment Variables 👁️</b></summary>
+<p>
+
+### CARGO_MSG_LIMIT
+- limit compiler messages number
+- `0` means no limit, which is default
+
+### CARGO_TIME_LIMIT
+- `cargo` execution time limit in seconds after encountering first compiling error
+- `1` is default
+- `0` means no limit
+
+### CARGO_ASC
+- show compiler messages in ascending order
+- `false` is default
+
+### CARGO_FORCE_WARN
+- show warnings even if errors still exist
+- `false` is default
+
+### CARGO_DEPS_WARN
+- show external path dependencies' warnings
+- `false` is default
+
+### CARGO_EDITOR
+- opens affected files in external app
+    - see [neovim integration](#text-editoride-integrations)
+- empty (`""`) means don't run external app
+- `"_cargo-limit-open-in-nvim"` is default
+
+</p>
+</details>
+
+## Text Editors/IDEs integration
+<details>
+<summary><b>💡 Neovim Plugin 👁️</b></summary>
 <p>
 
 Enable the plugin in your `init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
@@ -158,7 +192,7 @@ endfunction
 </details>
 
 <details>
-<summary><b>💡 Other Text Editors/IDEs Integration 👁️</b></summary>
+<summary><b>💡 Other Text Editor/IDE Integrations 👁️</b></summary>
 <p>
 
 **cargo-limit** can run external app/script and provide affected files to stdin in the following JSON format:
@@ -203,41 +237,6 @@ jq --raw-output '.files |= unique_by(.path) | .files[] | [
 
 </p>
 </details>
-
-</p>
-</details>
-
-## Environment Variables
-<details>
-<summary><b>💡 See 👁️</b></summary>
-<p>
-
-## CARGO_MSG_LIMIT
-- limit compiler messages number
-- `0` means no limit, which is default
-
-## CARGO_TIME_LIMIT
-- `cargo` execution time limit in seconds after encountering first compiling error
-- `1` is default
-- `0` means no limit
-
-## CARGO_ASC
-- show compiler messages in ascending order
-- `false` is default
-
-## CARGO_FORCE_WARN
-- show warnings even if errors still exist
-- `false` is default
-
-## CARGO_DEPS_WARN
-- show external path dependencies' warnings
-- `false` is default
-
-## CARGO_EDITOR
-- opens affected files in external app
-    - see [neovim integration](#neovim-and-other-text-editorsides-integration)
-- empty (`""`) means don't run external app
-- `"_cargo-limit-open-in-nvim"` is default
 
 </p>
 </details>
