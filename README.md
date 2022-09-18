@@ -248,7 +248,7 @@ jq --raw-output '.locations |= unique_by(.path) | .locations[] | [
 Thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for NixOS package.
 
 ## Wanna Contribute?
-Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban board](https://github.com/alopatindev/cargo-limit/projects/1).
+Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban board](https://github.com/alopatindev/cargo-limit/projects/1?fullscreen=true).
 
 ## License
 MIT/Apache-2.0
