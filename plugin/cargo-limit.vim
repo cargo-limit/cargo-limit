@@ -90,13 +90,12 @@ function! s:ignore_changed_lines_of_current_file(changed_line_numbers, current_f
 endfunction
 
 function! s:compute_changed_line_numbers()
-  let l:changed_line_numbers = {}
-  let l:diff_stdout_lines = split(execute(s:diff_new_changes_command), "\n")
-
   function! s:parse_line_number(text)
     return split(a:text, ',')[0][1:]
   endfunction
 
+  let l:changed_line_numbers = {}
+  let l:diff_stdout_lines = split(execute(s:diff_new_changes_command), "\n")
   let l:diff_stdout_line_number = 0
   while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
