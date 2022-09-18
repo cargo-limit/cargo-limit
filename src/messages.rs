@@ -285,9 +285,9 @@ impl TransformedMessages {
         let mut source_files_in_consistent_order = Vec::new();
         let mut used_file_names_and_lines = HashSet::new();
         for (span, message) in spans_and_messages {
-            let file_name = span.file_name.clone();
-            if !used_file_names_and_lines.contains(&(file_name.clone(), span.line_start)) {
-                used_file_names_and_lines.insert((file_name, span.line_start));
+            let key = (span.file_name.clone(), span.line_start);
+            if !used_file_names_and_lines.contains(&key) {
+                used_file_names_and_lines.insert(key);
                 source_files_in_consistent_order.push(SourceFile::new(
                     span,
                     message,
