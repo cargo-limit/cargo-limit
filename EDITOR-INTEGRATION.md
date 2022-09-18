@@ -6,7 +6,7 @@ Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
 and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 
 <details>
-<summary>💡 Test the plugin 👁️</summary>
+<summary>💡 Test the plugin! 👁️</summary>
 <p>
 1. Open two terminals (or tmux windows, etc.)
 2. `cd your/project/directory` in both of them
@@ -77,7 +77,7 @@ endfunction
 </details>
 
 # Other Text Editors/IDEs Integration
-cargo-limit can run external app/script and provide affected files to stdin in the following JSON format:
+**cargo-limit** can run external app/script and provide affected files to stdin in the following JSON format:
 ```json
 {
   "workspace_root": "/full/path/to/project",
@@ -93,7 +93,7 @@ cargo-limit can run external app/script and provide affected files to stdin in t
 }
 ```
 
-Theoretically this can be used for any text editor or IDE, especially if it supports client/server communication. To do that you need a wrapper app/script that parses the `files` and gives them to the text editor or IDE client.
+Theoretically this can be used for any text editor or IDE, especially if it supports client/server communication. To do that you need a **wrapper app/script** that parses the `files` and gives them to the text editor or IDE client.
 
 <details>
 <summary>💡 Example: Gedit! 👁️</summary>
