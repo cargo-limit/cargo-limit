@@ -17,7 +17,7 @@ nvim +PlugInstall +UpdateRemotePlugins +qa
 2. `cd your/project/directory` in both of them
 3. Run `nvim` in one of them
 4. Run `cargo lrun` in the other
-5. In case of compiling errors `nvim` opens new or existing tab with the file on affected line and column
+5. In case of compiling errors `nvim` opens new or existing tabs with the files on affected lines and columns
 6. Fix the error, save the file and `nvim` will jump to the next error location
 7. `cargo llrun` (`cargo llcheck`, etc.) will open them in case of warnings as well.
 
