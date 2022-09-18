@@ -82,7 +82,7 @@ Also `llcheck`, `llrun`, etc.
 </p>
 </details>
 
-## Text Editors/IDEs integration
+## Text Editor/IDE integrations
 <details>
 <summary><b>💡 Neovim Plugin 👁️</b></summary>
 <p>
