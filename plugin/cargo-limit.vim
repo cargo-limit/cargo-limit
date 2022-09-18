@@ -63,11 +63,7 @@ endfunction
 
 function! s:open_next_file_in_new_or_existing_tab()
   let l:current_file = s:current_file()
-  if l:current_file != '' && !filereadable(l:current_file)
-    return
-  endif
-
-  if !empty(s:source_files)
+  if l:current_file == '' || filereadable(l:current_file) && !empty(s:source_files)
     let l:source_file = s:source_files[0]
     let l:path = fnameescape(l:source_file.path)
     if &l:modified == 0
