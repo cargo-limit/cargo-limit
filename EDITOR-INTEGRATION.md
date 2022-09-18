@@ -24,13 +24,17 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 <summary><b>⚠️ Known Limitations! 👁️</b></summary>
 <p>
 
-### 1. In order to not disrupt from text editing or file navigation, auto jumps work only if
+### 1. Auto-jumps work only if
 - current **mode is normal**
 - current buffer is either **empty or contains some existing** and unmodified (saved) file.
 
-### 2. Auto-jump on each file save is currently imprecise:
-- it may jump on a wrong line if it moved or not jump at all, if the next affected line is supposed to be modified already
-- for precise jump please rerun `cargo ll{check,run,etc.}`.
+Why? — In order to not disrupt from text editing or file navigation.
+
+### 2. Auto-jump on each file save is currently imprecise
+- it may jump on a wrong line if it moved
+- it may not jump at all, if the next affected line is supposed to be modified already
+
+For precise jump please rerun `cargo ll{check,run,etc.}`.
 
 </p>
 </details>
