@@ -22,7 +22,7 @@ In order to not disrupt from text editing or file navigation, this will work onl
 ⚠️ If you want other Neovim behavior — add a **custom open handler** to your `init.vim`.
 
 <details>
-<summary>💡 Examples!</summary>
+<summary>👁️ See Examples!</summary>
 <p>
 
 ### Open Files in Buffers Instead of Tabs
