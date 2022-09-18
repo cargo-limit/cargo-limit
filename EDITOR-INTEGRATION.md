@@ -3,7 +3,11 @@ Enable the plugin in your `init.vim`. For instance for [vim-plug](https://github
 ```viml
 Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
 ```
-and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
+and install it with
+
+```bash
+nvim +PlugInstall +UpdateRemotePlugins +qa
+```
 
 <details>
 <summary><b>💡 Test the plugin! 👁️</b></summary>
