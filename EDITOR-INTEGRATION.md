@@ -6,7 +6,7 @@ Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
 and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 
 <details>
-<summary>💡 Test the plugin! 👁️</summary>
+<summary><b>💡 Test the plugin! 👁️</b></summary>
 <p>
 1. Open two terminals (or tmux windows, etc.)
 2. `cd your/project/directory` in both of them
@@ -27,7 +27,7 @@ In order to not disrupt from text editing or file navigation, this will work onl
 ⚠️ If you want other Neovim behavior — add a **custom open handler** to your `init.vim`.
 
 <details>
-<summary>💡 See examples! 👁️</summary>
+<summary><b>💡 See examples! 👁️</b></summary>
 <p>
 
 ### Open Files in Buffers Instead of Tabs
@@ -96,7 +96,7 @@ endfunction
 Theoretically this can be used for any text editor or IDE, especially if it supports client/server communication. To do that you need a **wrapper app/script** that parses the `files` and gives them to the text editor or IDE client.
 
 <details>
-<summary>💡 Example: Gedit! 👁️</summary>
+<summary><b>💡 Example: Gedit! 👁️</b></summary>
 <p>
 
 1. Install [`jq`](https://stedolan.github.io/jq/download/)
