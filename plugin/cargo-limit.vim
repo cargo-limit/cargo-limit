@@ -130,9 +130,7 @@ function! s:maybe_delete_dead_unix_socket(server_address)
       let l:ss_stdout = system('ss --all --listening --family=unix')
       let l:socket_is_dead = stridx(l:ss_stdout, a:server_address) == -1
       if l:socket_is_dead
-        let g:cargo_limit_server_address = a:server_address
-        lua os.remove(vim.g.cargo_limit_server_address)
-        unlet g:cargo_limit_server_address
+        let l:ignore = luaeval('os.remove(_A)', a:server_address)
         echohl None
         echomsg 'removed dead socket ' . a:server_address . ' '
       endif
