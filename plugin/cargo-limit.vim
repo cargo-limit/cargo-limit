@@ -33,15 +33,7 @@ function! s:create_server_address(escaped_workspace_root)
     let l:server_address_dir =  '/tmp/' . l:prefix . $USER
     call mkdir(l:server_address_dir, 'p', 0700)
     let l:server_address = l:server_address_dir . '/' . a:escaped_workspace_root
-
-    call system('socat UNIX-CONNECT:' . l:server_address . ' /dev/null')
-    let l:socket_is_dead = v:shell_error != 0
-    let g:cargo_limit_server_address = l:server_address
-    if l:socket_is_dead
-      lua os.remove(vim.g.cargo_limit_server_address)
-    endif
-    unlet g:cargo_limit_server_address
-
+    call s:maybe_delete_dead_unix_socket(l:server_address)
     return l:server_address
   else
     throw 'unsupported OS'
@@ -126,6 +118,22 @@ function! s:compute_changed_line_numbers()
   endwhile
 
   return l:changed_line_numbers
+endfunction
+
+function! s:maybe_delete_dead_unix_socket(server_address)
+  if filereadable(a:server_address)
+    call system('which socat')
+    let l:socat_is_installed = v:shell_error == 0
+    if l:socat_is_installed
+      call system('socat UNIX-CONNECT:' . a:server_address . ' /dev/null')
+      let l:socket_is_dead = v:shell_error != 0
+      let g:cargo_limit_server_address = a:server_address
+      if l:socket_is_dead
+        lua os.remove(vim.g.cargo_limit_server_address)
+      endif
+      unlet g:cargo_limit_server_address
+    endif
+  endif
 endfunction
 
 function! s:current_file()
