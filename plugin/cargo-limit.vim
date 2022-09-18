@@ -131,12 +131,12 @@ if !exists('*CargoLimitOpen')
     call s:open_all_files_in_new_or_existing_tabs(a:editor_data.files)
   endfunction
 
-  " TODO: augroup?
-  autocmd TextChanged,InsertLeave,FilterReadPost *.rs call s:on_buffer_changed()
-
-  " TODO: event for case when we try to save already unmodified file?
-  autocmd BufWritePre *.rs call s:call_after_event_finished(
-    \ {-> execute('call s:open_next_file_in_new_or_existing_tab()') })
+  augroup CargoLimitAutocommands
+    autocmd!
+    autocmd TextChanged,InsertLeave,FilterReadPost *.rs call s:on_buffer_changed()
+    autocmd BufWritePre *.rs call s:call_after_event_finished(
+      \ {-> execute('call s:open_next_file_in_new_or_existing_tab()') })
+  augroup END
 endif
 
 if has('nvim')
