@@ -1,4 +1,4 @@
-# Neovim integration
+# Neovim Integration
 Enable the plugin in your `init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
 ```viml
 Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
@@ -18,10 +18,13 @@ In order to not disrupt from text editing or file navigation, this will work onl
 - current mode is normal
 - current buffer is either empty or contains some existing and unmodified (saved) file.
 
-## Custom open handler
-⚠️ If you want something different than opening/switching tabs with affected files — you can add your own handler to `init.vim`.
+## Customizations
+⚠️ If you want other behavior than opening/switching tabs with affected files — you can add your custom open handler to `init.vim`.
 
-For example:
+<details>
+<summary>Examples</summary>
+<p>
+
 <details>
 <summary>Open files in buffers instead of tabs</summary>
 <p>
@@ -77,7 +80,10 @@ endfunction
 </p>
 </details>
 
-# Other text editors/IDEs integration
+</p>
+</details>
+
+# Other Text Editors/IDEs Integration
 cargo-limit can run external app/script and provide affected files to stdin in the following JSON format:
 ```json
 {
