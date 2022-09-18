@@ -48,17 +48,20 @@ function! s:on_buffer_changed()
 endfunction
 
 function! s:open_all_files_in_new_or_existing_tabs(files)
-  let s:source_files = reverse(a:files)
-  for source_file in s:source_files
-    let l:path = fnameescape(source_file.path)
-    if mode() == 'n' && &l:modified == 0
-      execute 'tab drop ' . l:path
-      call cursor((source_file.line), (source_file.column))
-    else
-      break
-    endif
-  endfor
-  let s:source_files = reverse(s:source_files)[1:]
+  let l:current_file = s:current_file()
+  if l:current_file == '' || filereadable(l:current_file)
+    let s:source_files = reverse(a:files)
+    for source_file in s:source_files
+      let l:path = fnameescape(source_file.path)
+      if mode() == 'n' && &l:modified == 0
+        execute 'tab drop ' . l:path
+        call cursor((source_file.line), (source_file.column))
+      else
+        break
+      endif
+    endfor
+    let s:source_files = reverse(s:source_files)[1:]
+  endif
 endfunction
 
 function! s:open_next_file_in_new_or_existing_tab()
