@@ -20,14 +20,20 @@ and install it with `nvim +PlugInstall +UpdateRemotePlugins +qa`
 </p>
 </details>
 
-## ⚠️ Known Limitations
-1. In order **to not disrupt** from text editing or file navigation, auto jumps work only if
+<details>
+<summary><b>Known Limitations! 👁️</b></summary>
+<p>
+
+### 1. In order to not disrupt from text editing or file navigation, auto jumps work only if
 - current **mode is normal**
 - current buffer is either **empty or contains some existing** and unmodified (saved) file.
 
-2. Auto-jump on **each file save** is currently **imprecise**:
+### 2. Auto-jump on each file save is currently imprecise:
 - it may jump on a wrong line if it moved or not jump at all, if the next affected line is supposed to be modified already
 - for precise jump please rerun `cargo ll{check,run,etc.}`.
+
+</p>
+</details>
 
 ## Customizations
 ⚠️ If you want other Neovim behavior — add a **custom open handler** to your `init.vim`.
