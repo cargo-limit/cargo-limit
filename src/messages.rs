@@ -1,4 +1,4 @@
-use crate::{io::Buffers, models::SourceFile, options::Options, process};
+use crate::{io::Buffers, models::Location, options::Options, process};
 use anyhow::Result;
 use cargo_metadata::{
     diagnostic::{DiagnosticLevel, DiagnosticSpan},
@@ -26,7 +26,7 @@ struct FilteredAndOrderedMessages {
 
 struct TransformedMessages {
     messages: Vec<Message>,
-    source_files_in_consistent_order: Vec<SourceFile>,
+    locations_in_consistent_order: Vec<Location>,
 }
 
 pub fn transform_and_process_messages(
@@ -34,13 +34,13 @@ pub fn transform_and_process_messages(
     messages: Messages,
     options: &Options,
     workspace_root: &Path,
-    mut process: impl FnMut(&mut Buffers, Vec<Message>, Vec<SourceFile>) -> Result<()>,
+    mut process: impl FnMut(&mut Buffers, Vec<Message>, Vec<Location>) -> Result<()>,
 ) -> Result<()> {
     let TransformedMessages {
         messages,
-        source_files_in_consistent_order,
+        locations_in_consistent_order,
     } = TransformedMessages::transform(messages, options, workspace_root)?;
-    process(buffers, messages, source_files_in_consistent_order)
+    process(buffers, messages, locations_in_consistent_order)
 }
 
 impl Messages {
@@ -234,8 +234,8 @@ impl TransformedMessages {
         }
         .collect::<Vec<_>>();
 
-        let source_files_in_consistent_order =
-            Self::extract_source_files_for_external_app(&messages, options, workspace_root);
+        let locations_in_consistent_order =
+            Self::extract_locations_for_external_app(&messages, options, workspace_root);
 
         let messages = messages.into_iter();
         let messages = {
@@ -250,15 +250,15 @@ impl TransformedMessages {
 
         Ok(TransformedMessages {
             messages,
-            source_files_in_consistent_order,
+            locations_in_consistent_order,
         })
     }
 
-    fn extract_source_files_for_external_app(
+    fn extract_locations_for_external_app(
         messages: &[CompilerMessage],
         options: &Options,
         workspace_root: &Path,
-    ) -> Vec<SourceFile> {
+    ) -> Vec<Location> {
         let spans_and_messages = messages
             .iter()
             .filter(|message| {
@@ -282,21 +282,17 @@ impl TransformedMessages {
             })
             .map(|(span, message)| (Self::find_leaf_project_expansion(span), &message.message));
 
-        let mut source_files_in_consistent_order = Vec::new();
+        let mut locations_in_consistent_order = Vec::new();
         let mut used_file_names_and_lines = HashSet::new();
         for (span, message) in spans_and_messages {
             let key = (span.file_name.clone(), span.line_start);
             if !used_file_names_and_lines.contains(&key) {
                 used_file_names_and_lines.insert(key);
-                source_files_in_consistent_order.push(SourceFile::new(
-                    span,
-                    message,
-                    workspace_root,
-                ));
+                locations_in_consistent_order.push(Location::new(span, message, workspace_root));
             }
         }
 
-        source_files_in_consistent_order
+        locations_in_consistent_order
     }
 
     fn find_leaf_project_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {

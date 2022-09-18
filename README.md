@@ -149,11 +149,11 @@ function! g:CargoLimitOpen(editor_data)
   if l:current_file != '' && !filereadable(l:current_file)
     return
   endif
-  for source_file in reverse(a:editor_data.files)
-    let l:path = fnameescape(source_file.path)
+  for location in reverse(a:editor_data.locations)
+    let l:path = fnameescape(location.path)
     if mode() == 'n' && &l:modified == 0
       execute 'edit ' . l:path
-      call cursor((source_file.line), (source_file.column))
+      call cursor((location.line), (location.column))
     else
       break
     endif
@@ -169,11 +169,11 @@ function! g:CargoLimitOpen(editor_data)
   let l:winnr = winnr()
 
   cgetexpr []
-  for file in a:editor_data['files']
+  for file in a:editor_data['locations']
     caddexpr file['path'] . ':' . file['line'] . ':' . file['column'] . ':' . file['message']
   endfor
 
-  if empty(a:editor_data['files'])
+  if empty(a:editor_data['locations'])
     cclose
   else
     copen
@@ -195,11 +195,11 @@ endfunction
 <summary><b>💡 Other Text Editor/IDE Integrations 👁️</b></summary>
 <p>
 
-**cargo-limit** can run external app/script and provide affected files to stdin in the following JSON format:
+**cargo-limit** can run external app/script and provide affected locations to stdin in the following JSON format:
 ```json
 {
   "workspace_root": "/full/path/to/project",
-  "files": [
+  "locations": [
     {
       "path": "/full/path/to/project/file.rs",
       "line": 4,
@@ -211,7 +211,7 @@ endfunction
 }
 ```
 
-Theoretically this can be used for any text editor or IDE, especially if it supports client/server communication. To do that you need a **wrapper app/script** that parses the `files` and gives them to the text editor or IDE client.
+Theoretically this can be used for any text editor or IDE, especially if it supports client/server communication. To do that you need a **wrapper app/script** that parses the `locations` and gives them to the text editor or IDE client.
 
 <details>
 <summary><b>💡 Example: Gedit! 👁️</b></summary>
@@ -222,7 +222,7 @@ Theoretically this can be used for any text editor or IDE, especially if it supp
 ```bash
 #!/bin/bash
 
-jq --raw-output '.files |= unique_by(.path) | .files[] | [
+jq --raw-output '.locations |= unique_by(.path) | .locations[] | [
     "gedit",
     .path,
     "+" + (.line | tostring) + ":" + (.column | tostring),
