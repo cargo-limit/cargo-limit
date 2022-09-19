@@ -82,14 +82,14 @@ function! s:open_next_location_in_new_or_existing_tab()
 endfunction
 
 function! s:ignore_changed_lines_of_current_file(changed_line_numbers, current_file)
-  let s:new_locations = []
+  let l:new_locations = []
   for i in s:locations
     let l:is_changed_line = get(a:changed_line_numbers, i.line) && i.path == a:current_file
     if !l:is_changed_line
-      call add(s:new_locations, i)
+      call add(l:new_locations, i)
     endif
   endfor
-  let s:locations = s:new_locations
+  let s:locations = l:new_locations
 endfunction
 
 function! s:deduplicate_lines()
