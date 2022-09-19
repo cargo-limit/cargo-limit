@@ -169,7 +169,14 @@ endfunction
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
-    call s:open_all_locations_in_new_or_existing_tabs(a:editor_data.locations)
+    if exists('a:editor_data.locations')
+      let l:locations = a:editor_data.locations
+    else
+      " NOTE: backward compatibility with old API
+      let l:locations = a:editor_data.files
+    endif
+
+    call s:open_all_locations_in_new_or_existing_tabs(l:locations)
   endfunction
 
   augroup CargoLimitAutocommands
