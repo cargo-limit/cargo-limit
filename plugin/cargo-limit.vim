@@ -7,9 +7,7 @@ function! s:on_cargo_metadata(_job_id, data, event)
   elseif a:event == 'stderr' && type(a:data) == v:t_list && a:data != ['']
     let l:stderr = join(a:data, "\n")
     if l:stderr !~ 'could not find `Cargo.toml`'
-      echohl Error
-      echon l:stderr
-      echohl None
+      call s:log_error(l:stderr)
     endif
   elseif a:event == 'exit'
     let l:stdout = join(s:data_chunks, '')
@@ -20,8 +18,7 @@ function! s:on_cargo_metadata(_job_id, data, event)
       let l:server_address = s:create_server_address(l:escaped_workspace_root)
       if !filereadable(l:server_address)
         call serverstart(l:server_address)
-        echohl None
-        echomsg 'cargo-limit is ready'
+        call s:log_info('cargo-limit is ready')
       endif
     endif
   endif
@@ -140,16 +137,21 @@ function! s:compute_changed_line_numbers()
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
+  const ss_command = 'ss --all --listening --family=unix'
   if filereadable(a:server_address)
     call system('which ss')
     let l:ss_is_installed = v:shell_error == 0
     if l:ss_is_installed
-      let l:ss_stdout = system('ss --all --listening --family=unix')
-      let l:socket_is_dead = stridx(l:ss_stdout, a:server_address) == -1
-      if l:socket_is_dead
-        let l:ignore = luaeval('os.remove(_A)', a:server_address)
-        echohl None
-        echomsg 'removed dead socket ' . a:server_address . ' '
+      let l:ss_stdout = system(ss_command)
+      let l:ss_succeed = v:shell_error == 0
+      if l:ss_succeed
+        let l:socket_is_dead = stridx(l:ss_stdout, a:server_address) == -1
+        if l:socket_is_dead
+          let l:ignore = luaeval('os.remove(_A)', a:server_address)
+          call s:log_info('removed dead socket ' . a:server_address)
+        endif
+      else
+        call s:log_error('failed to execute "' . ss_command . '"')
       endif
     endif
   endif
@@ -165,6 +167,17 @@ endfunction
 
 function! s:call_after_event_finished(function)
   call timer_start(0, { tid -> a:function() })
+endfunction
+
+function! s:log_error(message)
+  echohl Error
+  echon a:message
+  echohl None
+endfunction
+
+function! s:log_info(message)
+  echohl None
+  echomsg a:message
 endfunction
 
 if !exists('*CargoLimitOpen')
