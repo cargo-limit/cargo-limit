@@ -7,7 +7,7 @@ use cargo_metadata::{
 use getset::CopyGetters;
 use itertools::{Either, Itertools};
 use process::CargoProcess;
-use std::{collections::HashSet, path::Path, time::Duration};
+use std::{path::Path, time::Duration};
 
 #[derive(Default, CopyGetters, Debug)]
 pub struct Messages {
@@ -259,7 +259,7 @@ impl TransformedMessages {
         options: &Options,
         workspace_root: &Path,
     ) -> Vec<Location> {
-        let spans_and_messages = messages
+        messages
             .iter()
             .filter(|message| {
                 if options.open_in_external_app_on_warnings() {
@@ -280,19 +280,9 @@ impl TransformedMessages {
                     .cloned()
                     .map(move |span| (span, message))
             })
-            .map(|(span, message)| (Self::find_leaf_project_expansion(span), &message.message));
-
-        let mut locations_in_consistent_order = Vec::new();
-        let mut used_file_names_and_lines = HashSet::new();
-        for (span, message) in spans_and_messages {
-            let key = (span.file_name.clone(), span.line_start);
-            if !used_file_names_and_lines.contains(&key) {
-                used_file_names_and_lines.insert(key);
-                locations_in_consistent_order.push(Location::new(span, message, workspace_root));
-            }
-        }
-
-        locations_in_consistent_order
+            .map(|(span, message)| (Self::find_leaf_project_expansion(span), &message.message))
+            .map(|(span, message)| Location::new(span, message, workspace_root))
+            .collect()
     }
 
     fn find_leaf_project_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {
