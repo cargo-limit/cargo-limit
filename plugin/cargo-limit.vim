@@ -47,6 +47,7 @@ function! s:on_buffer_changed()
   if l:current_file != '' && filereadable(l:current_file)
     let changed_line_numbers = s:compute_changed_line_numbers()
     call s:ignore_changed_lines_of_current_file(changed_line_numbers, l:current_file)
+    call s:deduplicate_lines()
   endif
 endfunction
 
@@ -89,6 +90,22 @@ function! s:ignore_changed_lines_of_current_file(changed_line_numbers, current_f
     endif
   endfor
   let s:locations = s:new_locations
+endfunction
+
+function! s:deduplicate_lines()
+  let l:new_locations = []
+  let l:added_lines = {}
+
+  for i in s:locations
+    let l:added_line_key = string([i.path, i.line])
+    let l:is_added_line = get(l:added_lines, l:added_line_key)
+    if !l:is_added_line
+      call add(l:new_locations, i)
+      let l:added_lines[l:added_line_key] = 1
+    endif
+  endfor
+
+  let s:locations = l:new_locations
 endfunction
 
 function! s:compute_changed_line_numbers()
