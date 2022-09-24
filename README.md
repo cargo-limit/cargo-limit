@@ -90,6 +90,19 @@ Also `llcheck`, `llrun`, etc.
 Enable the plugin in your `init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
 ```viml
 Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
+
+"" Optionally: F2 to save, if already saved - jump to next location
+"function g:SaveAllOrOpenNextLocation()
+"  if &l:modified == 0
+"    call g:CargoLimitOpenNextLocation()
+"  else
+"    execute 'wa'
+"  endif
+"endfunction
+"
+"nmap <F2> :call g:SaveAllOrOpenNextLocation()<cr>
+"vmap <F2> <esc>:call g:SaveAllOrOpenNextLocation()<cr>v
+"imap <F2> <esc>:call g:SaveAllOrOpenNextLocation()<cr>i
 ```
 and install it with
 
