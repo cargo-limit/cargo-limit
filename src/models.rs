@@ -7,6 +7,8 @@ use std::path::{Path, PathBuf};
 pub struct EditorData {
     #[get = "pub"]
     workspace_root: PathBuf,
+
+    #[serde(rename = "files")]
     locations: Vec<Location>,
 }
 
