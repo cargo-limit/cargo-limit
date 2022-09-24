@@ -91,7 +91,7 @@ Enable the plugin in your `init.vim`. For instance for [vim-plug](https://github
 ```viml
 Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
 
-"" Optionally: F2 to save, if already saved - jump to next location
+"" Optionally: F2 to save, F2 again to jump
 "function! SaveAllOrOpenNextLocation()
 "  if &l:modified == 0
 "    call g:CargoLimitOpenNextLocation()
