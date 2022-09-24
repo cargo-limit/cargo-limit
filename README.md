@@ -92,7 +92,7 @@ Enable the plugin in your `init.vim`. For instance for [vim-plug](https://github
 Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
 
 "" Optionally: F2 to save, F2 again to jump
-"function! SaveAllOrOpenNextLocation()
+"function! SaveAllFilesOrOpenNextLocation()
 "  if &l:modified == 0
 "    call g:CargoLimitOpenNextLocation()
 "  else
@@ -100,9 +100,9 @@ Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
 "  endif
 "endfunction
 "
-"nmap <F2> :call SaveAllOrOpenNextLocation()<cr>
-"vmap <F2> <esc>:call SaveAllOrOpenNextLocation()<cr>v
-"imap <F2> <esc>:call SaveAllOrOpenNextLocation()<cr>i
+"nmap <F2> :call SaveAllFilesOrOpenNextLocation()<cr>
+"vmap <F2> <esc>:call SaveAllFilesOrOpenNextLocation()<cr>v
+"imap <F2> <esc>:call SaveAllFilesOrOpenNextLocation()<cr>i
 ```
 and install it with
 
