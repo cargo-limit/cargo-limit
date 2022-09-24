@@ -44,7 +44,6 @@ function! s:on_buffer_changed()
   if l:current_file != '' && filereadable(l:current_file)
     let changed_line_numbers = s:compute_changed_line_numbers()
     call s:ignore_changed_lines_of_current_file(changed_line_numbers, l:current_file)
-    call s:deduplicate_lines()
   endif
 endfunction
 
@@ -52,6 +51,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
   let l:current_file = s:current_file()
   if l:current_file == '' || filereadable(l:current_file)
     let s:locations = reverse(a:locations)
+    call s:deduplicate_locations_by_paths_and_lines()
     for location in s:locations
       let l:path = fnameescape(location.path)
       if mode() == 'n' && &l:modified == 0
@@ -89,7 +89,7 @@ function! s:ignore_changed_lines_of_current_file(changed_line_numbers, current_f
   let s:locations = l:new_locations
 endfunction
 
-function! s:deduplicate_lines()
+function! s:deduplicate_locations_by_paths_and_lines()
   let l:new_locations = []
   let l:added_lines = {}
 
@@ -165,10 +165,6 @@ function! s:starts_with(longer, shorter)
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
 
-function! s:call_after_event_finished(function)
-  call timer_start(0, { tid -> a:function() })
-endfunction
-
 function! s:log_error(message)
   echohl Error
   echon a:message
@@ -192,11 +188,13 @@ if !exists('*CargoLimitOpen')
     call s:open_all_locations_in_new_or_existing_tabs(l:locations)
   endfunction
 
+  function! g:CargoLimitOpenNextLocation()
+    call s:open_next_location_in_new_or_existing_tab()
+  endfunction
+
   augroup CargoLimitAutocommands
     autocmd!
     autocmd TextChanged,InsertLeave,FilterReadPost *.rs call s:on_buffer_changed()
-    autocmd BufWritePre *.rs call s:call_after_event_finished(
-      \ {-> execute('call s:open_next_location_in_new_or_existing_tab()') })
   augroup END
 endif
 
