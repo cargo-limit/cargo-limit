@@ -97,10 +97,18 @@ and install it with
 nvim +PlugInstall +UpdateRemotePlugins +qa
 ```
 
-### Optionally: F2 to save, F2 again to jump
+### Optionally: F2 to save, F2 again to jump to next affected line
 ```viml
 function! SaveAllFilesOrOpenNextLocation()
-  if &l:modified == 0
+  let l:all_files_are_saved = 1
+  for i in getbufinfo({'bufmodified': 1})
+    if i.name != ''
+      let l:all_files_are_saved = 0
+      break
+    endif
+  endfor
+
+  if l:all_files_are_saved
     call g:CargoLimitOpenNextLocation()
   else
     execute 'wa'
