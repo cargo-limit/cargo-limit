@@ -137,12 +137,12 @@ function! s:compute_changed_line_numbers()
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
-  const ss_command = 'ss --all --listening --family=unix'
+  const lsof_command = 'lsof -U'
   if filereadable(a:server_address)
     call system('which ss')
     let l:ss_is_installed = v:shell_error == 0
     if l:ss_is_installed
-      let l:ss_stdout = system(ss_command)
+      let l:ss_stdout = system(lsof_command)
       let l:ss_succeed = v:shell_error == 0
       if l:ss_succeed
         let l:socket_is_dead = stridx(l:ss_stdout, a:server_address) == -1
