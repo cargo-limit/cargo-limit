@@ -137,21 +137,22 @@ function! s:compute_changed_line_numbers()
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
-  const lsof_command = 'lsof -U'
+  const lsof_executable = 'lsof'
+  const lsof_command = lsof_executable . ' -U'
   if filereadable(a:server_address)
-    call system('which ss')
-    let l:ss_is_installed = v:shell_error == 0
-    if l:ss_is_installed
-      let l:ss_stdout = system(lsof_command)
-      let l:ss_succeed = v:shell_error == 0
-      if l:ss_succeed
-        let l:socket_is_dead = stridx(l:ss_stdout, a:server_address) == -1
+    call system('which ' . lsof_executable)
+    let l:lsof_is_installed = v:shell_error == 0
+    if l:lsof_is_installed
+      let l:lsof_stdout = system(lsof_command)
+      let l:lsof_succeed = v:shell_error == 0
+      if l:lsof_succeed
+        let l:socket_is_dead = stridx(l:lsof_stdout, a:server_address) == -1
         if l:socket_is_dead
           let l:ignore = luaeval('os.remove(_A)', a:server_address)
           call s:log_info('removed dead socket ' . a:server_address)
         endif
       else
-        call s:log_error('failed to execute "' . ss_command . '"')
+        call s:log_error('failed to execute "' . lsof_command . '"')
       endif
     endif
   endif
