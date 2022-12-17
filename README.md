@@ -268,10 +268,47 @@ jq --raw-output '.files |= unique_by(.path) | .files[] | [
 [bacon](https://github.com/Canop/bacon) is a background rust code checker.
 
 ## Thanks to all Contributors ❤️
-Thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for NixOS package.
+Thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for [NixOS package](https://search.nixos.org/packages?show=cargo-limit).
 
 ## Wanna Contribute?
-Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban board](https://github.com/alopatindev/cargo-limit/projects/1?fullscreen=true).
+Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban board](https://github.com/alopatindev/cargo-limit/projects/1?fullscreen=true). You can also make a package for your favorite OS distribution.
+
+## Support
+Please support the project with crypto:
+
+<details>
+<summary><b>🪙 Bitcoin 👁️</b></summary>
+<p>
+
+**1Afgvdz1oPaugFcLgDaAzCYYdHexV6tTvH**
+
+![](https://gist.github.com/alopatindev/9992806d10ed6d7915b7a001dc4dc85a/raw/086afd23752de49f158a1dc527456ede83029c66/bitcoin.svg)
+
+</p>
+</details>
+
+<details>
+<summary><b>🪙 Tron (TRX, USDT-TRC20, etc.) 👁️</b></summary>
+<p>
+
+**TVxE2HyryNyNReMvw9HRQ3BkYePCszXSrc**
+
+![](https://gist.github.com/alopatindev/9992806d10ed6d7915b7a001dc4dc85a/raw/086afd23752de49f158a1dc527456ede83029c66/tron.svg)
+
+</p>
+</details>
+
+
+<details>
+<summary><b>🪙 Ethereum (ETH, DAI, etc.) 👁️</b></summary>
+<p>
+
+**0xa879cdb1d7d859e6e425f8e50c4ee49f4b3a7b06**
+
+![](https://gist.github.com/alopatindev/9992806d10ed6d7915b7a001dc4dc85a/raw/086afd23752de49f158a1dc527456ede83029c66/ethereum.svg)
+
+</p>
+</details>
 
 ## License
 MIT/Apache-2.0
