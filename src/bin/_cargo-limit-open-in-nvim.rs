@@ -23,9 +23,7 @@ impl NeovimCommand {
         let escaped_workspace_root = editor_data
             .workspace_root()
             .to_string_lossy()
-            .replace('/', ESCAPE_CHAR)
-            .replace('\\', ESCAPE_CHAR)
-            .replace(':', ESCAPE_CHAR);
+            .replace(['/', '\\', ':'], ESCAPE_CHAR);
 
         Ok(Some(Self {
             escaped_workspace_root,
