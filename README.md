@@ -1,5 +1,6 @@
 # cargo-limit
 [![Crates.io](https://img.shields.io/crates/v/cargo-limit.svg)](https://crates.io/crates/cargo-limit)
+[![Awesome](https://camo.githubusercontent.com/13c4e50d88df7178ae1882a203ed57b641674f94/68747470733a2f2f63646e2e7261776769742e636f6d2f73696e647265736f726875732f617765736f6d652f643733303566333864323966656437386661383536353265336136336531353464643865383832392f6d656469612f62616467652e737667)](https://github.com/rust-unofficial/awesome-rust#build-system)
 
 🚀 Cargo with less noise:
 - errors have highest priority
@@ -264,8 +265,10 @@ jq --raw-output '.files |= unique_by(.path) | .files[] | [
 </p>
 </details>
 
-## Similar Projects
-[bacon](https://github.com/Canop/bacon) is a background rust code checker.
+## Similar Projects / Inspirations
+- [bacon](https://github.com/Canop/bacon) is a background rust code checker
+- [cargo-firstpage](https://github.com/cecton/cargo-firstpage) shows only the first page of rustc output
+- [ograc](https://gitlab.com/lirnril/ograc) like cargo, but backwards
 
 ## Thanks to all Contributors ❤️
 Thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for [NixOS package](https://search.nixos.org/packages?show=cargo-limit).
