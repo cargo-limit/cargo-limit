@@ -18,6 +18,8 @@ This tool is especially useful in combination with [cargo-watch](https://crates.
 
 Initially this project was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189).
 
+Check out [🎙️  Rustacean Station podcast episode](https://rustacean-station.org/episode/alexander-lopatin/) for more.
+
 [![asciicast](https://asciinema.org/a/441673.svg)](https://asciinema.org/a/441673)
 
 ## Installation
