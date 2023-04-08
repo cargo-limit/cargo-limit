@@ -278,7 +278,7 @@ Thanks everyone for code contributions and bug reporting. Special thanks to [Cas
 ## Wanna Contribute?
 Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban board](https://github.com/alopatindev/cargo-limit/projects/1?fullscreen=true). You can also make a package for your favorite OS distribution.
 
-## Support
+## Support ❤️
 Please support the project with crypto:
 
 <details>
