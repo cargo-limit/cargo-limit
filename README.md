@@ -272,14 +272,8 @@ jq --raw-output '.files |= unique_by(.path) | .files[] | [
 - [cargo-firstpage](https://github.com/cecton/cargo-firstpage) shows only the first page of rustc output
 - [ograc](https://gitlab.com/lirnril/ograc) like cargo, but backwards
 
-## Thanks to all Contributors ❤️
-Thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for [NixOS package](https://search.nixos.org/packages?show=cargo-limit).
-
-## Wanna Contribute?
-Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban board](https://github.com/alopatindev/cargo-limit/projects/1?fullscreen=true). You can also make a package for your favorite OS distribution.
-
 ## Support ❤️
-Please support the project with crypto:
+Like the project? You can support it with crypto:
 
 <details>
 <summary><b>🪙 Bitcoin 👁️</b></summary>
@@ -314,6 +308,12 @@ Please support the project with crypto:
 
 </p>
 </details>
+
+## Thanks to all Contributors ❤️
+Thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for [NixOS package](https://search.nixos.org/packages?show=cargo-limit).
+
+## Wanna Contribute?
+Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban board](https://github.com/alopatindev/cargo-limit/projects/1?fullscreen=true). You can also make a package for your favorite OS distribution.
 
 ## License
 MIT/Apache-2.0
