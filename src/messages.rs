@@ -169,7 +169,6 @@ impl FilteredAndOrderedMessages {
     ) -> Vec<CompilerMessage> {
         let messages = messages
             .into_iter()
-            .unique()
             .filter(|i| !i.message.spans.is_empty())
             .map(|i| {
                 let spans_from_leaf_to_root = i.message.spans.iter().rev();
@@ -196,6 +195,24 @@ impl FilteredAndOrderedMessages {
         project_messages
             .into_iter()
             .chain(dependencies_messages)
+            .into_iter()
+            .unique_by(|i| {
+                i.message
+                    .spans
+                    .clone()
+                    .into_iter()
+                    .unique_by(|span| {
+                        (
+                            span.line_start,
+                            span.text
+                                .iter()
+                                .map(|text| text.text.clone())
+                                .unique()
+                                .next(),
+                        )
+                    })
+                    .collect_vec()
+            })
             .collect()
     }
 }
