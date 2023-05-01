@@ -49,7 +49,7 @@ cargo lrustdoc
 cargo ltest
 ```
 
-Also `llcheck`, `llrun`, etc. — these don't auto-open text editor for warnings (still open it for errors).
+Also `llcheck`, `llrun`, etc. — these **auto-open text editor for warnings** as well, not just errors.
 
 <details>
 <summary><b>💡 Environment Variables 👁️</b></summary>
