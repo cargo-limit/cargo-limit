@@ -267,16 +267,28 @@ jq --raw-output '.files |= unique_by(.path) | .files[] | [
 </p>
 </details>
 
-## Similar Projects / Inspirations
+## Similar Projects/Inspirations
 - [bacon](https://github.com/Canop/bacon) is a background rust code checker
 - [cargo-firstpage](https://github.com/cecton/cargo-firstpage) shows only the first page of rustc output
 - [ograc](https://gitlab.com/lirnril/ograc) like cargo, but backwards
 
-## Support ❤️
-Like the project? You can support it with crypto:
+## Support
+If you like the project — you can support it by clicking the :star: button or even by buying me some veggies 🥕
+
+---
 
 <details>
-<summary><b>🪙 Bitcoin 👁️</b></summary>
+<summary><b>Patreon</b> 👁️</summary>
+<p>
+
+https://www.patreon.com/join/alopatindev/checkout
+
+</p>
+</details>
+
+
+<details>
+<summary><b>Bitcoin</b> 👁️</summary>
 <p>
 
 **1Afgvdz1oPaugFcLgDaAzCYYdHexV6tTvH**
@@ -287,7 +299,7 @@ Like the project? You can support it with crypto:
 </details>
 
 <details>
-<summary><b>🪙 Tron (TRX, USDT-TRC20, etc.) 👁️</b></summary>
+<summary><b>Tron</b> (TRX, USDT-TRC20, etc.) 👁️</summary>
 <p>
 
 **TVxE2HyryNyNReMvw9HRQ3BkYePCszXSrc**
@@ -299,7 +311,7 @@ Like the project? You can support it with crypto:
 
 
 <details>
-<summary><b>🪙 Ethereum (ETH, DAI, etc.) 👁️</b></summary>
+<summary><b>Ethereum</b> (ETH, DAI, etc.) 👁️</summary>
 <p>
 
 **0xa879cdb1d7d859e6e425f8e50c4ee49f4b3a7b06**
@@ -309,8 +321,15 @@ Like the project? You can support it with crypto:
 </p>
 </details>
 
-## Thanks to all Contributors ❤️
-Thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for [NixOS package](https://search.nixos.org/packages?show=cargo-limit).
+---
+
+Thanks for supporting Free/Libre and Open Source Software! :heart:
+
+By choosing Free Software **you** make 🌍 a better place!
+
+---
+
+Also thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for [NixOS package](https://search.nixos.org/packages?show=cargo-limit)!
 
 ## Wanna Contribute?
 Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban board](https://github.com/alopatindev/cargo-limit/projects/1?fullscreen=true). You can also make a package for your favorite OS distribution.
