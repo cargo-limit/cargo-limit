@@ -281,7 +281,7 @@ If you like the project — you can support it by clicking the :star: button or 
 <summary><b>Patreon</b> 👁️</summary>
 <p>
 
-https://www.patreon.com/join/alopatindev/checkout
+https://www.patreon.com/checkout/alopatindev/9785189
 
 </p>
 </details>
