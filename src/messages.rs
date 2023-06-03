@@ -195,7 +195,6 @@ impl FilteredAndOrderedMessages {
         project_messages
             .into_iter()
             .chain(dependencies_messages)
-            .into_iter()
             .unique_by(|i| {
                 i.message
                     .spans
