@@ -323,9 +323,7 @@ https://www.patreon.com/checkout/alopatindev/9785189
 
 ---
 
-Thanks for supporting Free/Libre and Open Source Software! :heart:
-
-By choosing Free Software **you** make 🌍 a better place!
+Thanks for making 🌍 a better place by supporting Free/Libre and Open Source Software! :heart:
 
 ---
 
