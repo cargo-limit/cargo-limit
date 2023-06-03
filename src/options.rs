@@ -3,7 +3,7 @@ use anyhow::{format_err, Context, Result};
 use const_format::concatcp;
 use getset::{CopyGetters, Getters};
 use itertools::Either;
-use std::{env, iter, path::Path, str::FromStr, time::Duration};
+use std::{env, io, io::IsTerminal, iter, path::Path, str::FromStr, time::Duration};
 
 const EXECUTABLE_PREFIX: &str = concatcp!(CARGO_EXECUTABLE, "-l");
 
@@ -110,6 +110,7 @@ impl Options {
         Self::from_vars_and_atty()?.process_args(current_exe, env::args(), workspace_root)
     }
 
+    // TODO: rename
     fn from_vars_and_atty() -> Result<Self> {
         let mut result = Self::default();
         result.detect_terminal_color_support();
@@ -133,7 +134,7 @@ impl Options {
     }
 
     fn detect_terminal_color_support(&mut self) {
-        self.terminal_supports_colors = atty::is(atty::Stream::Stderr);
+        self.terminal_supports_colors = io::stderr().is_terminal()
     }
 
     fn process_args(

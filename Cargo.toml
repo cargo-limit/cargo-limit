@@ -13,7 +13,6 @@ documentation = "https://github.com/alopatindev/cargo-limit#readme"
 [dependencies]
 anyhow = "1"
 atomig = { version = "0.4", features = ["derive"] }
-atty = "0.2"
 cargo_metadata = "0.15"
 const_format = "0.2.8"
 ctrlc = { version = "3", features = ["termination"] }
