@@ -299,7 +299,7 @@ https://www.patreon.com/checkout/alopatindev/9785189
 </details>
 
 <details>
-<summary><b>Tron</b> (TRX, USDT-TRC20, etc.) 👁️</summary>
+<summary><b>TRON</b> (TRX, USDT-TRC20, etc.) 👁️</summary>
 <p>
 
 **TVxE2HyryNyNReMvw9HRQ3BkYePCszXSrc**
