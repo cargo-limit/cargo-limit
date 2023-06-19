@@ -2,6 +2,12 @@
 [![Crates.io](https://img.shields.io/crates/v/cargo-limit.svg)](https://crates.io/crates/cargo-limit)
 [![Awesome](https://camo.githubusercontent.com/13c4e50d88df7178ae1882a203ed57b641674f94/68747470733a2f2f63646e2e7261776769742e636f6d2f73696e647265736f726875732f617765736f6d652f643733303566333864323966656437386661383536353265336136336531353464643865383832392f6d656469612f62616467652e737667)](https://github.com/rust-unofficial/awesome-rust#build-system)
 
+The continued development of cargo-limit is made possible thanks to the support of awesome backers :heart:
+
+If you'd like to join them, please consider contributing with [Crypto or Patreon](#Support).
+
+## Description
+
 🚀 Cargo with less noise:
 - errors have highest priority
     - they never appear in the middle of warnings
@@ -273,20 +279,6 @@ jq --raw-output '.files |= unique_by(.path) | .files[] | [
 - [ograc](https://gitlab.com/lirnril/ograc) like cargo, but backwards
 
 ## Support
-If you like the project — you can support it by clicking the :star: button or even by buying me some veggies 🥕
-
----
-
-<details>
-<summary><b>Patreon</b> 👁️</summary>
-<p>
-
-https://www.patreon.com/checkout/alopatindev/9785189
-
-</p>
-</details>
-
-
 <details>
 <summary><b>Bitcoin</b> 👁️</summary>
 <p>
@@ -321,9 +313,17 @@ https://www.patreon.com/checkout/alopatindev/9785189
 </p>
 </details>
 
----
 
-Thanks for making 🌍 a better place by supporting Free/Libre and Open Source Software! :heart:
+<details>
+<summary><b>Patreon</b> 👁️</summary>
+<p>
+
+https://www.patreon.com/checkout/alopatindev/9785189
+
+</p>
+</details>
+
+Thank you for making 🌍 a better place by supporting Free/Libre and Open Source Software development! :heart:
 
 ---
 
