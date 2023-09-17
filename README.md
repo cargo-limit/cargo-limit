@@ -1,10 +1,7 @@
 # cargo-limit
 [![Crates.io](https://img.shields.io/crates/v/cargo-limit.svg)](https://crates.io/crates/cargo-limit)
 [![Awesome](https://camo.githubusercontent.com/13c4e50d88df7178ae1882a203ed57b641674f94/68747470733a2f2f63646e2e7261776769742e636f6d2f73696e647265736f726875732f617765736f6d652f643733303566333864323966656437386661383536353265336136336531353464643865383832392f6d656469612f62616467652e737667)](https://github.com/rust-unofficial/awesome-rust#build-system)
-
-The continued development of cargo-limit is made possible thanks to the support of awesome backers :heart:
-
-If you'd like to join them, please consider contributing with [Crypto or Patreon](#Support).
+[![Donate with Crypto or Patreon](https://img.shields.io/badge/♡_Donate-Crypto_or_Patreon-97ca00)](#Support)
 
 ## Description
 
@@ -20,9 +17,7 @@ If you'd like to join them, please consider contributing with [Crypto or Patreon
 - after encountering **first error** the rest of **build time is limited** by default
 - files can be **[automatically opened](#text-editoride-integrations) in your text editor on affected lines**
 
-This tool is especially useful in combination with [cargo-watch](https://crates.io/crates/cargo-watch).
-
-Initially this project was just a workaround for [this issue](https://github.com/rust-lang/rust/issues/27189).
+Initially this project was a workaround for **[this issue](https://github.com/rust-lang/rust/issues/27189), which was closed with no adequate solution**.
 
 Check out [🎙️  Rustacean Station podcast episode](https://rustacean-station.org/episode/alexander-lopatin/) for more.
 
@@ -32,12 +27,12 @@ Check out [🎙️  Rustacean Station podcast episode](https://rustacean-station
 
 ### From crates.io
 ```
-cargo install cargo-limit
+cargo install --locked cargo-limit
 ```
 
 ### From git
 ```
-cargo install --force --git https://github.com/alopatindev/cargo-limit
+cargo install --locked --force --git https://github.com/alopatindev/cargo-limit
 ```
 
 ## Usage
@@ -55,7 +50,9 @@ cargo lrustdoc
 cargo ltest
 ```
 
-Also `llcheck`, `llrun`, etc. — these **auto-open text editor for warnings** as well, not just errors.
+Also `llcheck`, `llrun`, etc. to **auto-open text editor for warnings** as well, not just for errors.
+
+This tool is especially useful in combination with [cargo-watch](https://crates.io/crates/cargo-watch).
 
 <details>
 <summary><b>💡 Environment Variables 👁️</b></summary>
@@ -96,14 +93,46 @@ Also `llcheck`, `llrun`, etc. — these **auto-open text editor for warnings** a
 <summary><b>💡 Neovim Plugin 👁️</b></summary>
 <p>
 
-Enable the plugin in your `init.vim`. For instance for [vim-plug](https://github.com/junegunn/vim-plug#neovim):
+This plugin is [LSP](https://microsoft.github.io/language-server-protocol/)-independent, **it will keep working even when [rust-analyzer](https://rust-analyzer.github.io/) fails**.
+
+### Using **[vim-plug](https://github.com/junegunn/vim-plug#neovim):**
 ```viml
 Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
 ```
-and install it with
 
+and run
 ```bash
 nvim +PlugInstall +UpdateRemotePlugins +qa
+```
+
+### Using [lazy.nvim](https://github.com/folke/lazy.nvim):
+```lua
+use {
+  'alopatindev/cargo-limit',
+  config = function()
+    -- TODO
+  end,
+}
+```
+
+### Using [packer.nvim](https://github.com/wbthomason/packer.nvim):
+```lua
+use {
+  'alopatindev/cargo-limit',
+  -- TODO: dependence installation
+}
+```
+
+### Using [paq-nvim](https://github.com/savq/paq-nvim):
+```lua
+paq {'alopatindev/cargo-limit'}
+-- TODO: dependence installation
+```
+
+### Using [dein](https://github.com/Shougo/dein.vim):
+```viml
+call dein#add('alopatindev/cargo-limit', { 'rev': 'master' })
+" TODO: dependence installation
 ```
 
 ### Optionally: F2 to save, F2 again to jump to next affected line
@@ -279,58 +308,26 @@ jq --raw-output '.files |= unique_by(.path) | .files[] | [
 - [ograc](https://gitlab.com/lirnril/ograc) like cargo, but backwards
 
 ## Support
-<details>
-<summary><b>Bitcoin</b> 👁️</summary>
-<p>
+If this project improved your workflow — please consider:
+- pressing ⭐
+- sharing this project with your friends/colleges
+- buying me some ~~coffee~~ veggies 🥕
 
-**1Afgvdz1oPaugFcLgDaAzCYYdHexV6tTvH**
+---
 
-![](https://gist.github.com/alopatindev/9992806d10ed6d7915b7a001dc4dc85a/raw/086afd23752de49f158a1dc527456ede83029c66/bitcoin.svg)
+Your donations will help me allocate more time to resolve [issues](https://github.com/alopatindev/cargo-limit/issues) and to **finish all the [planned features](https://github.com/alopatindev/cargo-limit/projects/1?fullscreen=true)**! ❤️
 
-</p>
-</details>
+- **Bitcoin** (BTC) `1Afgvdz1oPaugFcLgDaAzCYYdHexV6tTvH`
 
-<details>
-<summary><b>TRON</b> (TRX, USDT-TRC20, etc.) 👁️</summary>
-<p>
+- **TRON** (TRX, USDT-TRC20, etc.) `TVxE2HyryNyNReMvw9HRQ3BkYePCszXSrc`
 
-**TVxE2HyryNyNReMvw9HRQ3BkYePCszXSrc**
+- **Ethereum** (ETH, DAI, etc.) `0xa879cdb1d7d859e6e425f8e50c4ee49f4b3a7b06`
 
-![](https://gist.github.com/alopatindev/9992806d10ed6d7915b7a001dc4dc85a/raw/086afd23752de49f158a1dc527456ede83029c66/tron.svg)
-
-</p>
-</details>
-
-
-<details>
-<summary><b>Ethereum</b> (ETH, DAI, etc.) 👁️</summary>
-<p>
-
-**0xa879cdb1d7d859e6e425f8e50c4ee49f4b3a7b06**
-
-![](https://gist.github.com/alopatindev/9992806d10ed6d7915b7a001dc4dc85a/raw/086afd23752de49f158a1dc527456ede83029c66/ethereum.svg)
-
-</p>
-</details>
-
-
-<details>
-<summary><b>Patreon</b> 👁️</summary>
-<p>
-
-https://www.patreon.com/checkout/alopatindev/9785189
-
-</p>
-</details>
-
-Thank you for making 🌍 a better place by supporting Free/Libre and Open Source Software development! :heart:
+- **[Patreon](https://www.patreon.com/checkout/alopatindev/9785189)**
 
 ---
 
 Also thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for [NixOS package](https://search.nixos.org/packages?show=cargo-limit)!
-
-## Wanna Contribute?
-Please check out [issues](https://github.com/alopatindev/cargo-limit/issues) and [kanban board](https://github.com/alopatindev/cargo-limit/projects/1?fullscreen=true). You can also make a package for your favorite OS distribution.
 
 ## License
 MIT/Apache-2.0
