@@ -101,7 +101,7 @@ impl Options {
     // TODO: rename
     fn from_vars_and_atty() -> Result<Self> {
         let mut result = Self::default();
-        result.detect_terminal_color_support();
+        result.terminal_supports_colors = io::stderr().is_terminal();
 
         {
             let mut seconds = result
@@ -129,10 +129,6 @@ impl Options {
         Self::parse_var("CARGO_EDITOR", &mut result.open_in_external_app)?;
 
         Ok(result)
-    }
-
-    fn detect_terminal_color_support(&mut self) {
-        self.terminal_supports_colors = io::stderr().is_terminal()
     }
 
     fn process_args(
