@@ -100,8 +100,10 @@ impl Options {
 
     // TODO: rename
     fn from_vars_and_atty() -> Result<Self> {
-        let mut result = Self::default();
-        result.terminal_supports_colors = io::stderr().is_terminal();
+        let mut result = Self {
+            terminal_supports_colors: io::stderr().is_terminal(),
+            ..Self::default()
+        };
 
         {
             let mut seconds = result
