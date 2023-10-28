@@ -4,19 +4,16 @@ use cargo_metadata::{
     diagnostic::{DiagnosticLevel, DiagnosticSpan},
     CompilerMessage, Message,
 };
-use getset::CopyGetters;
 use itertools::{Either, Itertools};
 use process::CargoProcess;
-use std::{path::Path, time::Duration};
+use std::path::Path;
 
-#[derive(Default, CopyGetters, Debug)]
+#[derive(Default, Debug)]
 pub struct Messages {
     internal_compiler_errors: Vec<CompilerMessage>,
     errors: Vec<CompilerMessage>,
     non_errors: Vec<CompilerMessage>,
-
-    #[get_copy = "pub"]
-    child_killed: bool,
+    pub child_killed: bool,
 }
 
 struct FilteredAndOrderedMessages {
@@ -50,11 +47,11 @@ impl Messages {
         options: &Options,
     ) -> Result<Self> {
         let mut result = Messages::default();
-        if options.help() || options.version() {
+        if options.help || options.version {
             return Ok(result);
         }
 
-        for message in Message::parse_stream(buffers.child_stdout_reader_mut()) {
+        for message in buffers.map_child_stdout_reader(Message::parse_stream) {
             match message? {
                 Message::CompilerMessage(compiler_message) => {
                     match compiler_message.message.level {
@@ -73,8 +70,7 @@ impl Messages {
 
             if let Some(cargo_process) = cargo_process {
                 if result.has_errors() {
-                    let time_limit = options.time_limit_after_error();
-                    if time_limit > Duration::from_secs(0) {
+                    if let Some(time_limit) = options.time_limit_after_error {
                         cargo_process.kill_after_timeout(time_limit);
                     }
                 }
@@ -106,7 +102,7 @@ impl Messages {
 impl FilteredAndOrderedMessages {
     fn filter(messages: Messages, options: &Options, workspace_root: &Path) -> Self {
         let non_errors = messages.non_errors.into_iter();
-        let warnings = if options.show_dependencies_warnings() {
+        let warnings = if options.show_dependencies_warnings {
             Either::Left(non_errors)
         } else {
             Either::Right(non_errors.filter(|i| i.target.src_path.starts_with(workspace_root)))
@@ -228,7 +224,7 @@ impl TransformedMessages {
 
         let errors = errors.into_iter();
         let warnings = warnings.into_iter();
-        let messages = if options.show_warnings_if_errors_exist() {
+        let messages = if options.show_warnings_if_errors_exist {
             Either::Left(errors.chain(warnings))
         } else {
             let messages = if has_errors {
@@ -239,7 +235,7 @@ impl TransformedMessages {
             Either::Right(messages)
         };
 
-        let limit_messages = options.limit_messages();
+        let limit_messages = options.limit_messages;
         let no_limit = limit_messages == 0;
         let messages = {
             if no_limit {
@@ -255,7 +251,7 @@ impl TransformedMessages {
 
         let messages = messages.into_iter();
         let messages = {
-            if options.ascending_messages_order() {
+            if options.ascending_messages_order {
                 Either::Left(messages)
             } else {
                 Either::Right(messages.rev())
@@ -278,7 +274,7 @@ impl TransformedMessages {
         messages
             .iter()
             .filter(|message| {
-                if options.open_in_external_app_on_warnings() {
+                if options.open_in_external_app_on_warnings {
                     true
                 } else {
                     matches!(

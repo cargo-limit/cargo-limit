@@ -35,15 +35,14 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     let options = Options::from_os_env(current_exe, workspace_root)?;
 
     let mut cargo_process = CargoProcess::run(&options)?;
-
-    let mut buffers = Buffers::new(cargo_process.child_mut())?;
+    let mut buffers = cargo_process.buffers()?;
 
     let process_messages = |buffers: &mut Buffers,
                             messages: Vec<Message>,
                             locations_in_consistent_order: Vec<Location>|
      -> Result<()> {
         let messages = messages.into_iter();
-        if options.json_message_format() {
+        if options.json_message_format {
             for message in messages {
                 buffers.writeln_to_stdout(&serde_json::to_string(&message)?)?;
             }
@@ -66,7 +65,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     let mut parsed_messages =
         Messages::parse_with_timeout_on_error(&mut buffers, Some(&cargo_process), &options)?;
 
-    let exit_code = if parsed_messages.child_killed() {
+    let exit_code = if parsed_messages.child_killed {
         buffers.writeln_to_stdout("")?;
         let exit_code = cargo_process.wait()?;
         parsed_messages.merge(Messages::parse_with_timeout_on_error(
@@ -96,7 +95,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
         cargo_process.wait()?
     };
 
-    if options.help() {
+    if options.help {
         buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
     }
 
@@ -109,7 +108,7 @@ fn open_affected_files_in_external_app(
     options: &Options,
     workspace_root: &Path,
 ) -> Result<()> {
-    let app = &options.open_in_external_app();
+    let app = &options.open_in_external_app;
     if !app.is_empty() {
         let editor_data = EditorData::new(workspace_root, locations_in_consistent_order);
         let mut child = Command::new(app).stdin(Stdio::piped()).spawn()?;

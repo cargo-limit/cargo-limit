@@ -13,17 +13,12 @@ struct NeovimCommand {
 
 impl NeovimCommand {
     fn from_editor_data<R: Read>(mut input: R) -> Result<Option<Self>> {
-        const ESCAPE_CHAR: &str = "%";
-
         let mut raw_editor_data = String::new();
         input.read_to_string(&mut raw_editor_data)?;
         let command = format!(r#"call g:CargoLimitOpen({})"#, raw_editor_data);
 
         let editor_data: EditorData = serde_json::from_str(&raw_editor_data)?;
-        let escaped_workspace_root = editor_data
-            .workspace_root()
-            .to_string_lossy()
-            .replace(['/', '\\', ':'], ESCAPE_CHAR);
+        let escaped_workspace_root = editor_data.escaped_workspace_root();
 
         Ok(Some(Self {
             escaped_workspace_root,

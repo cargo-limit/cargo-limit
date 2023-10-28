@@ -1,7 +1,6 @@
-use crate::options::Options;
+use crate::{io::Buffers, options::Options};
 use anyhow::{Context, Result};
 use atomig::{Atom, Atomic};
-use getset::MutGetters;
 use std::{
     env, fmt,
     path::PathBuf,
@@ -17,9 +16,8 @@ const CARGO_ENV_VAR: &str = "CARGO";
 #[doc(hidden)]
 pub const NO_EXIT_CODE: i32 = 127;
 
-#[derive(Debug, MutGetters)]
+#[derive(Debug)]
 pub struct CargoProcess {
-    #[get_mut = "pub"]
     child: Child,
     state: Arc<Atomic<State>>,
 }
@@ -67,6 +65,10 @@ impl CargoProcess {
         })?;
 
         Ok(Self { child, state })
+    }
+
+    pub fn buffers(&mut self) -> Result<Buffers> {
+        Buffers::new(&mut self.child)
     }
 
     pub fn wait(&mut self) -> Result<i32> {

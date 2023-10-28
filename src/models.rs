@@ -1,11 +1,9 @@
 use cargo_metadata::diagnostic::{Diagnostic, DiagnosticLevel, DiagnosticSpan};
-use getset::Getters;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-#[derive(Deserialize, Serialize, Getters)]
+#[derive(Deserialize, Serialize)]
 pub struct EditorData {
-    #[get = "pub"]
     workspace_root: PathBuf,
 
     #[serde(rename = "files")]
@@ -28,6 +26,13 @@ impl EditorData {
             workspace_root,
             locations: locations_in_consistent_order,
         }
+    }
+
+    pub fn escaped_workspace_root(&self) -> String {
+        const ESCAPE_CHAR: &str = "%";
+        self.workspace_root
+            .to_string_lossy()
+            .replace(['/', '\\', ':'], ESCAPE_CHAR)
     }
 }
 
