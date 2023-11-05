@@ -116,7 +116,7 @@ impl CargoProcess {
                         .args(["/PID", pid.to_string().as_str(), "/t"])
                         .output()
                     {
-                        String::from_utf8_lossy(&stderr).starts_with("SUCCESS")
+                        stderr.starts_with(b"SUCCESS")
                     } else {
                         false
                     }

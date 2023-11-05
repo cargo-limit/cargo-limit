@@ -97,7 +97,7 @@ This plugin is [LSP](https://microsoft.github.io/language-server-protocol/)-inde
 
 ### Using **[vim-plug](https://github.com/junegunn/vim-plug#neovim):**
 ```viml
-Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
+Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit' }
 ```
 
 and run
@@ -109,9 +109,6 @@ nvim +PlugInstall +UpdateRemotePlugins +qa
 ```lua
 use {
   'alopatindev/cargo-limit',
-  config = function()
-    -- TODO
-  end,
 }
 ```
 
@@ -119,20 +116,17 @@ use {
 ```lua
 use {
   'alopatindev/cargo-limit',
-  -- TODO: dependence installation
 }
 ```
 
 ### Using [paq-nvim](https://github.com/savq/paq-nvim):
 ```lua
 paq {'alopatindev/cargo-limit'}
--- TODO: dependence installation
 ```
 
 ### Using [dein](https://github.com/Shougo/dein.vim):
 ```viml
 call dein#add('alopatindev/cargo-limit', { 'rev': 'master' })
-" TODO: dependence installation
 ```
 
 ### Optionally: F2 to save, F2 again to jump to next affected line
