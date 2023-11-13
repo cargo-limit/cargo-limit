@@ -68,7 +68,7 @@ function! s:on_buffer_write()
 
   " FIXME: why current file? what if we switch tab?
   let l:current_file = s:current_file()
-  if !filereadable(l:current_file)
+  if l:current_file != '' && !filereadable(l:current_file) " TODO: correct?
     return
   endif
   "call s:log_info(l:current_file)
@@ -139,8 +139,7 @@ endfunction
 
 " FIXME: naming
 function! s:open_all_locations_in_new_or_existing_tabs(locations)
-  call delete(s:sources_dir, 'rf')
-  call mkdir(s:sources_dir, 'p')
+  call s:recreate_sources_dir()
 
   let l:current_file = s:current_file()
   if l:current_file == '' || filereadable(l:current_file)
@@ -223,6 +222,13 @@ function! s:maybe_delete_dead_unix_socket(server_address)
   endif
 endfunction
 
+function! s:recreate_sources_dir()
+  if exists('s:sources_dir')
+    call delete(s:sources_dir, 'rf')
+    call mkdir(s:sources_dir, 'p')
+  endif
+endfunction
+
 function! s:current_file()
   return resolve(expand('%:p'))
 endfunction
@@ -277,6 +283,7 @@ if !exists('*CargoLimitOpen')
   augroup CargoLimitAutocommands
     autocmd!
     autocmd BufWritePost *.rs call s:on_buffer_write()
+    autocmd VimLeavePre * call s:recreate_sources_dir()
   augroup END
 endif
 
