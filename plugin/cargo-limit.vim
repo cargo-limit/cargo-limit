@@ -1,5 +1,13 @@
+" TODO: enable linter
+
+const MIN_NVIM_VERSION = '0.7.0'
+
+const s:temp_dir_prefix = 'nvim-cargo-limit-'
+
 let s:data_chunks = []
 let s:locations = []
+
+" TODO: remove sources dir on exit?
 
 function! s:on_cargo_metadata(_job_id, data, event)
   if a:event == 'stdout'
@@ -14,40 +22,126 @@ function! s:on_cargo_metadata(_job_id, data, event)
     if len(l:stdout) > 0
       let l:metadata = json_decode(l:stdout)
       let l:workspace_root = get(l:metadata, 'workspace_root')
-      let l:escaped_workspace_root = substitute(workspace_root, '[/\\:]', '%', 'g')
-      let l:server_address = s:create_server_address(l:escaped_workspace_root)
-      if !filereadable(l:server_address)
-        call serverstart(l:server_address)
-        call s:log_info('cargo-limit is ready')
-      endif
+      let l:escaped_workspace_root = s:escape_path(workspace_root)
+      call s:start_server(l:escaped_workspace_root)
     endif
   endif
 endfunction
 
-function! s:create_server_address(escaped_workspace_root)
-  let l:prefix = 'nvim-cargo-limit-'
-  if has('win32')
-    return '\\.\pipe\' . l:prefix . $USERNAME . '-' . a:escaped_workspace_root
-  elseif has('unix')
-    let l:server_address_dir =  '/tmp/' . l:prefix . $USER
-    call mkdir(l:server_address_dir, 'p', 0700)
-    let l:server_address = l:server_address_dir . '/' . a:escaped_workspace_root
-    call s:maybe_delete_dead_unix_socket(l:server_address)
-    return l:server_address
+function! s:maybe_create_temp_dir(escaped_workspace_root)
+  if has('unix')
+    let s:temp_dir = '/tmp/' . s:temp_dir_prefix . $USER . '/' . a:escaped_workspace_root
+    call mkdir(s:temp_dir, 'p', 0700)
+  elseif has('win32')
+    throw 'unimplemented' # TODO
   else
     throw 'unsupported OS'
   endif
+  let s:sources_dir = s:temp_dir . '/sources'
 endfunction
 
-function! s:on_buffer_changed()
-  let l:current_file = s:current_file()
-  if l:current_file != '' && filereadable(l:current_file)
-    let changed_line_numbers = s:compute_changed_line_numbers()
-    call s:ignore_changed_lines_of_current_file(changed_line_numbers, l:current_file)
+function! s:start_server(escaped_workspace_root)
+  call s:maybe_create_temp_dir(a:escaped_workspace_root)
+  if has('unix')
+    let l:server_address = s:temp_dir . '/nvim.sock'
+    call s:maybe_delete_dead_unix_socket(l:server_address)
+  elseif has('win32')
+    let l:server_address = '\\.\pipe\' . s:temp_dir_prefix . $USERNAME . '-' . a:escaped_workspace_root
+  else
+    throw 'unsupported OS'
+  endif
+
+  if !filereadable(l:server_address)
+    call serverstart(l:server_address)
+    call s:log_info('cargo-limit is ready')
   endif
 endfunction
 
+" TODO: naming
+function! s:on_buffer_write()
+  function! s:parse_lines(text, delimiter)
+    let l:offset_and_lines = split(split(a:text, a:delimiter)[0], ',')
+    let l:offset = str2nr(l:offset_and_lines[0])
+    let l:lines = len(l:offset_and_lines) > 1 ? str2nr(l:offset_and_lines[1]) : 1
+    return [l:offset, l:lines]
+  endfunction
+
+  " FIXME: why current file? what if we switch tab?
+  let l:current_file = s:current_file()
+  if !filereadable(l:current_file)
+    return
+  endif
+  "call s:log_info(l:current_file)
+
+  let l:locations_index = 0
+  while l:locations_index < len(l:locations_index) - 1
+    if s:locations[l:locations_index]['path'] == l:current_file
+      break
+    else
+      let l:locations_index += 1
+    endif
+  endwhile
+"  call s:log_info(l:locations_index)
+"  call s:log_info(s:locations)
+
+  const diff_change_pattern = '@@ '
+  const diff_new_changes_command =
+    \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff '
+    \ . s:temp_source_for_diff(l:current_file)
+    \ . ' '
+    \ . l:current_file
+  "call s:log_info(diff_new_changes_command)
+
+  let l:changed_line_numbers = {}
+  let l:diff_stdout_lines = split(execute(diff_new_changes_command), "\n")
+  "call s:log_info(l:diff_stdout_lines)
+  let l:diff_stdout_line_number = 0
+  while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
+    let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
+    if s:starts_with(l:diff_line, diff_change_pattern)
+      let l:offsets_and_changes = split(trim(split(l:diff_line, diff_change_pattern)[0]), ' ')
+
+      let [l:removal_offset, l:removal_lines] = s:parse_lines(l:offsets_and_changes[0], '-')
+      let [l:addition_offset, l:addition_lines] = s:parse_lines(l:offsets_and_changes[1], '+')
+      let l:changed_lines = l:addition_lines - l:removal_lines
+      "let l:changed_lines = (l:removal_offset - l:addition_offset) + l:addition_lines - l:removal_lines " TODO
+
+      let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1] " FIXME: bounds check?
+      let l:removed_text = l:next_diff_line[1:]
+      let l:removed_new_line = empty(l:removed_text)
+      if !l:removed_new_line
+        let l:changed_line_numbers[l:removal_offset] = 1
+      endif
+
+      "call s:log_info(l:offsets_and_changes)
+
+      "call s:log_info(l:changed_lines)
+      if l:changed_lines != 0
+        while l:locations_index < len(s:locations)
+          let l:current_location = s:locations[l:locations_index]
+          if l:current_location['path'] == l:current_file
+            let l:current_line = l:current_location['line']
+            if l:current_line >= l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:changed_lines
+              let s:locations[l:locations_index]['line'] += l:changed_lines
+            endif
+            let l:locations_index += 1
+          else
+            break
+          endif
+        endwhile
+      endif
+    endif
+    let l:diff_stdout_line_number += 1
+  endwhile
+
+  call s:ignore_changed_lines_of_current_file(l:changed_line_numbers, l:current_file)
+endfunction
+
+" FIXME: naming
 function! s:open_all_locations_in_new_or_existing_tabs(locations)
+  call delete(s:sources_dir, 'rf')
+  call mkdir(s:sources_dir, 'p')
+
   let l:current_file = s:current_file()
   if l:current_file == '' || filereadable(l:current_file)
     let s:locations = reverse(a:locations)
@@ -57,6 +151,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
       if mode() == 'n' && &l:modified == 0
         execute 'tab drop ' . l:path
         call cursor((location.line), (location.column))
+        call s:limited_copy_to_sources(l:path)
       else
         break
       endif
@@ -72,6 +167,7 @@ function! s:open_next_location_in_new_or_existing_tab()
     let l:path = fnameescape(l:location.path)
     if &l:modified == 0
       execute 'tab drop ' . l:path
+      call s:limited_copy_to_sources(l:path) " TODO
       call cursor((l:location.line), (l:location.column))
       let s:locations = s:locations[1:]
     endif
@@ -105,37 +201,6 @@ function! s:deduplicate_locations_by_paths_and_lines()
   let s:locations = l:new_locations
 endfunction
 
-function! s:compute_changed_line_numbers()
-  const diff_new_changes_command =
-    \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'
-  const diff_change_pattern = '@@ '
-
-  function! s:parse_line_number(text)
-    return split(a:text, ',')[0][1:]
-  endfunction
-
-  let l:changed_line_numbers = {}
-  let l:diff_stdout_lines = split(execute(diff_new_changes_command), "\n")
-  let l:diff_stdout_line_number = 0
-  while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
-    let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
-    if s:starts_with(l:diff_line, diff_change_pattern)
-      let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, diff_change_pattern)[0])
-      let l:removed_line = s:parse_line_number(split(l:changed_line_numbers_with_offsets, ' ')[0])
-      let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
-      let l:removed_text = l:next_diff_line[1:]
-      let l:removed_new_line = empty(l:removed_text)
-      if !l:removed_new_line
-        let l:changed_line_numbers[l:removed_line] = 1
-      endif
-      let l:diff_stdout_line_number += 1
-    endif
-    let l:diff_stdout_line_number += 1
-  endwhile
-
-  return l:changed_line_numbers
-endfunction
-
 function! s:maybe_delete_dead_unix_socket(server_address)
   const lsof_executable = 'lsof'
   const lsof_command = lsof_executable . ' -U'
@@ -162,6 +227,27 @@ function! s:current_file()
   return resolve(expand('%:p'))
 endfunction
 
+function! s:escape_path(path)
+  return substitute(a:path, '[/\\:]', '@', 'g')
+endfunction
+
+" TODO: naming
+function! s:temp_source_for_diff(path)
+  "return s:sources_dir . '/' . fnamemodify(a:path, ':t') " TODO
+  return s:sources_dir . '/' . s:escape_path(a:path)
+endfunction
+
+" TODO: naming
+function! s:limited_copy_to_sources(path)
+  call s:limited_copy(a:path, s:temp_source_for_diff(a:path))
+endfunction
+
+function! s:limited_copy(source, destination)
+  const limit_bytes = 1024 * 1024
+  let l:data = readblob(a:source, 0, limit_bytes)
+  call writefile(l:data, a:destination, "bS")
+endfunction
+
 function! s:starts_with(longer, shorter)
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
@@ -184,18 +270,19 @@ if !exists('*CargoLimitOpen')
   endfunction
 
   function! g:CargoLimitOpenNextLocation()
+    "call s:on_buffer_write()
     call s:open_next_location_in_new_or_existing_tab()
   endfunction
 
   augroup CargoLimitAutocommands
     autocmd!
-    autocmd TextChanged,InsertLeave,FilterReadPost *.rs call s:on_buffer_changed()
+    autocmd BufWritePost *.rs call s:on_buffer_write()
   augroup END
 endif
 
 if has('nvim')
-  if !has('nvim-0.7.0')
-    throw 'unsupported nvim version, expected >=0.7.0'
+  if !has('nvim-' . MIN_NVIM_VERSION)
+    throw 'unsupported nvim version, expected >=' . MIN_NVIM_VERSION
   endif
   call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
   \ 'on_stdout': function('s:on_cargo_metadata'),

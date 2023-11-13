@@ -65,16 +65,16 @@ fn nvim_listen_address(escaped_workspace_root: String) -> Result<String> {
     const PREFIX: &str = "nvim-cargo-limit-";
 
     let result = {
+        #[cfg(unix)]
+        {
+            let user = env::var("USER")?;
+            format!("/tmp/{PREFIX}{user}/{escaped_workspace_root}/nvim.sock")
+        }
+
         #[cfg(windows)]
         {
             let user = env::var("USERNAME")?;
             format!(r"\\.\pipe\{PREFIX}{user}-{escaped_workspace_root}")
-        }
-
-        #[cfg(unix)]
-        {
-            let user = env::var("USER")?;
-            format!("/tmp/{PREFIX}{user}/{escaped_workspace_root}")
         }
 
         #[cfg(not(any(unix, windows)))]

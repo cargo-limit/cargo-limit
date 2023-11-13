@@ -29,7 +29,7 @@ impl EditorData {
     }
 
     pub fn escaped_workspace_root(&self) -> String {
-        const ESCAPE_CHAR: &str = "%";
+        const ESCAPE_CHAR: &str = "@";
         self.workspace_root
             .to_string_lossy()
             .replace(['/', '\\', ':'], ESCAPE_CHAR)
