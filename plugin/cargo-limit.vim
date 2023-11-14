@@ -87,7 +87,7 @@ function! s:on_buffer_write()
   const diff_change_pattern = '@@ '
   const diff_new_changes_command =
     \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff -- '
-    \ . escape(s:temp_source_for_diff(l:current_file), '%')
+    \ . fnameescape(s:temp_source_for_diff(l:current_file))
     \ . ' '
     \ . l:current_file
   "call s:log_info(diff_new_changes_command)
