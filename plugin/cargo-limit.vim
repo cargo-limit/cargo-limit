@@ -150,7 +150,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
       if mode() == 'n' && &l:modified == 0
         execute 'tab drop ' . l:path
         call cursor((location.line), (location.column))
-        call s:limited_copy_to_sources(l:path)
+        call s:maybe_copy_to_sources(l:path)
       else
         break
       endif
@@ -166,7 +166,7 @@ function! s:open_next_location_in_new_or_existing_tab()
     let l:path = fnameescape(l:location.path)
     if &l:modified == 0
       execute 'tab drop ' . l:path
-      call s:limited_copy_to_sources(l:path) " TODO
+      call s:maybe_copy_to_sources(l:path) " TODO
       call cursor((l:location.line), (l:location.column))
       let s:locations = s:locations[1:]
     endif
@@ -244,15 +244,16 @@ function! s:temp_source_for_diff(path)
 endfunction
 
 " TODO: naming
-function! s:limited_copy_to_sources(path)
-  call s:limited_copy(a:path, s:temp_source_for_diff(a:path))
+function! s:maybe_copy_to_sources(path)
+  call s:maybe_copy(a:path, s:temp_source_for_diff(a:path))
 endfunction
 
-function! s:limited_copy(source, destination)
-  const limit_bytes = 1024 * 1024
-  let l:data = readblob(a:source, 0, limit_bytes)
-  "call s:log_info(a:destination)
-  call writefile(l:data, a:destination, "bS")
+function! s:maybe_copy(source, destination)
+  const max_size_bytes = 1024 * 1024
+  if getfsize(a:source) <= max_size_bytes
+    let l:data = readblob(a:source)
+    call writefile(l:data, a:destination, "bS")
+  endif
 endfunction
 
 function! s:starts_with(longer, shorter)
