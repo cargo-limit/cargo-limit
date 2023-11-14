@@ -121,7 +121,7 @@ function! s:on_buffer_write()
           let l:current_location = s:locations[l:locations_index]
           if l:current_location['path'] == l:current_file
             let l:current_line = l:current_location['line']
-            if l:current_line >= l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:changed_lines
+            if l:current_line > l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:changed_lines
               let s:locations[l:locations_index]['line'] += l:changed_lines
             endif
             let l:locations_index += 1
