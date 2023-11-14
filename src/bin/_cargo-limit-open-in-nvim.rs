@@ -32,7 +32,8 @@ impl NeovimCommand {
 
     fn run(self) -> Result<ExitStatus> {
         // TODO: exit code?
-        self.run_inner(&self.legacy_escaped_workspace_root)?;
+        self.run_inner(&self.legacy_escaped_workspace_root)?; // TODO: if successfully connected -
+                                                              // show warning
         self.run_inner(&self.escaped_workspace_root)
     }
 
