@@ -156,7 +156,7 @@ function! s:open_next_location_in_new_or_existing_tab()
     if &l:modified == 0
       execute 'tab drop ' . l:path
       call cursor((l:location.line), (l:location.column))
-      call s:maybe_copy_to_sources(l:path) " TODO
+      "call s:maybe_copy_to_sources(l:path) " TODO
       let s:locations = s:locations[1:]
     endif
   endif
@@ -232,7 +232,6 @@ function! s:temp_source_for_diff(path)
   return s:sources_dir . '/' . s:escape_path(a:path)
 endfunction
 
-" TODO: naming
 function! s:maybe_copy_to_sources(path)
   call s:maybe_copy(a:path, s:temp_source_for_diff(a:path))
 endfunction
@@ -269,8 +268,7 @@ if !exists('*CargoLimitOpen')
     endif
 
     if !l:version_matched
-      call s:log_error('version mismatch, please update both nvim plugin and crate')
-      return
+      throw 'version mismatch, please update both nvim plugin and crate'
     endif
 
     let l:locations = a:editor_data.files
