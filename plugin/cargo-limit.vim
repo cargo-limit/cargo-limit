@@ -1,8 +1,8 @@
 " TODO: enable linter
 " TODO: check if diff is somehow broken
-" TODO: support legacy paths but give warning?
 
 const MIN_NVIM_VERSION = '0.7.0'
+const s:EXPECTED_PROTOCOL_VERSION = '0.0.10'
 
 let s:data_chunks = []
 let s:locations = []
@@ -29,20 +29,19 @@ endfunction
 function! s:start_server(escaped_workspace_root)
   const TEMP_DIR_PREFIX = 'nvim-cargo-limit-'
   if has('unix')
-    let s:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root " TODO: move
-    let s:sources_dir = s:server_address . '.sources'
+    let l:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root
+    let s:sources_dir = l:server_address . '.sources'
     call mkdir(s:sources_dir, 'p', 0700)
-    call s:maybe_delete_dead_unix_socket(s:server_address)
+    call s:maybe_delete_dead_unix_socket(l:server_address)
   elseif has('win32')
-    let s:server_address = '\\.\pipe\' . TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
+    let l:server_address = '\\.\pipe\' . TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
     " TODO: create sources dir
   else
     throw 'unsupported OS'
   endif
 
-  " TODO: l:server_address?
-  if !filereadable(s:server_address)
-    call serverstart(s:server_address)
+  if !filereadable(l:server_address)
+    call serverstart(l:server_address)
     call s:log_info('ready')
   endif
 endfunction
@@ -156,8 +155,8 @@ function! s:open_next_location_in_new_or_existing_tab()
     let l:path = fnameescape(l:location.path)
     if &l:modified == 0
       execute 'tab drop ' . l:path
-      call s:maybe_copy_to_sources(l:path) " TODO
       call cursor((l:location.line), (l:location.column))
+      call s:maybe_copy_to_sources(l:path) " TODO
       let s:locations = s:locations[1:]
     endif
   endif
@@ -254,8 +253,6 @@ function! s:log_error(message)
   echohl Error
   echon 'cargo-limit: ' . a:message
   echohl None
-  "sleep 3000m
-  "redraw
 endfunction
 
 function! s:log_info(message)
@@ -265,29 +262,16 @@ endfunction
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
-"    "let l:plugindir = expand('<sfile>:p:h:h')
-"    let l:plugindir = luaeval('debug.getinfo(1).source:sub(2)')
-"    call s:log_info(l:plugindir)
-"    call s:log_info(expand('<sfile>:s'))
-"    sleep 2000ms
-"    redraw
+    if exists('a:editor_data.protocol_version')
+      let l:version_matched = a:editor_data.protocol_version == s:EXPECTED_PROTOCOL_VERSION
+    else
+      let l:version_matched = 0
+    endif
 
-"    "const cargo_limit_cargo_toml = resolve(expand('<sfile>:p:h')) . '/../Cargo.toml'
-"    const cargo_limit_cargo_toml = '/home/al/git/cargo-limit/plugin/../Cargo.toml' " TODO
-"    "call s:log_error(cargo_limit_cargo_toml)
-"    if exists('a:editor_data.protocol_version') && filereadable(cargo_limit_cargo_toml)
-"      "const plugin_version = '0.0.11' " TODO: read from Cargo.toml
-"      const plugin_version = matchstr(readfile(cargo_limit_cargo_toml), "\nversion = \"([0-9.]*)\"\n")
-"      const protocol_version = a:editor_data.protocol_version
-"      let l:version_matched = plugin_version == protocol_version
-"    else
-"      let l:version_matched = 0
-"    endif
-"
-"    if !l:version_matched
-"      call s:log_error('version mismatch, please update both nvim plugin and cargo-limit crate')
-"      return
-"    endif
+    if !l:version_matched
+      call s:log_error('version mismatch, please update both nvim plugin and crate')
+      return
+    endif
 
     let l:locations = a:editor_data.files
     call s:open_all_locations_in_new_or_existing_tabs(l:locations)
