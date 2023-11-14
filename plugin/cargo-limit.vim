@@ -27,14 +27,14 @@ function! s:on_cargo_metadata(_job_id, data, event)
 endfunction
 
 function! s:start_server(escaped_workspace_root)
-  const temp_dir_prefix = 'nvim-cargo-limit-'
+  const TEMP_DIR_PREFIX = 'nvim-cargo-limit-'
   if has('unix')
-    let s:server_address = '/tmp/' . temp_dir_prefix . $USER . '/' . a:escaped_workspace_root " TODO: move
+    let s:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root " TODO: move
     let s:sources_dir = s:server_address . '.sources'
     call mkdir(s:sources_dir, 'p', 0700)
     call s:maybe_delete_dead_unix_socket(s:server_address)
   elseif has('win32')
-    let s:server_address = '\\.\pipe\' . temp_dir_prefix . $USERNAME . '-' . a:escaped_workspace_root
+    let s:server_address = '\\.\pipe\' . TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
     " TODO: create sources dir
   else
     throw 'unsupported OS'
@@ -74,22 +74,22 @@ function! s:on_buffer_write()
 "  call s:log_info(l:locations_index)
 "  call s:log_info(s:locations)
 
-  const diff_change_pattern = '@@ '
-  const diff_new_changes_command =
+  const DIFF_CHANGE_PATTERN = '@@ '
+  const DIFF_NEW_CHANGES_COMMAND =
     \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff -- '
     \ . fnameescape(s:temp_source_for_diff(l:current_file))
     \ . ' '
     \ . l:current_file
-  "call s:log_info(diff_new_changes_command)
+  "call s:log_info(DIFF_NEW_CHANGES_COMMAND)
 
   let l:changed_line_numbers = {}
-  let l:diff_stdout_lines = split(execute(diff_new_changes_command), "\n")
+  let l:diff_stdout_lines = split(execute(DIFF_NEW_CHANGES_COMMAND), "\n")
   "call s:log_info(join(l:diff_stdout_lines, ''))
   let l:diff_stdout_line_number = 0
   while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
-    if s:starts_with(l:diff_line, diff_change_pattern)
-      let l:offsets_and_changes = split(trim(split(l:diff_line, diff_change_pattern)[0]), ' ')
+    if s:starts_with(l:diff_line, DIFF_CHANGE_PATTERN)
+      let l:offsets_and_changes = split(trim(split(l:diff_line, DIFF_CHANGE_PATTERN)[0]), ' ')
 
       let [l:removal_offset, l:removal_lines] = s:parse_lines(l:offsets_and_changes[0], '-')
       let [l:addition_offset, l:addition_lines] = s:parse_lines(l:offsets_and_changes[1], '+')
@@ -191,13 +191,13 @@ function! s:deduplicate_locations_by_paths_and_lines()
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
-  const lsof_executable = 'lsof'
-  const lsof_command = lsof_executable . ' -U'
+  const LSOF_EXECUTABLE = 'lsof'
+  const LSOF_COMMAND = LSOF_EXECUTABLE . ' -U'
   if filereadable(a:server_address)
-    call system('which ' . lsof_executable)
+    call system('which ' . LSOF_EXECUTABLE)
     let l:lsof_is_installed = v:shell_error == 0
     if l:lsof_is_installed
-      let l:lsof_stdout = system(lsof_command)
+      let l:lsof_stdout = system(LSOF_COMMAND)
       let l:lsof_succeed = v:shell_error == 0
       if l:lsof_succeed
         let l:socket_is_dead = stridx(l:lsof_stdout, a:server_address) == -1
@@ -206,7 +206,7 @@ function! s:maybe_delete_dead_unix_socket(server_address)
           call s:log_info('removed dead socket ' . a:server_address)
         endif
       else
-        call s:log_error('failed to execute "' . lsof_command . '"')
+        call s:log_error('failed to execute "' . LSOF_COMMAND . '"')
       endif
     endif
   endif
@@ -239,8 +239,8 @@ function! s:maybe_copy_to_sources(path)
 endfunction
 
 function! s:maybe_copy(source, destination)
-  const max_size_bytes = 1024 * 1024
-  if getfsize(a:source) <= max_size_bytes
+  const MAX_SIZE_BYTES = 1024 * 1024
+  if getfsize(a:source) <= MAX_SIZE_BYTES
     let l:data = readblob(a:source)
     call writefile(l:data, a:destination, "bS")
   endif
