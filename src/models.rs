@@ -31,17 +31,10 @@ impl EditorData {
     }
 
     pub fn escaped_workspace_root(&self) -> String {
-        self.escaped_workspace_root_inner("@")
-    }
-
-    pub fn legacy_escaped_workspace_root(&self) -> String {
-        self.escaped_workspace_root_inner("%")
-    }
-
-    fn escaped_workspace_root_inner(&self, escape_char: &str) -> String {
+        const ESCAPE_CHAR: &str = "@";
         self.workspace_root
             .to_string_lossy()
-            .replace(['/', '\\', ':'], escape_char)
+            .replace(['/', '\\', ':'], ESCAPE_CHAR)
     }
 }
 

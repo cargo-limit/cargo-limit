@@ -262,8 +262,8 @@ function! s:log_error(message)
   echohl Error
   echon 'cargo-limit: ' . a:message
   echohl None
-  sleep 3000m
-  redraw
+  "sleep 3000m
+  "redraw
 endfunction
 
 function! s:log_info(message)
@@ -273,6 +273,13 @@ endfunction
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
+"    "let l:plugindir = expand('<sfile>:p:h:h')
+"    let l:plugindir = luaeval('debug.getinfo(1).source:sub(2)')
+"    call s:log_info(l:plugindir)
+    call s:log_info(expand('<sfile>:s'))
+    sleep 2000ms
+    redraw
+
 "    "const cargo_limit_cargo_toml = resolve(expand('<sfile>:p:h')) . '/../Cargo.toml'
 "    const cargo_limit_cargo_toml = '/home/al/git/cargo-limit/plugin/../Cargo.toml' " TODO
 "    "call s:log_error(cargo_limit_cargo_toml)

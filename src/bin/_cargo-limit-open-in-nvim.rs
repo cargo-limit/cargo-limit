@@ -8,7 +8,6 @@ use std::{
 
 struct NeovimCommand {
     escaped_workspace_root: String,
-    legacy_escaped_workspace_root: String,
     command: String,
 }
 
@@ -16,29 +15,19 @@ impl NeovimCommand {
     fn from_editor_data<R: Read>(mut input: R) -> Result<Option<Self>> {
         let mut raw_editor_data = String::new();
         input.read_to_string(&mut raw_editor_data)?;
-        let command =
-            format!("<Esc>:call g:CargoLimitOpen({raw_editor_data})<Enter><Esc>:echom ''<Enter>");
+        let command = format!("<Esc>:call g:CargoLimitOpen({raw_editor_data})<Enter>");
 
         let editor_data: EditorData = serde_json::from_str(&raw_editor_data)?;
         let escaped_workspace_root = editor_data.escaped_workspace_root();
-        let legacy_escaped_workspace_root = editor_data.legacy_escaped_workspace_root();
 
         Ok(Some(Self {
             escaped_workspace_root,
-            legacy_escaped_workspace_root,
             command,
         }))
     }
 
     fn run(self) -> Result<ExitStatus> {
-        // TODO: exit code?
-        self.run_inner(&self.legacy_escaped_workspace_root)?; // TODO: if successfully connected -
-                                                              // show warning
-        self.run_inner(&self.escaped_workspace_root)
-    }
-
-    fn run_inner(&self, escaped_workspace_root: &str) -> Result<ExitStatus> {
-        let server_name = nvim_listen_address(escaped_workspace_root)?;
+        let server_name = nvim_listen_address(self.escaped_workspace_root)?;
         let remote_send_args = vec!["--server", &server_name, "--remote-send", &self.command];
 
         match Command::new("nvim").args(remote_send_args).output() {
@@ -66,7 +55,7 @@ impl NeovimCommand {
     }
 }
 
-fn nvim_listen_address(escaped_workspace_root: &str) -> Result<String> {
+fn nvim_listen_address(escaped_workspace_root: String) -> Result<String> {
     const PREFIX: &str = "nvim-cargo-limit-";
 
     let result = {
