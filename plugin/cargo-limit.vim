@@ -28,18 +28,19 @@ endfunction
 
 function! s:start_server(escaped_workspace_root)
   const TEMP_DIR_PREFIX = 'nvim-cargo-limit-'
+
   if has('unix')
     let l:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root
     let s:sources_dir = l:server_address . '.sources'
-    call mkdir(s:sources_dir, 'p', 0700)
     call s:maybe_delete_dead_unix_socket(l:server_address)
   elseif has('win32')
     let l:server_address = '\\.\pipe\' . TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
     let s:sources_dir = $TEMP . '\' . TEMP_DIR_PREFIX . $USERNAME . '\' . a:escaped_workspace_root . '.sources'
-    call mkdir(s:sources_dir, 'p', 0700)
   else
     throw 'unsupported OS'
   endif
+
+  call mkdir(s:sources_dir, 'p', 0700) " TODO: supported permission on win32?
 
   if !filereadable(l:server_address)
     call serverstart(l:server_address)
