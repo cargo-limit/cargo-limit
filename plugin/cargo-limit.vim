@@ -30,29 +30,29 @@ endfunction
 
 function! s:maybe_create_temp_dir(escaped_workspace_root)
   if has('unix')
-    let s:temp_dir = '/tmp/' . s:temp_dir_prefix . $USER . '/' . a:escaped_workspace_root
-    call mkdir(s:temp_dir, 'p', 0700)
+    let s:server_address = '/tmp/' . s:temp_dir_prefix . $USER . '/' . a:escaped_workspace_root " TODO: move
+    let s:sources_dir = s:server_address . '.sources'
+    call mkdir(s:sources_dir, 'p', 0700)
   elseif has('win32')
     throw 'unimplemented' " TODO
   else
     throw 'unsupported OS'
   endif
-  let s:sources_dir = s:temp_dir . '/sources'
 endfunction
 
 function! s:start_server(escaped_workspace_root)
   call s:maybe_create_temp_dir(a:escaped_workspace_root)
   if has('unix')
-    let l:server_address = s:temp_dir . '/nvim.sock'
-    call s:maybe_delete_dead_unix_socket(l:server_address)
+    call s:maybe_delete_dead_unix_socket(s:server_address)
   elseif has('win32')
-    let l:server_address = '\\.\pipe\' . s:temp_dir_prefix . $USERNAME . '-' . a:escaped_workspace_root
+    let s:server_address = '\\.\pipe\' . s:temp_dir_prefix . $USERNAME . '-' . a:escaped_workspace_root
   else
     throw 'unsupported OS'
   endif
 
-  if !filereadable(l:server_address)
-    call serverstart(l:server_address)
+  " TODO: l:server_address?
+  if !filereadable(s:server_address)
+    call serverstart(s:server_address)
     call s:log_info('ready')
   endif
 endfunction

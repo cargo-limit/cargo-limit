@@ -62,7 +62,7 @@ fn nvim_listen_address(escaped_workspace_root: String) -> Result<String> {
         #[cfg(unix)]
         {
             let user = env::var("USER")?;
-            format!("/tmp/{PREFIX}{user}/{escaped_workspace_root}/nvim.sock")
+            format!("/tmp/{PREFIX}{user}/{escaped_workspace_root}")
         }
 
         #[cfg(windows)]
