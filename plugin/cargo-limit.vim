@@ -1,4 +1,6 @@
 " TODO: enable linter
+" TODO: check if diff is somehow broken
+" TODO: support legacy paths but give warning?
 
 const MIN_NVIM_VERSION = '0.7.0'
 
@@ -33,7 +35,7 @@ function! s:maybe_create_temp_dir(escaped_workspace_root)
     let s:temp_dir = '/tmp/' . s:temp_dir_prefix . $USER . '/' . a:escaped_workspace_root
     call mkdir(s:temp_dir, 'p', 0700)
   elseif has('win32')
-    throw 'unimplemented' # TODO
+    throw 'unimplemented' " TODO
   else
     throw 'unsupported OS'
   endif
