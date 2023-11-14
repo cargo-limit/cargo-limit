@@ -35,7 +35,8 @@ function! s:start_server(escaped_workspace_root)
     call s:maybe_delete_dead_unix_socket(l:server_address)
   elseif has('win32')
     let l:server_address = '\\.\pipe\' . TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
-    " TODO: create sources dir
+    let s:sources_dir = $TEMP . '\' . TEMP_DIR_PREFIX . $USERNAME . '\' . a:escaped_workspace_root . '.sources'
+    call mkdir(s:sources_dir, 'p', 0700)
   else
     throw 'unsupported OS'
   endif
