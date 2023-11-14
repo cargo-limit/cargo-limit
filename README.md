@@ -271,6 +271,7 @@ endfunction
 **cargo-limit** can run external app/script and provide affected locations to stdin in the following JSON format:
 ```json
 {
+  "protocol_version": "0.0.11",
   "workspace_root": "/full/path/to/project",
   "files": [
     {

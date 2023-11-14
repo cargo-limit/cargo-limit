@@ -9,8 +9,6 @@ const s:temp_dir_prefix = 'nvim-cargo-limit-'
 let s:data_chunks = []
 let s:locations = []
 
-" TODO: remove sources dir on exit?
-
 function! s:on_cargo_metadata(_job_id, data, event)
   if a:event == 'stdout'
     call add(s:data_chunks, join(a:data, ''))
@@ -55,7 +53,7 @@ function! s:start_server(escaped_workspace_root)
 
   if !filereadable(l:server_address)
     call serverstart(l:server_address)
-    call s:log_info('cargo-limit is ready')
+    call s:log_info('ready')
   endif
 endfunction
 
@@ -262,17 +260,36 @@ endfunction
 
 function! s:log_error(message)
   echohl Error
-  echon a:message
+  echon 'cargo-limit: ' . a:message
   echohl None
+  sleep 3000m
+  redraw
 endfunction
 
 function! s:log_info(message)
   echohl None
-  echomsg a:message
+  echomsg 'cargo-limit: ' . a:message
 endfunction
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
+"    "const cargo_limit_cargo_toml = resolve(expand('<sfile>:p:h')) . '/../Cargo.toml'
+"    const cargo_limit_cargo_toml = '/home/al/git/cargo-limit/plugin/../Cargo.toml' " TODO
+"    "call s:log_error(cargo_limit_cargo_toml)
+"    if exists('a:editor_data.protocol_version') && filereadable(cargo_limit_cargo_toml)
+"      "const plugin_version = '0.0.11' " TODO: read from Cargo.toml
+"      const plugin_version = matchstr(readfile(cargo_limit_cargo_toml), "\nversion = \"([0-9.]*)\"\n")
+"      const protocol_version = a:editor_data.protocol_version
+"      let l:version_matched = plugin_version == protocol_version
+"    else
+"      let l:version_matched = 0
+"    endif
+"
+"    if !l:version_matched
+"      call s:log_error('version mismatch, please update both nvim plugin and cargo-limit crate')
+"      return
+"    endif
+
     let l:locations = a:editor_data.files
     call s:open_all_locations_in_new_or_existing_tabs(l:locations)
   endfunction
