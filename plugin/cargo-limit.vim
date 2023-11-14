@@ -2,7 +2,7 @@
 " TODO: check if diff is somehow broken
 
 const MIN_NVIM_VERSION = '0.7.0'
-const s:EXPECTED_PROTOCOL_VERSION = '0.0.10'
+const s:PLUGIN_VERSION = '0.0.10'
 
 let s:data_chunks = []
 let s:locations = []
@@ -262,13 +262,14 @@ endfunction
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
     if exists('a:editor_data.protocol_version')
-      let l:version_matched = a:editor_data.protocol_version == s:EXPECTED_PROTOCOL_VERSION
+      const l:crate_version = a:editor_data.protocol_version
+      let l:version_matched = l:crate_version == s:PLUGIN_VERSION
     else
       let l:version_matched = 0
     endif
 
     if !l:version_matched
-      throw 'version mismatch, please update both nvim plugin and crate'
+      throw 'cargo-limit: version mismatch, plugin ' . s:PLUGIN_VERSION . ' != crate ' . l:crate_version
     endif
 
     let l:locations = a:editor_data.files
