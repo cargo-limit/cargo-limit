@@ -28,7 +28,7 @@ impl NeovimCommand {
 
     fn run(self) -> Result<ExitStatus> {
         let server_name = nvim_listen_address(self.escaped_workspace_root)?;
-        let remote_send_args = vec!["--server", &server_name, "--remote-send", &self.command];
+        let remote_send_args = vec!["--headless", "--server", &server_name, "--remote-send", &self.command];
 
         match Command::new("nvim").args(remote_send_args).output() {
             Ok(Output {

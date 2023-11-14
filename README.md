@@ -28,7 +28,7 @@ Check out [🎙️  Rustacean Station podcast episode](https://rustacean-station
 
 ### From crates.io
 ```
-cargo install --locked --force cargo-limit
+cargo install --locked cargo-limit
 ```
 
 ### From git
