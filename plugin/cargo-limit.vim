@@ -1,7 +1,7 @@
 " TODO: enable linter
 " TODO: check if diff is somehow broken
 
-const MIN_NVIM_VERSION = '0.7.0'
+const s:MIN_NVIM_VERSION = '0.7.0'
 const s:PLUGIN_VERSION = '0.0.10'
 
 let s:data_chunks = []
@@ -271,7 +271,8 @@ if !exists('*CargoLimitOpen')
     endif
 
     if !l:version_matched
-      throw 'cargo-limit: version mismatch, plugin ' . s:PLUGIN_VERSION . ' != crate ' . l:crate_version
+      " NOTE: might will turn into "throw"
+      call s:log_error('version mismatch, plugin ' . s:PLUGIN_VERSION . ' != crate ' . l:crate_version)
     endif
 
     let l:locations = a:editor_data.files
@@ -291,8 +292,8 @@ if !exists('*CargoLimitOpen')
 endif
 
 if has('nvim')
-  if !has('nvim-' . MIN_NVIM_VERSION)
-    throw 'unsupported nvim version, expected >=' . MIN_NVIM_VERSION
+  if !has('nvim-' . s:MIN_NVIM_VERSION)
+    throw 'unsupported nvim version, expected >=' . s:MIN_NVIM_VERSION
   endif
   call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
   \ 'on_stdout': function('s:on_cargo_metadata'),
