@@ -86,15 +86,15 @@ function! s:on_buffer_write()
 
   const diff_change_pattern = '@@ '
   const diff_new_changes_command =
-    \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff '
-    \ . s:temp_source_for_diff(l:current_file)
+    \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff -- '
+    \ . escape(s:temp_source_for_diff(l:current_file), '%')
     \ . ' '
     \ . l:current_file
   "call s:log_info(diff_new_changes_command)
 
   let l:changed_line_numbers = {}
   let l:diff_stdout_lines = split(execute(diff_new_changes_command), "\n")
-  "call s:log_info(l:diff_stdout_lines)
+  "call s:log_info(join(l:diff_stdout_lines, ''))
   let l:diff_stdout_line_number = 0
   while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
@@ -234,7 +234,7 @@ function! s:current_file()
 endfunction
 
 function! s:escape_path(path)
-  return substitute(a:path, '[/\\:]', '@', 'g')
+  return substitute(a:path, '[/\\:]', '%', 'g')
 endfunction
 
 " TODO: naming
@@ -251,6 +251,7 @@ endfunction
 function! s:limited_copy(source, destination)
   const limit_bytes = 1024 * 1024
   let l:data = readblob(a:source, 0, limit_bytes)
+  "call s:log_info(a:destination)
   call writefile(l:data, a:destination, "bS")
 endfunction
 
@@ -276,9 +277,9 @@ if !exists('*CargoLimitOpen')
 "    "let l:plugindir = expand('<sfile>:p:h:h')
 "    let l:plugindir = luaeval('debug.getinfo(1).source:sub(2)')
 "    call s:log_info(l:plugindir)
-    call s:log_info(expand('<sfile>:s'))
-    sleep 2000ms
-    redraw
+"    call s:log_info(expand('<sfile>:s'))
+"    sleep 2000ms
+"    redraw
 
 "    "const cargo_limit_cargo_toml = resolve(expand('<sfile>:p:h')) . '/../Cargo.toml'
 "    const cargo_limit_cargo_toml = '/home/al/git/cargo-limit/plugin/../Cargo.toml' " TODO
