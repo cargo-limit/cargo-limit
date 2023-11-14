@@ -4,8 +4,6 @@
 
 const MIN_NVIM_VERSION = '0.7.0'
 
-const s:temp_dir_prefix = 'nvim-cargo-limit-'
-
 let s:data_chunks = []
 let s:locations = []
 
@@ -29,13 +27,14 @@ function! s:on_cargo_metadata(_job_id, data, event)
 endfunction
 
 function! s:start_server(escaped_workspace_root)
+  const temp_dir_prefix = 'nvim-cargo-limit-'
   if has('unix')
-    let s:server_address = '/tmp/' . s:temp_dir_prefix . $USER . '/' . a:escaped_workspace_root " TODO: move
+    let s:server_address = '/tmp/' . temp_dir_prefix . $USER . '/' . a:escaped_workspace_root " TODO: move
     let s:sources_dir = s:server_address . '.sources'
     call mkdir(s:sources_dir, 'p', 0700)
     call s:maybe_delete_dead_unix_socket(s:server_address)
   elseif has('win32')
-    let s:server_address = '\\.\pipe\' . s:temp_dir_prefix . $USERNAME . '-' . a:escaped_workspace_root
+    let s:server_address = '\\.\pipe\' . temp_dir_prefix . $USERNAME . '-' . a:escaped_workspace_root
     " TODO: create sources dir
   else
     throw 'unsupported OS'
