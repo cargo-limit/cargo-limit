@@ -8,6 +8,7 @@ use std::{
 
 struct NeovimCommand {
     escaped_workspace_root: String,
+    legacy_escaped_workspace_root: String,
     command: String,
 }
 
@@ -20,21 +21,24 @@ impl NeovimCommand {
 
         let editor_data: EditorData = serde_json::from_str(&raw_editor_data)?;
         let escaped_workspace_root = editor_data.escaped_workspace_root();
+        let legacy_escaped_workspace_root = editor_data.legacy_escaped_workspace_root();
 
         Ok(Some(Self {
             escaped_workspace_root,
+            legacy_escaped_workspace_root,
             command,
         }))
     }
 
     fn run(self) -> Result<ExitStatus> {
-        let NeovimCommand {
-            escaped_workspace_root,
-            command,
-        } = self;
+        // TODO: exit code?
+        self.run_inner(&self.legacy_escaped_workspace_root)?;
+        self.run_inner(&self.escaped_workspace_root)
+    }
 
+    fn run_inner(&self, escaped_workspace_root: &str) -> Result<ExitStatus> {
         let server_name = nvim_listen_address(escaped_workspace_root)?;
-        let remote_send_args = vec!["--server", &server_name, "--remote-send", &command];
+        let remote_send_args = vec!["--server", &server_name, "--remote-send", &self.command];
 
         match Command::new("nvim").args(remote_send_args).output() {
             Ok(Output {
@@ -61,7 +65,7 @@ impl NeovimCommand {
     }
 }
 
-fn nvim_listen_address(escaped_workspace_root: String) -> Result<String> {
+fn nvim_listen_address(escaped_workspace_root: &str) -> Result<String> {
     const PREFIX: &str = "nvim-cargo-limit-";
 
     let result = {
