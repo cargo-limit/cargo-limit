@@ -40,7 +40,7 @@ function! s:start_server(escaped_workspace_root)
     throw 'unsupported OS'
   endif
 
-  call mkdir(s:sources_dir, 'p', 0700) " TODO: supported permission on win32?
+  call mkdir(s:sources_dir, 'p', 0700)
 
   if !filereadable(l:server_address)
     call serverstart(l:server_address)
@@ -263,6 +263,8 @@ endfunction
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
+    echom ''
+
     if exists('a:editor_data.protocol_version')
       const l:crate_version = a:editor_data.protocol_version
       let l:version_matched = l:crate_version == s:PLUGIN_VERSION
@@ -280,6 +282,7 @@ if !exists('*CargoLimitOpen')
   endfunction
 
   function! g:CargoLimitOpenNextLocation()
+    echom ''
     "call s:on_buffer_write()
     call s:open_next_location_in_new_or_existing_tab()
   endfunction
