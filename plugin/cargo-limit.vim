@@ -100,8 +100,7 @@ function! s:on_buffer_write()
       "let l:changed_lines = (l:removal_offset - l:addition_offset) + l:addition_lines - l:removal_lines " TODO
 
       let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1] " FIXME: bounds check?
-      let l:removed_text = l:next_diff_line[1:]
-      let l:removed_new_line = empty(l:removed_text)
+      let l:removed_new_line = empty(l:next_diff_line[1:])
       if !l:removed_new_line
         let l:changed_line_numbers[l:removal_offset] = 1
       endif
@@ -113,9 +112,9 @@ function! s:on_buffer_write()
         while l:locations_index < len(s:locations)
           let l:current_location = s:locations[l:locations_index]
           if l:current_location.path == l:current_file
-            let l:current_line = l:current_location['line']
+            let l:current_line = l:current_location.line
             if l:current_line > l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:changed_lines
-              let s:locations[l:locations_index]['line'] += l:changed_lines
+              let s:locations[l:locations_index].line += l:changed_lines
             endif
             let l:locations_index += 1
           else
