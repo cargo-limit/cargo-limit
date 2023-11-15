@@ -32,16 +32,16 @@ function! s:start_server(escaped_workspace_root)
 
   if has('unix')
     let l:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root
-    let s:sources_dir = l:server_address . '.sources'
+    let s:sources_temp_dir = l:server_address . '.sources'
     call s:maybe_delete_dead_unix_socket(l:server_address)
   elseif has('win32')
     let l:server_address = '\\.\pipe\' . TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
-    let s:sources_dir = $TEMP . '\' . TEMP_DIR_PREFIX . $USERNAME . '\' . a:escaped_workspace_root . '.sources'
+    let s:sources_temp_dir = $TEMP . '\' . TEMP_DIR_PREFIX . $USERNAME . '\' . a:escaped_workspace_root . '.sources'
   else
     throw 'unsupported OS'
   endif
 
-  call mkdir(s:sources_dir, 'p', 0700)
+  call mkdir(s:sources_temp_dir, 'p', 0700)
 
   if !filereadable(l:server_address)
     call serverstart(l:server_address)
@@ -132,7 +132,7 @@ endfunction
 
 " FIXME: naming
 function! s:open_all_locations_in_new_or_existing_tabs(locations)
-  call s:recreate_sources_dir()
+  call s:recreate_sources_temp_dir()
 
   let l:current_file = s:current_file()
   if l:current_file == '' || filereadable(l:current_file)
@@ -217,10 +217,10 @@ function! s:maybe_delete_dead_unix_socket(server_address)
   endif
 endfunction
 
-function! s:recreate_sources_dir()
-  if exists('s:sources_dir')
-    call delete(s:sources_dir, 'rf')
-    call mkdir(s:sources_dir, 'p')
+function! s:recreate_sources_temp_dir()
+  if exists('s:sources_temp_dir')
+    call delete(s:sources_temp_dir, 'rf')
+    call mkdir(s:sources_temp_dir, 'p')
   endif
 endfunction
 
@@ -234,8 +234,8 @@ endfunction
 
 " TODO: naming
 function! s:temp_source_for_diff(path)
-  "return s:sources_dir . '/' . fnamemodify(a:path, ':t') " TODO
-  return s:sources_dir . '/' . s:escape_path(a:path)
+  "return s:sources_temp_dir . '/' . fnamemodify(a:path, ':t') " TODO
+  return s:sources_temp_dir . '/' . s:escape_path(a:path)
 endfunction
 
 function! s:maybe_copy_to_sources(path)
@@ -292,7 +292,7 @@ if !exists('*CargoLimitOpen')
   augroup CargoLimitAutocommands
     autocmd!
     autocmd BufWritePost *.rs call s:on_buffer_write()
-    autocmd VimLeavePre * call s:recreate_sources_dir()
+    autocmd VimLeavePre * call s:recreate_sources_temp_dir()
   augroup END
 endif
 
