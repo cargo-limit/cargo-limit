@@ -10,14 +10,14 @@ let s:locations = []
 function! s:on_cargo_metadata(_job_id, data, event)
   if a:event == 'stdout'
     call add(s:data_chunks, join(a:data, ''))
-  elseif a:event == 'stderr' && type(a:data) == v:t_list && a:data != ['']
+  elseif a:event == 'stderr' && type(a:data) == v:t_list
     let l:stderr = join(a:data, "\n")
-    if l:stderr !~ 'could not find `Cargo.toml`'
+    if !empty(l:stderr) && l:stderr !~ 'could not find `Cargo.toml`'
       call s:throw_error(l:stderr)
     endif
   elseif a:event == 'exit'
     let l:stdout = join(s:data_chunks, '')
-    if len(l:stdout) > 0
+    if !empty(l:stdout)
       let l:metadata = json_decode(l:stdout)
       let l:workspace_root = get(l:metadata, 'workspace_root')
       let l:escaped_workspace_root = s:escape_path(workspace_root)
