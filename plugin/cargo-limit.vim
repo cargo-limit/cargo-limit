@@ -13,7 +13,7 @@ function! s:on_cargo_metadata(_job_id, data, event)
   elseif a:event == 'stderr' && type(a:data) == v:t_list && a:data != ['']
     let l:stderr = join(a:data, "\n")
     if l:stderr !~ 'could not find `Cargo.toml`'
-      call s:log_error(l:stderr)
+      call s:throw_error(l:stderr)
     endif
   elseif a:event == 'exit'
     let l:stdout = join(s:data_chunks, '')
@@ -207,7 +207,7 @@ function! s:maybe_delete_dead_unix_socket(server_address)
           call s:log_info('removed dead socket ' . a:server_address)
         endif
       else
-        call s:log_error('failed to execute "' . LSOF_COMMAND . '"')
+        call s:throw_error('failed to execute "' . LSOF_COMMAND . '"')
       endif
     endif
   endif
@@ -250,10 +250,8 @@ function! s:starts_with(longer, shorter)
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
 
-function! s:log_error(message)
-  echohl Error
-  echon 'cargo-limit: ' . a:message
-  echohl None
+function! s:throw_error(message)
+  throw 'cargo-limit: ' . a:message
 endfunction
 
 function! s:log_info(message)
@@ -273,8 +271,8 @@ if !exists('*CargoLimitOpen')
     endif
 
     if !l:version_matched
-      " NOTE: might will turn into "throw"
-      call s:log_error('version mismatch, plugin ' . s:PLUGIN_VERSION . ' != crate ' . l:crate_version)
+      " NOTE: this will become error after next breaking protocol change
+      " call s:throw_error('version mismatch, plugin ' . s:PLUGIN_VERSION . ' != crate ' . l:crate_version)
     endif
 
     let l:locations = a:editor_data.files
@@ -296,7 +294,7 @@ endif
 
 if has('nvim')
   if !has('nvim-' . s:MIN_NVIM_VERSION)
-    throw 'unsupported nvim version, expected >=' . s:MIN_NVIM_VERSION
+    call s:throw_error('unsupported nvim version, expected >=' . s:MIN_NVIM_VERSION)
   endif
   call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
   \ 'on_stdout': function('s:on_cargo_metadata'),
@@ -304,7 +302,7 @@ if has('nvim')
   \ 'on_exit': function('s:on_cargo_metadata'),
   \ })
 else
-  throw 'unsupported text editor'
+  call s:throw_error('unsupported text editor')
 endif
 
 " vim:shiftwidth=2 softtabstop=2 tabstop=2
