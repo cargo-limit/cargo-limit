@@ -1,5 +1,6 @@
 " TODO: enable linter
 " TODO: check if diff is somehow broken
+" TODO: reorder functions
 
 const s:MIN_NVIM_VERSION = '0.7.0'
 const s:PLUGIN_VERSION = '0.0.10' " TODO: if we knew plugin full path, we could
@@ -46,38 +47,7 @@ function! s:start_server(escaped_workspace_root)
 
   if !filereadable(l:server_address)
     call s:recreate_sources_temp_dir()
-
-    if !exists('*CargoLimitOpen')
-      function! g:CargoLimitOpen(editor_data)
-        if exists('a:editor_data.protocol_version')
-          const l:crate_version = a:editor_data.protocol_version
-          const l:version_matched = l:crate_version == s:PLUGIN_VERSION
-        else
-          const l:version_matched = 0
-        endif
-
-        if !l:version_matched
-          " NOTE: this will become error after next breaking protocol change
-          " call s:log_error('version mismatch, plugin ' . s:PLUGIN_VERSION . ' != crate ' . l:crate_version)
-        endif
-
-        const l:locations = a:editor_data.files
-        call s:open_all_locations_in_new_or_existing_tabs(l:locations)
-      endfunction
-
-      function! g:CargoLimitOpenNextLocation()
-        echom ''
-        "call s:on_buffer_write()
-        call s:open_next_location_in_new_or_existing_tab()
-      endfunction
-
-      augroup CargoLimitAutocommands
-        autocmd!
-        autocmd BufWritePost *.rs call s:on_buffer_write()
-        autocmd VimLeavePre * call s:recreate_sources_temp_dir()
-      augroup END
-    endif
-
+    call s:maybe_setup_handlers()
     call serverstart(l:server_address)
     call s:log_info('ready')
   endif
@@ -227,6 +197,39 @@ function! s:deduplicate_locations_by_paths_and_lines()
   endfor
 
   let s:LOCATIONS = l:new_locations
+endfunction
+
+function! s:maybe_setup_handlers()
+  if !exists('*CargoLimitOpen')
+    function! g:CargoLimitOpen(editor_data)
+      if exists('a:editor_data.protocol_version')
+        const l:crate_version = a:editor_data.protocol_version
+        const l:version_matched = l:crate_version == s:PLUGIN_VERSION
+      else
+        const l:version_matched = 0
+      endif
+
+      if !l:version_matched
+        " NOTE: this will become error after next breaking protocol change
+        " call s:log_error('version mismatch, plugin ' . s:PLUGIN_VERSION . ' != crate ' . l:crate_version)
+      endif
+
+      const l:locations = a:editor_data.files
+      call s:open_all_locations_in_new_or_existing_tabs(l:locations)
+    endfunction
+
+    function! g:CargoLimitOpenNextLocation()
+      echom ''
+      "call s:on_buffer_write()
+      call s:open_next_location_in_new_or_existing_tab()
+    endfunction
+
+    augroup CargoLimitAutocommands
+      autocmd!
+      autocmd BufWritePost *.rs call s:on_buffer_write()
+      autocmd VimLeavePre * call s:recreate_sources_temp_dir()
+    augroup END
+  endif
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
