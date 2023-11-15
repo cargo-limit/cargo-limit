@@ -15,7 +15,7 @@ impl NeovimCommand {
     fn from_editor_data<R: Read>(mut input: R) -> Result<Option<Self>> {
         let mut raw_editor_data = String::new();
         input.read_to_string(&mut raw_editor_data)?;
-        let command = format!("<Esc>:call g:CargoLimitOpen({raw_editor_data})<Enter>");
+        let command = format!("g:CargoLimitOpen({raw_editor_data})");
 
         let editor_data: EditorData = serde_json::from_str(&raw_editor_data)?;
         let escaped_workspace_root = editor_data.escaped_workspace_root();
@@ -33,7 +33,7 @@ impl NeovimCommand {
             "--clean",
             "--server",
             &server_name,
-            "--remote-send",
+            "--remote-expr",
             &self.command,
         ];
 

@@ -261,8 +261,6 @@ endfunction
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)
-    echom ''
-
     if exists('a:editor_data.protocol_version')
       const l:crate_version = a:editor_data.protocol_version
       let l:version_matched = l:crate_version == s:PLUGIN_VERSION
