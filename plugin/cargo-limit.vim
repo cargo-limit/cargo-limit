@@ -57,7 +57,9 @@ function! s:on_buffer_write()
     return [l:offset, l:lines]
   endfunction
 
+  " resolve(bufname()) ? nope
   " FIXME: why current file? what if we switch tab?
+  " this will return file per each currently written tab
   let l:current_file = s:current_file()
   if l:current_file != '' && !filereadable(l:current_file) " TODO: correct?
     return
@@ -66,7 +68,7 @@ function! s:on_buffer_write()
 
   let l:locations_index = 0
   while l:locations_index < len(l:locations_index) - 1
-    if s:locations[l:locations_index]['path'] == l:current_file
+    if s:locations[l:locations_index].path == l:current_file
       break
     else
       let l:locations_index += 1
@@ -110,7 +112,7 @@ function! s:on_buffer_write()
       if l:changed_lines != 0
         while l:locations_index < len(s:locations)
           let l:current_location = s:locations[l:locations_index]
-          if l:current_location['path'] == l:current_file
+          if l:current_location.path == l:current_file
             let l:current_line = l:current_location['line']
             if l:current_line > l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:changed_lines
               let s:locations[l:locations_index]['line'] += l:changed_lines
@@ -140,6 +142,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
       let l:path = fnameescape(location.path)
       if mode() == 'n' && &l:modified == 0
         execute 'tab drop ' . l:path
+        "call s:on_buffer_write()
         call cursor((location.line), (location.column))
         call s:maybe_copy_to_sources(l:path)
       else
@@ -157,6 +160,7 @@ function! s:open_next_location_in_new_or_existing_tab()
     let l:path = fnameescape(l:location.path)
     if &l:modified == 0
       execute 'tab drop ' . l:path
+      "call s:on_buffer_write()
       call cursor((l:location.line), (l:location.column))
       "call s:maybe_copy_to_sources(l:path) " TODO
       let s:locations = s:locations[1:]
