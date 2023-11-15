@@ -5,7 +5,7 @@
 [![Donate with Crypto/USD/EUR/etc.](https://img.shields.io/badge/%E2%99%A1_Donate-Crypto_or_%24%2F%E2%82%AC%2Fetc.-97ca00)](#Support)
 ## Description
 
-🚀 Cargo with less noise:
+🚀 Rust/Cargo with less noise:
 - errors have highest priority
     - they never appear in the middle of warnings
     - **warnings are skipped** by default until errors are fixed
