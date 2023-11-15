@@ -51,7 +51,7 @@ endfunction
 
 " TODO: naming
 function! s:on_buffer_write()
-  function! s:parse_lines(text, delimiter)
+  function! s:parse_diff_stats(text, delimiter)
     let l:offset_and_lines = split(split(a:text, a:delimiter)[0], ',')
     let l:offset = str2nr(l:offset_and_lines[0])
     let l:lines = len(l:offset_and_lines) > 1 ? str2nr(l:offset_and_lines[1]) : 1
@@ -78,44 +78,44 @@ function! s:on_buffer_write()
 "  call s:log_info(l:locations_index)
 "  call s:log_info(s:locations)
 
-  const DIFF_CHANGE_PATTERN = '@@ '
-  const DIFF_NEW_CHANGES_COMMAND =
+  const DIFF_STATS_PATTERN = '@@ '
+  const DIFF_COMMAND =
     \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff -- '
     \ . fnameescape(s:temp_source_for_diff(l:current_file))
     \ . ' '
     \ . l:current_file
-  "call s:log_info(DIFF_NEW_CHANGES_COMMAND)
+  "call s:log_info(DIFF_COMMAND)
 
-  let l:changed_line_numbers = {}
-  let l:diff_stdout_lines = split(execute(DIFF_NEW_CHANGES_COMMAND), "\n")
+  let l:edited_line_numbers = {}
+  let l:diff_stdout_lines = split(execute(DIFF_COMMAND), "\n")
   "call s:log_info(join(l:diff_stdout_lines, ''))
   let l:diff_stdout_line_number = 0
   while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
-    if s:starts_with(l:diff_line, DIFF_CHANGE_PATTERN)
-      let l:offsets_and_changes = split(trim(split(l:diff_line, DIFF_CHANGE_PATTERN)[0]), ' ')
+    if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
+      let l:raw_diff_stats = split(trim(split(l:diff_line, DIFF_STATS_PATTERN)[0]), ' ')
 
-      let [l:removal_offset, l:removal_lines] = s:parse_lines(l:offsets_and_changes[0], '-')
-      let [l:addition_offset, l:addition_lines] = s:parse_lines(l:offsets_and_changes[1], '+')
-      let l:changed_lines = l:addition_lines - l:removal_lines
-      "let l:changed_lines = (l:removal_offset - l:addition_offset) + l:addition_lines - l:removal_lines " TODO
+      let [l:removal_offset, l:removals] = s:parse_diff_stats(l:raw_diff_stats[0], '-')
+      let [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_diff_stats[1], '+')
+      let l:shifted_lines = l:additions - l:removals
+      "let l:shifted_lines = (l:removal_offset - l:addition_offset) + l:additions - l:removals " TODO
 
       let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
-      let l:removed_new_line = empty(l:next_diff_line[1:])
-      if !l:removed_new_line
-        let l:changed_line_numbers[l:removal_offset] = 1
+      let l:edited_new_line = empty(l:next_diff_line[1:])
+      if !l:edited_new_line
+        let l:edited_line_numbers[l:removal_offset] = 1
       endif
 
-      "call s:log_info(l:offsets_and_changes)
+      "call s:log_info(l:raw_diff_stats)
 
-      "call s:log_info(l:changed_lines)
-      if l:changed_lines != 0
+      "call s:log_info(l:shifted_lines)
+      if l:shifted_lines != 0
         while l:locations_index < len(s:locations)
           let l:current_location = s:locations[l:locations_index]
           if l:current_location.path == l:current_file
             let l:current_line = l:current_location.line
-            if l:current_line > l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:changed_lines
-              let s:locations[l:locations_index].line += l:changed_lines
+            if l:current_line > l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:shifted_lines
+              let s:locations[l:locations_index].line += l:shifted_lines
             endif
             let l:locations_index += 1
           else
@@ -127,7 +127,7 @@ function! s:on_buffer_write()
     let l:diff_stdout_line_number += 1
   endwhile
 
-  call s:ignore_changed_lines_of_current_file(l:changed_line_numbers, l:current_file)
+  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, l:current_file)
 endfunction
 
 " FIXME: naming
@@ -168,11 +168,11 @@ function! s:open_next_location_in_new_or_existing_tab()
   endif
 endfunction
 
-function! s:ignore_changed_lines_of_current_file(changed_line_numbers, current_file)
+function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
   let l:new_locations = []
   for i in s:locations
-    let l:is_changed_line = get(a:changed_line_numbers, i.line) && i.path == a:current_file
-    if !l:is_changed_line
+    let l:is_edited_line = get(a:edited_line_numbers, i.line) && i.path == a:current_file
+    if !l:is_edited_line
       call add(l:new_locations, i)
     endif
   endfor
