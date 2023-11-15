@@ -54,13 +54,6 @@ endfunction
 
 " TODO: naming
 function! s:on_buffer_write()
-  function! s:parse_diff_stats(text, delimiter)
-    const l:offset_and_lines = split(split(a:text, a:delimiter)[0], ',')
-    const l:offset = str2nr(l:offset_and_lines[0])
-    const l:lines = len(l:offset_and_lines) > 1 ? str2nr(l:offset_and_lines[1]) : 1
-    return [l:offset, l:lines]
-  endfunction
-
   " resolve(bufname()) ? nope
   " FIXME: why current file? what if we switch tab?
   " this will return file per each currently written tab
@@ -131,6 +124,13 @@ function! s:on_buffer_write()
   endwhile
 
   call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, l:current_file)
+endfunction
+
+function! s:parse_diff_stats(text, delimiter)
+  const l:offset_and_lines = split(split(a:text, a:delimiter)[0], ',')
+  const l:offset = str2nr(l:offset_and_lines[0])
+  const l:lines = len(l:offset_and_lines) > 1 ? str2nr(l:offset_and_lines[1]) : 1
+  return [l:offset, l:lines]
 endfunction
 
 " FIXME: naming
