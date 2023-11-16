@@ -198,61 +198,67 @@ function! s:deduplicate_locations_by_paths_and_lines()
 endfunction
 
 function! s:maybe_setup_handlers()
-  if !exists('*CargoLimitOpen')
-    function! g:CargoLimitOpen(editor_data)
-      const PLUGIN_VERSION = '0.0.10' " TODO: if we knew plugin full path, we could
-                                      " cargo metadata --quiet --format-version=1 --manifest-path ../Cargo.toml | jq | grep 'cargo-limit '
-
-      let l:crate_version = v:null
-      let l:version_matched = 0
-      if exists('a:editor_data.protocol_version')
-        let l:crate_version = a:editor_data.protocol_version
-        let l:version_matched = l:crate_version == PLUGIN_VERSION
-      endif
-
-      if !l:version_matched
-        " NOTE: this will become error after next breaking protocol change
-        " call s:log_error('version mismatch, plugin ' . PLUGIN_VERSION . ' != crate ' . l:crate_version)
-      endif
-
-      let l:locations = a:editor_data.files
-      call s:open_all_locations_in_new_or_existing_tabs(l:locations)
-    endfunction
-
-    function! g:CargoLimitOpenNextLocation()
-      echom ''
-      "call s:on_buffer_write()
-      call s:open_next_location_in_new_or_existing_tab()
-    endfunction
-
-    augroup CargoLimitAutocommands
-      autocmd!
-      autocmd BufWritePost *.rs call s:on_buffer_write()
-      autocmd VimLeavePre * call s:recreate_sources_temp_dir()
-    augroup END
+  if exists('*CargoLimitOpen')
+    return
   endif
+
+  function! g:CargoLimitOpen(editor_data)
+    const PLUGIN_VERSION = '0.0.10' " TODO: if we knew plugin full path, we could
+                                    " cargo metadata --quiet --format-version=1 --manifest-path ../Cargo.toml | jq | grep 'cargo-limit '
+
+    let l:crate_version = v:null
+    let l:version_matched = 0
+    if exists('a:editor_data.protocol_version')
+      let l:crate_version = a:editor_data.protocol_version
+      let l:version_matched = l:crate_version == PLUGIN_VERSION
+    endif
+
+    if !l:version_matched
+      " NOTE: this will become error after next breaking protocol change
+      " call s:log_error('version mismatch, plugin ' . PLUGIN_VERSION . ' != crate ' . l:crate_version)
+    endif
+
+    let l:locations = a:editor_data.files
+    call s:open_all_locations_in_new_or_existing_tabs(l:locations)
+  endfunction
+
+  function! g:CargoLimitOpenNextLocation()
+    echom ''
+    "call s:on_buffer_write()
+    call s:open_next_location_in_new_or_existing_tab()
+  endfunction
+
+  augroup CargoLimitAutocommands
+    autocmd!
+    autocmd BufWritePost *.rs call s:on_buffer_write()
+    autocmd VimLeavePre * call s:recreate_sources_temp_dir()
+  augroup END
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
   const LSOF_EXECUTABLE = 'lsof'
   const LSOF_COMMAND = LSOF_EXECUTABLE . ' -U'
 
-  if filereadable(a:server_address)
-    call system('which ' . LSOF_EXECUTABLE)
-    let l:lsof_is_installed = v:shell_error == 0
-    if l:lsof_is_installed
-      let l:lsof_stdout = system(LSOF_COMMAND)
-      let l:lsof_succeed = v:shell_error == 0
-      if l:lsof_succeed
-        let l:socket_is_dead = !s:contains_str(l:lsof_stdout, a:server_address)
-        if l:socket_is_dead
-          let l:ignore = luaeval('os.remove(_A)', a:server_address)
-          call s:log_info('removed dead socket ' . a:server_address)
-        endif
-      else
-        call s:log_error('failed to execute "' . LSOF_COMMAND . '"')
-      endif
+  if !filereadable(a:server_address)
+    return
+  endif
+
+  call system('which ' . LSOF_EXECUTABLE)
+  let l:lsof_is_installed = v:shell_error == 0
+  if l:lsof_is_installed
+    return
+  endif
+
+  let l:lsof_stdout = system(LSOF_COMMAND)
+  let l:lsof_succeed = v:shell_error == 0
+  if l:lsof_succeed
+    let l:socket_is_dead = !s:contains_str(l:lsof_stdout, a:server_address)
+    if l:socket_is_dead
+      let l:ignore = luaeval('os.remove(_A)', a:server_address)
+      call s:log_info('removed dead socket ' . a:server_address)
     endif
+  else
+    call s:log_error('failed to execute "' . LSOF_COMMAND . '"')
   endif
 endfunction
 
