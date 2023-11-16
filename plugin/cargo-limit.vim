@@ -3,10 +3,6 @@
 " TODO: reorder functions
 " FIXME: regression? jump should not happen while I'm editing a file
 
-let s:MIN_NVIM_VERSION = '0.7.0'
-let s:PLUGIN_VERSION = '0.0.10' " TODO: if we knew plugin full path, we could
-                                " cargo metadata --quiet --format-version=1 --manifest-path ../Cargo.toml | jq | grep 'cargo-limit '
-
 let s:DATA_CHUNKS = []
 let s:LOCATIONS = []
 
@@ -204,16 +200,19 @@ endfunction
 function! s:maybe_setup_handlers()
   if !exists('*CargoLimitOpen')
     function! g:CargoLimitOpen(editor_data)
+      const PLUGIN_VERSION = '0.0.10' " TODO: if we knew plugin full path, we could
+                                      " cargo metadata --quiet --format-version=1 --manifest-path ../Cargo.toml | jq | grep 'cargo-limit '
+
       let l:crate_version = v:null
       let l:version_matched = 0
       if exists('a:editor_data.protocol_version')
         let l:crate_version = a:editor_data.protocol_version
-        let l:version_matched = l:crate_version == s:PLUGIN_VERSION
+        let l:version_matched = l:crate_version == PLUGIN_VERSION
       endif
 
       if !l:version_matched
         " NOTE: this will become error after next breaking protocol change
-        " call s:log_error('version mismatch, plugin ' . s:PLUGIN_VERSION . ' != crate ' . l:crate_version)
+        " call s:log_error('version mismatch, plugin ' . PLUGIN_VERSION . ' != crate ' . l:crate_version)
       endif
 
       let l:locations = a:editor_data.files
@@ -309,17 +308,23 @@ function! s:log_info(message)
   echomsg 'cargo-limit: ' . a:message
 endfunction
 
-if has('nvim')
-  if !has('nvim-' . s:MIN_NVIM_VERSION)
-    throw 'unsupported nvim version, expected >=' . s:MIN_NVIM_VERSION
+function! s:main()
+  const MIN_NVIM_VERSION = '0.7.0'
+
+  if has('nvim')
+    if !has('nvim-' . MIN_NVIM_VERSION)
+      throw 'unsupported nvim version, expected >=' . MIN_NVIM_VERSION
+    endif
+    call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
+    \ 'on_stdout': function('s:on_cargo_metadata'),
+    \ 'on_stderr': function('s:on_cargo_metadata'),
+    \ 'on_exit': function('s:on_cargo_metadata'),
+    \ })
+  else
+    throw 'unsupported text editor'
   endif
-  call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
-  \ 'on_stdout': function('s:on_cargo_metadata'),
-  \ 'on_stderr': function('s:on_cargo_metadata'),
-  \ 'on_exit': function('s:on_cargo_metadata'),
-  \ })
-else
-  throw 'unsupported text editor'
-endif
+endfunction
+
+call s:main()
 
 " vim:shiftwidth=2 softtabstop=2 tabstop=2
