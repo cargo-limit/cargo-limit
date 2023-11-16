@@ -3,8 +3,63 @@
 " TODO: reorder functions
 " FIXME: regression? jump should not happen while I'm editing a file
 
-let s:DATA_CHUNKS = []
-let s:LOCATIONS = []
+function! s:main()
+  const MIN_NVIM_VERSION = '0.7.0'
+
+  if has('nvim')
+    if !has('nvim-' . MIN_NVIM_VERSION)
+      throw 'unsupported nvim version, expected >=' . MIN_NVIM_VERSION
+    endif
+
+    let s:DATA_CHUNKS = []
+    let s:LOCATIONS = []
+    call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
+    \ 'on_stdout': function('s:on_cargo_metadata'),
+    \ 'on_stderr': function('s:on_cargo_metadata'),
+    \ 'on_exit': function('s:on_cargo_metadata'),
+    \ })
+  else
+    throw 'unsupported text editor'
+  endif
+endfunction
+
+function! s:maybe_setup_handlers()
+  if exists('*CargoLimitOpen')
+    return
+  endif
+
+  function! g:CargoLimitOpen(editor_data)
+    const PLUGIN_VERSION = '0.0.10' " TODO: if we knew plugin full path, we could
+                                    " cargo metadata --quiet --format-version=1 --manifest-path ../Cargo.toml | jq | grep 'cargo-limit '
+
+    let l:crate_version = v:null
+    let l:version_matched = 0
+    if exists('a:editor_data.protocol_version')
+      let l:crate_version = a:editor_data.protocol_version
+      let l:version_matched = l:crate_version == PLUGIN_VERSION
+    endif
+
+    if !l:version_matched
+      " NOTE: this will become error after next breaking protocol change
+      " call s:log_error('version mismatch, plugin ' . PLUGIN_VERSION . ' != crate ' . l:crate_version)
+    endif
+
+    let l:locations = a:editor_data.files
+    call s:open_all_locations_in_new_or_existing_tabs(l:locations)
+  endfunction
+
+  function! g:CargoLimitOpenNextLocation()
+    echom ''
+    "call s:on_buffer_write()
+    call s:open_next_location_in_new_or_existing_tab()
+  endfunction
+
+  augroup CargoLimitAutocommands
+    autocmd!
+    autocmd BufWritePost *.rs call s:on_buffer_write()
+    autocmd VimLeavePre * call s:recreate_sources_temp_dir()
+  augroup END
+endfunction
 
 function! s:on_cargo_metadata(_job_id, data, event)
   if a:event == 'stdout'
@@ -137,36 +192,40 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
   call s:recreate_sources_temp_dir()
 
   let l:current_file = s:current_file()
-  if l:current_file == '' || filereadable(l:current_file)
-    let s:LOCATIONS = reverse(a:locations)
-    call s:deduplicate_locations_by_paths_and_lines()
-    for location in s:LOCATIONS
-      let l:path = fnameescape(location.path)
-      if mode() == 'n' && &l:modified == 0
-        execute 'tab drop ' . l:path
-        "call s:on_buffer_write()
-        call cursor((location.line), (location.column))
-        call s:maybe_copy_to_sources(l:path)
-      else
-        break
-      endif
-    endfor
-    let s:LOCATIONS = reverse(s:LOCATIONS)[1:]
+  if l:current_file != '' && !filereadable(l:current_file)
+    return
   endif
+
+  let s:LOCATIONS = reverse(a:locations)
+  call s:deduplicate_locations_by_paths_and_lines()
+  for location in s:LOCATIONS
+    let l:path = fnameescape(location.path)
+    if mode() == 'n' && &l:modified == 0
+      execute 'tab drop ' . l:path
+      "call s:on_buffer_write()
+      call cursor((location.line), (location.column))
+      call s:maybe_copy_to_sources(l:path)
+    else
+      break
+    endif
+  endfor
+  let s:LOCATIONS = reverse(s:LOCATIONS)[1:]
 endfunction
 
 function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
-  if l:current_file == '' || filereadable(l:current_file) && !empty(s:LOCATIONS)
-    let l:location = s:LOCATIONS[0]
-    let l:path = fnameescape(l:location.path)
-    if &l:modified == 0
-      execute 'tab drop ' . l:path
-      "call s:on_buffer_write()
-      call cursor((l:location.line), (l:location.column))
-      "call s:maybe_copy_to_sources(l:path) " TODO
-      let s:LOCATIONS = s:LOCATIONS[1:]
-    endif
+  if l:current_file != '' && !filereadable(l:current_file) || empty(s:LOCATIONS) " TODO: correct?
+    return
+  endif
+
+  let l:location = s:LOCATIONS[0]
+  let l:path = fnameescape(l:location.path)
+  if &l:modified == 0
+    execute 'tab drop ' . l:path
+    "call s:on_buffer_write()
+    call cursor((l:location.line), (l:location.column))
+    "call s:maybe_copy_to_sources(l:path) " TODO
+    let s:LOCATIONS = s:LOCATIONS[1:]
   endif
 endfunction
 
@@ -195,44 +254,6 @@ function! s:deduplicate_locations_by_paths_and_lines()
   endfor
 
   let s:LOCATIONS = l:new_locations
-endfunction
-
-function! s:maybe_setup_handlers()
-  if exists('*CargoLimitOpen')
-    return
-  endif
-
-  function! g:CargoLimitOpen(editor_data)
-    const PLUGIN_VERSION = '0.0.10' " TODO: if we knew plugin full path, we could
-                                    " cargo metadata --quiet --format-version=1 --manifest-path ../Cargo.toml | jq | grep 'cargo-limit '
-
-    let l:crate_version = v:null
-    let l:version_matched = 0
-    if exists('a:editor_data.protocol_version')
-      let l:crate_version = a:editor_data.protocol_version
-      let l:version_matched = l:crate_version == PLUGIN_VERSION
-    endif
-
-    if !l:version_matched
-      " NOTE: this will become error after next breaking protocol change
-      " call s:log_error('version mismatch, plugin ' . PLUGIN_VERSION . ' != crate ' . l:crate_version)
-    endif
-
-    let l:locations = a:editor_data.files
-    call s:open_all_locations_in_new_or_existing_tabs(l:locations)
-  endfunction
-
-  function! g:CargoLimitOpenNextLocation()
-    echom ''
-    "call s:on_buffer_write()
-    call s:open_next_location_in_new_or_existing_tab()
-  endfunction
-
-  augroup CargoLimitAutocommands
-    autocmd!
-    autocmd BufWritePost *.rs call s:on_buffer_write()
-    autocmd VimLeavePre * call s:recreate_sources_temp_dir()
-  augroup END
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
@@ -312,23 +333,6 @@ endfunction
 function! s:log_info(message)
   echohl None
   echomsg 'cargo-limit: ' . a:message
-endfunction
-
-function! s:main()
-  const MIN_NVIM_VERSION = '0.7.0'
-
-  if has('nvim')
-    if !has('nvim-' . MIN_NVIM_VERSION)
-      throw 'unsupported nvim version, expected >=' . MIN_NVIM_VERSION
-    endif
-    call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
-    \ 'on_stdout': function('s:on_cargo_metadata'),
-    \ 'on_stderr': function('s:on_cargo_metadata'),
-    \ 'on_exit': function('s:on_cargo_metadata'),
-    \ })
-  else
-    throw 'unsupported text editor'
-  endif
 endfunction
 
 call s:main()

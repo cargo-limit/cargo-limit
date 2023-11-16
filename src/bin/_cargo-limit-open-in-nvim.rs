@@ -37,6 +37,7 @@ impl NeovimCommand {
             &self.command,
         ];
 
+        // FIXME: prints exit code on success?
         match Command::new("nvim").args(remote_send_args).output() {
             Ok(Output {
                 status,
