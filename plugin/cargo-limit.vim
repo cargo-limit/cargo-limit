@@ -14,7 +14,8 @@ function! s:on_cargo_metadata(_job_id, data, event)
     call add(s:DATA_CHUNKS, join(a:data, ''))
   elseif a:event == 'stderr' && type(a:data) == v:t_list
     const l:stderr = join(a:data, "\n")
-    if !empty(l:stderr) && l:stderr !~ 'could not find `Cargo.toml`'
+    "if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`') " TODO
+    if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`'
       call s:log_error(l:stderr)
     endif
   elseif a:event == 'exit'
@@ -243,7 +244,7 @@ function! s:maybe_delete_dead_unix_socket(server_address)
       const l:lsof_stdout = system(LSOF_COMMAND)
       const l:lsof_succeed = v:shell_error == 0
       if l:lsof_succeed
-        const l:socket_is_dead = stridx(l:lsof_stdout, a:server_address) == -1
+        const l:socket_is_dead = !s:contains_str(l:lsof_stdout, a:server_address)
         if l:socket_is_dead
           const l:ignore = luaeval('os.remove(_A)', a:server_address)
           call s:log_info('removed dead socket ' . a:server_address)
@@ -284,12 +285,16 @@ function! s:maybe_copy(source, destination)
   const MAX_SIZE_BYTES = 1024 * 1024
   if getfsize(a:source) <= MAX_SIZE_BYTES
     const l:data = readblob(a:source)
-    call writefile(l:data, a:destination, "bS")
+    call writefile(l:data, a:destination, 'bS')
   endif
 endfunction
 
 function! s:starts_with(longer, shorter)
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
+endfunction
+
+function! s:contains_str(text, pattern)
+  return stridx(a:text, a:pattern) != -1
 endfunction
 
 function! s:log_error(message)
