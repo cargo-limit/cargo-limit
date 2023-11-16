@@ -1,10 +1,11 @@
 " TODO: enable linter
 " TODO: check if diff is somehow broken
 " TODO: reorder functions
+" FIXME: regression? jump should not happen while I'm editing a file
 
-const s:MIN_NVIM_VERSION = '0.7.0'
-const s:PLUGIN_VERSION = '0.0.10' " TODO: if we knew plugin full path, we could
-                                  " cargo metadata --quiet --format-version=1 --manifest-path ../Cargo.toml | jq | grep 'cargo-limit '
+let s:MIN_NVIM_VERSION = '0.7.0'
+let s:PLUGIN_VERSION = '0.0.10' " TODO: if we knew plugin full path, we could
+                                " cargo metadata --quiet --format-version=1 --manifest-path ../Cargo.toml | jq | grep 'cargo-limit '
 
 let s:DATA_CHUNKS = []
 let s:LOCATIONS = []
@@ -33,7 +34,7 @@ function! s:start_server(escaped_workspace_root)
   const TEMP_DIR_PREFIX = 'nvim-cargo-limit-'
   const SOURCES = '.sources'
 
-  " TODO: what happens when I change dir to other crate? or run source $VIMRC?
+  " TODO: what happens when I change dir to other crate? or run :source $MYVIMRC?
   if has('unix')
     let l:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root
     let s:SOURCES_TEMP_DIR = l:server_address . SOURCES
@@ -203,11 +204,11 @@ endfunction
 function! s:maybe_setup_handlers()
   if !exists('*CargoLimitOpen')
     function! g:CargoLimitOpen(editor_data)
+      let l:crate_version = v:null
+      let l:version_matched = 0
       if exists('a:editor_data.protocol_version')
         let l:crate_version = a:editor_data.protocol_version
         let l:version_matched = l:crate_version == s:PLUGIN_VERSION
-      else
-        let l:version_matched = 0
       endif
 
       if !l:version_matched
