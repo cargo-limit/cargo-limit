@@ -13,17 +13,17 @@ function! s:on_cargo_metadata(_job_id, data, event)
   if a:event == 'stdout'
     call add(s:DATA_CHUNKS, join(a:data, ''))
   elseif a:event == 'stderr' && type(a:data) == v:t_list
-    const l:stderr = join(a:data, "\n")
+    let l:stderr = join(a:data, "\n")
     "if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`') " TODO
     if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`'
       call s:log_error(l:stderr)
     endif
   elseif a:event == 'exit'
-    const l:stdout = join(s:DATA_CHUNKS, '')
+    let l:stdout = join(s:DATA_CHUNKS, '')
     if !empty(l:stdout)
-      const l:metadata = json_decode(l:stdout)
-      const l:workspace_root = get(l:metadata, 'workspace_root')
-      const l:escaped_workspace_root = s:escape_path(workspace_root)
+      let l:metadata = json_decode(l:stdout)
+      let l:workspace_root = get(l:metadata, 'workspace_root')
+      let l:escaped_workspace_root = s:escape_path(workspace_root)
       call s:start_server(l:escaped_workspace_root)
     endif
   endif
@@ -35,13 +35,13 @@ function! s:start_server(escaped_workspace_root)
 
   " TODO: what happens when I change dir to other crate? or run source $VIMRC?
   if has('unix')
-    const l:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root
-    const s:SOURCES_TEMP_DIR = l:server_address . SOURCES
+    let l:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root
+    let s:SOURCES_TEMP_DIR = l:server_address . SOURCES
     call s:maybe_delete_dead_unix_socket(l:server_address)
   elseif has('win32')
     const SERVER_ADDRESS_POSTFIX = TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
-    const l:server_address = '\\.\pipe\' . SERVER_ADDRESS_POSTFIX
-    const s:SOURCES_TEMP_DIR = $TEMP . '\' . SERVER_ADDRESS_POSTFIX . SOURCES
+    let l:server_address = '\\.\pipe\' . SERVER_ADDRESS_POSTFIX
+    let s:SOURCES_TEMP_DIR = $TEMP . '\' . SERVER_ADDRESS_POSTFIX . SOURCES
   else
     throw 'unsupported OS'
   endif
@@ -59,7 +59,7 @@ function! s:on_buffer_write()
   " resolve(bufname()) ? nope
   " FIXME: why current file? what if we switch tab?
   " this will return file per each currently written tab
-  const l:current_file = s:current_file()
+  let l:current_file = s:current_file()
   if l:current_file != '' && !filereadable(l:current_file) " TODO: correct?
     return
   endif
@@ -85,21 +85,21 @@ function! s:on_buffer_write()
   "call s:log_info(DIFF_COMMAND)
 
   let l:edited_line_numbers = {}
-  const l:diff_stdout_lines = split(execute(DIFF_COMMAND), "\n")
+  let l:diff_stdout_lines = split(execute(DIFF_COMMAND), "\n")
   "call s:log_info(join(l:diff_stdout_lines, ''))
   let l:diff_stdout_line_number = 0
   while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
     if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
-      const l:raw_diff_stats = split(trim(split(l:diff_line, DIFF_STATS_PATTERN)[0]), ' ')
+      let l:raw_diff_stats = split(trim(split(l:diff_line, DIFF_STATS_PATTERN)[0]), ' ')
 
-      const [l:removal_offset, l:removals] = s:parse_diff_stats(l:raw_diff_stats[0], '-')
-      const [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_diff_stats[1], '+')
-      const l:shifted_lines = l:additions - l:removals
-      "const l:shifted_lines = (l:removal_offset - l:addition_offset) + l:additions - l:removals " TODO
+      let [l:removal_offset, l:removals] = s:parse_diff_stats(l:raw_diff_stats[0], '-')
+      let [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_diff_stats[1], '+')
+      let l:shifted_lines = l:additions - l:removals
+      "let l:shifted_lines = (l:removal_offset - l:addition_offset) + l:additions - l:removals " TODO
 
-      const l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
-      const l:edited_new_line = empty(l:next_diff_line[1:])
+      let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
+      let l:edited_new_line = empty(l:next_diff_line[1:])
       if !l:edited_new_line
         let l:edited_line_numbers[l:removal_offset] = 1
       endif
@@ -129,9 +129,9 @@ function! s:on_buffer_write()
 endfunction
 
 function! s:parse_diff_stats(text, delimiter)
-  const l:offset_and_lines = split(split(a:text, a:delimiter)[0], ',')
-  const l:offset = str2nr(l:offset_and_lines[0])
-  const l:lines = len(l:offset_and_lines) > 1 ? str2nr(l:offset_and_lines[1]) : 1
+  let l:offset_and_lines = split(split(a:text, a:delimiter)[0], ',')
+  let l:offset = str2nr(l:offset_and_lines[0])
+  let l:lines = len(l:offset_and_lines) > 1 ? str2nr(l:offset_and_lines[1]) : 1
   return [l:offset, l:lines]
 endfunction
 
@@ -139,7 +139,7 @@ endfunction
 function! s:open_all_locations_in_new_or_existing_tabs(locations)
   call s:recreate_sources_temp_dir()
 
-  const l:current_file = s:current_file()
+  let l:current_file = s:current_file()
   if l:current_file == '' || filereadable(l:current_file)
     let s:LOCATIONS = reverse(a:locations)
     call s:deduplicate_locations_by_paths_and_lines()
@@ -159,10 +159,10 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
 endfunction
 
 function! s:open_next_location_in_new_or_existing_tab()
-  const l:current_file = s:current_file()
+  let l:current_file = s:current_file()
   if l:current_file == '' || filereadable(l:current_file) && !empty(s:LOCATIONS)
-    const l:location = s:LOCATIONS[0]
-    const l:path = fnameescape(l:location.path)
+    let l:location = s:LOCATIONS[0]
+    let l:path = fnameescape(l:location.path)
     if &l:modified == 0
       execute 'tab drop ' . l:path
       "call s:on_buffer_write()
@@ -204,10 +204,10 @@ function! s:maybe_setup_handlers()
   if !exists('*CargoLimitOpen')
     function! g:CargoLimitOpen(editor_data)
       if exists('a:editor_data.protocol_version')
-        const l:crate_version = a:editor_data.protocol_version
-        const l:version_matched = l:crate_version == s:PLUGIN_VERSION
+        let l:crate_version = a:editor_data.protocol_version
+        let l:version_matched = l:crate_version == s:PLUGIN_VERSION
       else
-        const l:version_matched = 0
+        let l:version_matched = 0
       endif
 
       if !l:version_matched
@@ -215,7 +215,7 @@ function! s:maybe_setup_handlers()
         " call s:log_error('version mismatch, plugin ' . s:PLUGIN_VERSION . ' != crate ' . l:crate_version)
       endif
 
-      const l:locations = a:editor_data.files
+      let l:locations = a:editor_data.files
       call s:open_all_locations_in_new_or_existing_tabs(l:locations)
     endfunction
 
@@ -239,14 +239,14 @@ function! s:maybe_delete_dead_unix_socket(server_address)
 
   if filereadable(a:server_address)
     call system('which ' . LSOF_EXECUTABLE)
-    const l:lsof_is_installed = v:shell_error == 0
+    let l:lsof_is_installed = v:shell_error == 0
     if l:lsof_is_installed
-      const l:lsof_stdout = system(LSOF_COMMAND)
-      const l:lsof_succeed = v:shell_error == 0
+      let l:lsof_stdout = system(LSOF_COMMAND)
+      let l:lsof_succeed = v:shell_error == 0
       if l:lsof_succeed
-        const l:socket_is_dead = !s:contains_str(l:lsof_stdout, a:server_address)
+        let l:socket_is_dead = !s:contains_str(l:lsof_stdout, a:server_address)
         if l:socket_is_dead
-          const l:ignore = luaeval('os.remove(_A)', a:server_address)
+          let l:ignore = luaeval('os.remove(_A)', a:server_address)
           call s:log_info('removed dead socket ' . a:server_address)
         endif
       else
@@ -284,7 +284,7 @@ endfunction
 function! s:maybe_copy(source, destination)
   const MAX_SIZE_BYTES = 1024 * 1024
   if getfsize(a:source) <= MAX_SIZE_BYTES
-    const l:data = readblob(a:source)
+    let l:data = readblob(a:source)
     call writefile(l:data, a:destination, 'bS')
   endif
 endfunction
