@@ -14,8 +14,8 @@ function! s:on_cargo_metadata(_job_id, data, event)
     call add(s:DATA_CHUNKS, join(a:data, ''))
   elseif a:event == 'stderr' && type(a:data) == v:t_list
     let l:stderr = join(a:data, "\n")
-    "if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`') " TODO
-    if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`'
+    "if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`' " TODO
+    if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
       call s:log_error(l:stderr)
     endif
   elseif a:event == 'exit'
