@@ -202,13 +202,9 @@ imap <F2> <esc>:call SaveAllFilesOrOpenNextLocation()<cr>i
 
 This is by design, in order to **not disrupt** from active text editing or file navigation process.
 
-### 2. Auto-jump on each file save is currently imprecise
-- it may jump to a wrong line if it moved
-- it may not jump at all, if the next affected line is supposed to be modified already
+Also auto-jump may not happen to affected line that supposed to be **already modified/fixed** (until you rerun `cargo ll{check,run,etc.}`).
 
-For precise jump please rerun `cargo ll{check,run,etc.}`.
-
-### 3. Before running `nvim`: Current Directory should be Project (sub)directory
+### 2. Before running `nvim`: Current Directory should be Project (sub)directory
 - that's required so **cargo-limit** could [figure out](https://github.com/alopatindev/cargo-limit/issues/30#issuecomment-1219793195) which exact `nvim` instance should be controlled
 - only **first `nvim` instance** with current project (sub)directory will be **controlled by cargo-limit**.
 
