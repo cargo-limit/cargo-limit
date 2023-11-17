@@ -49,18 +49,18 @@ function! s:start_server(escaped_workspace_root)
   " TODO: what happens when I change dir to other crate? or run :source $MYVIMRC?
   if has('unix')
     let l:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root
-    let s:SOURCES_TEMP_DIR = l:server_address . SOURCES
+    let s:TEMP_SOURCES_DIR = l:server_address . SOURCES
     call s:maybe_delete_dead_unix_socket(l:server_address)
   elseif has('win32')
     const SERVER_ADDRESS_POSTFIX = TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
     let l:server_address = '\\.\pipe\' . SERVER_ADDRESS_POSTFIX
-    let s:SOURCES_TEMP_DIR = $TEMP . '\' . SERVER_ADDRESS_POSTFIX . SOURCES
+    let s:TEMP_SOURCES_DIR = $TEMP . '\' . SERVER_ADDRESS_POSTFIX . SOURCES
   else
     throw 'unsupported OS'
   endif
 
   if !filereadable(l:server_address)
-    call s:recreate_sources_temp_dir()
+    call s:recreate_temp_sources_dir()
     call s:maybe_setup_handlers()
     call serverstart(l:server_address)
     call s:log_info('ready')
@@ -101,13 +101,12 @@ function! s:maybe_setup_handlers()
   augroup CargoLimitAutocommands
     autocmd!
     autocmd BufWritePost *.rs call s:on_buffer_write()
-    autocmd VimLeavePre * call s:recreate_sources_temp_dir()
+    autocmd VimLeavePre * call s:recreate_temp_sources_dir()
   augroup END
 endfunction
 
-" FIXME: naming
 function! s:open_all_locations_in_new_or_existing_tabs(locations)
-  call s:recreate_sources_temp_dir()
+  call s:recreate_temp_sources_dir()
 
   let l:current_file = s:current_file()
   if l:current_file != '' && !filereadable(l:current_file)
@@ -122,7 +121,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
       execute 'tab drop ' . l:path
       "call s:on_buffer_write()
       call cursor((location.line), (location.column))
-      call s:maybe_copy_to_sources(l:path)
+      call s:maybe_copy_to_temp_sources(l:path)
     else
       break
     endif
@@ -142,7 +141,7 @@ function! s:open_next_location_in_new_or_existing_tab()
     execute 'tab drop ' . l:path
     "call s:on_buffer_write()
     call cursor((l:location.line), (l:location.column))
-    "call s:maybe_copy_to_sources(l:path) " TODO
+    "call s:maybe_copy_to_temp_sources(l:path) " TODO
     let s:LOCATIONS = s:LOCATIONS[1:]
   endif
 endfunction
@@ -172,7 +171,7 @@ function! s:on_buffer_write()
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
     \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff -- '
-    \ . fnameescape(s:temp_source_for_diff(l:current_file))
+    \ . fnameescape(s:temp_source_path(l:current_file))
     \ . ' '
     \ . l:current_file
   "call s:log_info(DIFF_COMMAND)
@@ -282,21 +281,20 @@ function! s:maybe_delete_dead_unix_socket(server_address)
   endif
 endfunction
 
-function! s:recreate_sources_temp_dir()
-  if exists('s:SOURCES_TEMP_DIR')
-    call delete(s:SOURCES_TEMP_DIR, 'rf')
-    call mkdir(s:SOURCES_TEMP_DIR, 'p', 0700)
+function! s:recreate_temp_sources_dir()
+  if exists('s:TEMP_SOURCES_DIR')
+    call delete(s:TEMP_SOURCES_DIR, 'rf')
+    call mkdir(s:TEMP_SOURCES_DIR, 'p', 0700)
   endif
 endfunction
 
-" TODO: naming
-function! s:temp_source_for_diff(path)
-  "return s:SOURCES_TEMP_DIR . '/' . fnamemodify(a:path, ':t') " TODO
-  return s:SOURCES_TEMP_DIR . '/' . s:escape_path(a:path)
+function! s:temp_source_path(path)
+  "return s:TEMP_SOURCES_DIR . '/' . fnamemodify(a:path, ':t') " TODO
+  return s:TEMP_SOURCES_DIR . '/' . s:escape_path(a:path)
 endfunction
 
-function! s:maybe_copy_to_sources(path)
-  call s:maybe_copy(a:path, s:temp_source_for_diff(a:path))
+function! s:maybe_copy_to_temp_sources(path)
+  call s:maybe_copy(a:path, s:temp_source_path(a:path))
 endfunction
 
 function! s:maybe_copy(source, destination)
