@@ -37,16 +37,18 @@ impl NeovimCommand {
             &self.command,
         ];
 
-        // FIXME: prints exit code on success?
         match Command::new("nvim").args(remote_send_args).output() {
             Ok(Output {
                 status,
                 stdout,
                 stderr,
             }) => {
-                let mut stdout_writer = io::stdout();
-                stdout_writer.write_all(&stdout)?;
-                stdout_writer.flush()?;
+                const EXPECTED_EXPR_RESULT: [u8; 1] = ['0' as u8];
+                if stdout != EXPECTED_EXPR_RESULT {
+                    let mut stdout_writer = io::stdout();
+                    stdout_writer.write_all(&stdout)?;
+                    stdout_writer.flush()?;
+                }
 
                 let failed_to_connect_is_the_only_error = stderr.starts_with(b"E247:")
                     && stderr.iter().filter(|i| **i == b'\n').count() == 1;
