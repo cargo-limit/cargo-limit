@@ -1,4 +1,4 @@
-" TODO: enable linter
+" TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
 " TODO: check if diff is somehow broken
 " FIXME: regression? jump should not happen while I'm editing a file
 
@@ -265,7 +265,7 @@ function! s:maybe_delete_dead_unix_socket(server_address)
 
   call system('which ' . LSOF_EXECUTABLE)
   let l:lsof_is_installed = v:shell_error == 0
-  if l:lsof_is_installed
+  if !l:lsof_is_installed
     return
   endif
 
