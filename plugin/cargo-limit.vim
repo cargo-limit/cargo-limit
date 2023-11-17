@@ -194,6 +194,9 @@ if !exists('*CargoLimitOpen')
 endif
 
 if has('nvim')
+  if !has('nvim-0.7.0')
+    throw 'unsupported nvim version, expected >=0.7.0'
+  endif
   call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
   \ 'on_stdout': function('s:on_cargo_metadata'),
   \ 'on_stderr': function('s:on_cargo_metadata'),

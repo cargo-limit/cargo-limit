@@ -93,11 +93,13 @@ This tool is especially useful in combination with [cargo-watch](https://crates.
 <summary><b>💡 Neovim Plugin 👁️</b></summary>
 <p>
 
+Requires `nvim >= 0.7.0` and `git` to be installed.
+
 This plugin is [LSP](https://microsoft.github.io/language-server-protocol/)-independent, **it will keep working even when [rust-analyzer](https://rust-analyzer.github.io/) fails**.
 
 ### Using **[vim-plug](https://github.com/junegunn/vim-plug#neovim):**
 ```viml
-Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit nvim-send' }
+Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit' }
 ```
 
 and run
@@ -105,34 +107,44 @@ and run
 nvim +PlugInstall +UpdateRemotePlugins +qa
 ```
 
-### Using [lazy.nvim](https://github.com/folke/lazy.nvim):
+### Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 ```lua
-use {
-  'alopatindev/cargo-limit',
-  config = function()
-    -- TODO
-  end,
-}
+{ 'alopatindev/cargo-limit', build = 'cargo install cargo-limit' },
+```
+
+and run
+```bash
+nvim --headless "+Lazy! sync" +qa
+```
+
+### [paq-nvim](https://github.com/savq/paq-nvim):
+```lua
+{ 'alopatindev/cargo-limit', build = ':!cargo install cargo-limit' },
+```
+
+and run
+```bash
+nvim +PaqSync +qa
 ```
 
 ### Using [packer.nvim](https://github.com/wbthomason/packer.nvim):
 ```lua
-use {
-  'alopatindev/cargo-limit',
-  -- TODO: dependence installation
-}
+{ use 'alopatindev/cargo-limit', run = ':!cargo install cargo-limit' }
 ```
 
-### Using [paq-nvim](https://github.com/savq/paq-nvim):
-```lua
-paq {'alopatindev/cargo-limit'}
--- TODO: dependence installation
+and run
+```bash
+nvim +PackerUpdate +qa
 ```
 
 ### Using [dein](https://github.com/Shougo/dein.vim):
 ```viml
-call dein#add('alopatindev/cargo-limit', { 'rev': 'master' })
-" TODO: dependence installation
+call dein#add('alopatindev/cargo-limit', { 'rev': 'master', 'hook_post_update': '!cargo install cargo-limit' })
+```
+
+and run
+```bash
+nvim --cmd '!call dein#install()'
 ```
 
 ### Optionally: F2 to save, F2 again to jump to next affected line
@@ -324,6 +336,10 @@ Your donations will help me allocate more time to resolve [issues](https://githu
 - **Ethereum** (ETH, DAI, etc.) `0xa879cdb1d7d859e6e425f8e50c4ee49f4b3a7b06`
 
 - **[Patreon](https://www.patreon.com/checkout/alopatindev/9785189)**
+
+- **[Liberapay](https://liberapay.com/alopatindev)**
+
+- **[Ko-fi](https://ko-fi.com/alopatindev)**
 
 ---
 

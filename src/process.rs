@@ -116,7 +116,7 @@ impl CargoProcess {
                         .args(["/PID", pid.to_string().as_str(), "/t"])
                         .output()
                     {
-                        String::from_utf8_lossy(&stderr).starts_with("SUCCESS")
+                        stderr.starts_with(b"SUCCESS")
                     } else {
                         false
                     }
@@ -164,5 +164,5 @@ impl StateExt for Arc<Atomic<State>> {
 }
 
 pub(crate) fn failed_to_execute_error_text<T: fmt::Debug>(app: T) -> String {
-    format!("failed to execute {:?}", app)
+    format!("failed to execute {app:?}")
 }

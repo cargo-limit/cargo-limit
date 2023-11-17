@@ -290,7 +290,7 @@ impl Options {
         if let Ok(new_value) = env::var(key) {
             *value = new_value
                 .parse()
-                .with_context(|| format!("invalid {} value", key))?;
+                .with_context(|| format!("invalid {key} value"))?;
         }
         Ok(())
     }
@@ -298,10 +298,9 @@ impl Options {
     fn validate_color(color: &str) -> Result<()> {
         if !VALID_COLORS.contains(&color) {
             return Err(format_err!(
-                "argument for {} must be {} (was {})",
+                "argument for {} must be {} (was {color})",
                 &COLOR[..COLOR.len() - 1],
                 VALID_COLORS.join(", "),
-                color,
             ));
         }
         Ok(())
@@ -310,10 +309,9 @@ impl Options {
     fn validate_message_format(format: &str) -> Result<()> {
         if !VALID_MESSAGE_FORMATS.contains(&format) {
             return Err(format_err!(
-                "argument for {} must be {} (was {})",
+                "argument for {} must be {} (was {format})",
                 &MESSAGE_FORMAT[..MESSAGE_FORMAT.len() - 1],
                 VALID_MESSAGE_FORMATS.join(", "),
-                format,
             ));
         }
         Ok(())
@@ -321,7 +319,7 @@ impl Options {
 
     fn add_color_arg(&mut self, value: &str) {
         self.args_after_app_args_delimiter
-            .push(format!("{}{}", COLOR, value));
+            .push(format!("{COLOR}{value}"));
     }
 }
 
@@ -347,8 +345,8 @@ impl ParsedSubcommand {
             if let Some(executable) = executable {
                 if executable == CARGO_EXECUTABLE
                     || executable == current_exe
-                    || executable == format!("l{}", subcommand)
-                    || executable == format!("ll{}", subcommand)
+                    || executable == format!("l{subcommand}")
+                    || executable == format!("ll{subcommand}")
                 {
                     let _ = peekable_args.next();
                 } else {
