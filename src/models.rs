@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Serialize)]
 pub struct EditorData {
-    protocol_version: Option<String>,
+    protocol_version: String,
     workspace_root: PathBuf,
 
     #[serde(rename = "files")]
@@ -23,8 +23,9 @@ pub struct Location {
 impl EditorData {
     pub fn new(workspace_root: &Path, locations_in_consistent_order: Vec<Location>) -> Self {
         let workspace_root = workspace_root.to_path_buf();
+        let protocol_version = std::env!("CARGO_PKG_VERSION").to_string();
         Self {
-            protocol_version: std::option_env!("CARGO_PKG_VERSION").map(|v| v.to_string()),
+            protocol_version,
             workspace_root,
             locations: locations_in_consistent_order,
         }
