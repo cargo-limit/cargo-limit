@@ -22,6 +22,51 @@ function! s:main()
   endif
 endfunction
 
+function! s:on_cargo_metadata(_job_id, data, event)
+  if a:event == 'stdout'
+    call add(s:DATA_CHUNKS, join(a:data, ''))
+  elseif a:event == 'stderr' && type(a:data) == v:t_list
+    let l:stderr = join(a:data, "\n")
+    if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`' " TODO
+    "if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`') " TODO: what's wrong?!
+      call s:log_error(l:stderr)
+    endif
+  elseif a:event == 'exit'
+    let l:stdout = join(s:DATA_CHUNKS, '')
+    if !empty(l:stdout)
+      let l:metadata = json_decode(l:stdout)
+      let l:workspace_root = get(l:metadata, 'workspace_root')
+      let l:escaped_workspace_root = s:escape_path(workspace_root)
+      call s:start_server(l:escaped_workspace_root)
+    endif
+  endif
+endfunction
+
+function! s:start_server(escaped_workspace_root)
+  const TEMP_DIR_PREFIX = 'nvim-cargo-limit-'
+  const SOURCES = '.sources'
+
+  " TODO: what happens when I change dir to other crate? or run :source $MYVIMRC?
+  if has('unix')
+    let l:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root
+    let s:SOURCES_TEMP_DIR = l:server_address . SOURCES
+    call s:maybe_delete_dead_unix_socket(l:server_address)
+  elseif has('win32')
+    const SERVER_ADDRESS_POSTFIX = TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
+    let l:server_address = '\\.\pipe\' . SERVER_ADDRESS_POSTFIX
+    let s:SOURCES_TEMP_DIR = $TEMP . '\' . SERVER_ADDRESS_POSTFIX . SOURCES
+  else
+    throw 'unsupported OS'
+  endif
+
+  if !filereadable(l:server_address)
+    call s:recreate_sources_temp_dir()
+    call s:maybe_setup_handlers()
+    call serverstart(l:server_address)
+    call s:log_info('ready')
+  endif
+endfunction
+
 function! s:maybe_setup_handlers()
   if exists('*CargoLimitOpen')
     return
@@ -99,51 +144,6 @@ function! s:open_next_location_in_new_or_existing_tab()
     call cursor((l:location.line), (l:location.column))
     "call s:maybe_copy_to_sources(l:path) " TODO
     let s:LOCATIONS = s:LOCATIONS[1:]
-  endif
-endfunction
-
-function! s:on_cargo_metadata(_job_id, data, event)
-  if a:event == 'stdout'
-    call add(s:DATA_CHUNKS, join(a:data, ''))
-  elseif a:event == 'stderr' && type(a:data) == v:t_list
-    let l:stderr = join(a:data, "\n")
-    if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`' " TODO
-    "if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`') " TODO: what's wrong?!
-      call s:log_error(l:stderr)
-    endif
-  elseif a:event == 'exit'
-    let l:stdout = join(s:DATA_CHUNKS, '')
-    if !empty(l:stdout)
-      let l:metadata = json_decode(l:stdout)
-      let l:workspace_root = get(l:metadata, 'workspace_root')
-      let l:escaped_workspace_root = s:escape_path(workspace_root)
-      call s:start_server(l:escaped_workspace_root)
-    endif
-  endif
-endfunction
-
-function! s:start_server(escaped_workspace_root)
-  const TEMP_DIR_PREFIX = 'nvim-cargo-limit-'
-  const SOURCES = '.sources'
-
-  " TODO: what happens when I change dir to other crate? or run :source $MYVIMRC?
-  if has('unix')
-    let l:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root
-    let s:SOURCES_TEMP_DIR = l:server_address . SOURCES
-    call s:maybe_delete_dead_unix_socket(l:server_address)
-  elseif has('win32')
-    const SERVER_ADDRESS_POSTFIX = TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
-    let l:server_address = '\\.\pipe\' . SERVER_ADDRESS_POSTFIX
-    let s:SOURCES_TEMP_DIR = $TEMP . '\' . SERVER_ADDRESS_POSTFIX . SOURCES
-  else
-    throw 'unsupported OS'
-  endif
-
-  if !filereadable(l:server_address)
-    call s:recreate_sources_temp_dir()
-    call s:maybe_setup_handlers()
-    call serverstart(l:server_address)
-    call s:log_info('ready')
   endif
 endfunction
 
