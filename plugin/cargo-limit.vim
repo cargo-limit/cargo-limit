@@ -26,13 +26,14 @@ function! s:on_cargo_metadata(_job_id, data, event)
   if a:event == 'stdout'
     call add(s:DATA_CHUNKS, join(a:data, ''))
   elseif a:event == 'stderr' && type(a:data) == v:t_list
-    let l:stderr = join(a:data, "\n")
-    if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`' " TODO
-    "if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`') " TODO: what's wrong?!
+    let l:stderr = trim(join(a:data, "\n"))
+    "call s:log_info(a:event . ' ' . !empty(l:stderr) . ' ' . (l:stderr !~# 'could not find `Cargo.toml`') . ' ' . (!s:contains_str(l:stderr, 'could not find `Cargo.toml`')))
+    "if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`' " TODO
+    if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
       call s:log_error(l:stderr)
     endif
   elseif a:event == 'exit'
-    let l:stdout = join(s:DATA_CHUNKS, '')
+    let l:stdout = trim(join(s:DATA_CHUNKS, ''))
     if !empty(l:stdout)
       let l:metadata = json_decode(l:stdout)
       let l:workspace_root = get(l:metadata, 'workspace_root')
