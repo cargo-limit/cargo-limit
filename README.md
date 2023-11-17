@@ -95,7 +95,7 @@ This tool is especially useful in combination with [cargo-watch](https://crates.
 
 Requires `nvim >= 0.7.0` and `git` to be installed.
 
-This plugin is [LSP](https://microsoft.github.io/language-server-protocol/)-independent, **it will keep working even when [rust-analyzer](https://rust-analyzer.github.io/) fails**.
+This plugin is [LSP](https://microsoft.github.io/language-server-protocol/)-independent, **it will keep working even when [rust-analyzer](https://rust-analyzer.github.io/) fails**!
 
 ### Using **[vim-plug](https://github.com/junegunn/vim-plug#neovim):**
 ```viml
