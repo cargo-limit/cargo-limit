@@ -108,7 +108,7 @@ nvim +PlugInstall +UpdateRemotePlugins +qa
 ```
 
 <details>
-<summary><b>💡 Using other Neovim plugin managers 👁️</b></summary>
+<summary><b>💡 Using other Neovim Plugin Managers 👁️</b></summary>
 <p>
 
 ### Using [lazy.nvim](https://github.com/folke/lazy.nvim)
