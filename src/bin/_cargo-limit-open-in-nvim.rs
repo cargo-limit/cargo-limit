@@ -43,7 +43,7 @@ impl NeovimCommand {
                 stdout,
                 stderr,
             }) => {
-                const EXPECTED_EXPR_RESULT: [u8; 1] = ['0' as u8];
+                const EXPECTED_EXPR_RESULT: [u8; 1] = [b'0'];
                 if stdout != EXPECTED_EXPR_RESULT {
                     let mut stdout_writer = io::stdout();
                     stdout_writer.write_all(&stdout)?;
