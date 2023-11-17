@@ -1,8 +1,8 @@
 # cargo-limit
-[![Crates.io](https://img.shields.io/crates/v/cargo-limit.svg)](https://crates.io/crates/cargo-limit)
+[![Crates.io](https://img.shields.io/crates/v/cargo-limit)](https://crates.io/crates/cargo-limit)
+[![Crates.io](https://img.shields.io/crates/d/cargo-limit)](https://crates.io/crates/cargo-limit)
 [![Awesome](https://camo.githubusercontent.com/13c4e50d88df7178ae1882a203ed57b641674f94/68747470733a2f2f63646e2e7261776769742e636f6d2f73696e647265736f726875732f617765736f6d652f643733303566333864323966656437386661383536353265336136336531353464643865383832392f6d656469612f62616467652e737667)](https://github.com/rust-unofficial/awesome-rust#build-system)
-[![Donate with Crypto or Patreon](https://img.shields.io/badge/♡_Donate-Crypto_or_Patreon-97ca00)](#Support)
-
+[![Donate with Crypto/USD/EUR/etc.](https://img.shields.io/badge/%E2%99%A1_Donate-Crypto_or_%24%2F%E2%82%AC%2Fetc.-97ca00)](#Support)
 ## Description
 
 🚀 Cargo with less noise:
@@ -95,11 +95,11 @@ This tool is especially useful in combination with [cargo-watch](https://crates.
 
 Requires `nvim >= 0.7.0` and `git` to be installed.
 
-This plugin is [LSP](https://microsoft.github.io/language-server-protocol/)-independent, **it will keep working even when [rust-analyzer](https://rust-analyzer.github.io/) fails**.
+This plugin is [LSP](https://microsoft.github.io/language-server-protocol/)-independent, **it will keep working even when [rust-analyzer](https://rust-analyzer.github.io/) fails**!
 
 ### Using **[vim-plug](https://github.com/junegunn/vim-plug#neovim):**
 ```viml
-Plug 'alopatindev/cargo-limit', { 'do': 'cargo install cargo-limit' }
+Plug 'alopatindev/cargo-limit', { 'do': 'cargo install --locked cargo-limit' }
 ```
 
 and run
@@ -107,9 +107,13 @@ and run
 nvim +PlugInstall +UpdateRemotePlugins +qa
 ```
 
+<details>
+<summary><b>💡 Using other Neovim Plugin Managers 👁️</b></summary>
+<p>
+
 ### Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 ```lua
-{ 'alopatindev/cargo-limit', build = 'cargo install cargo-limit' },
+{ 'alopatindev/cargo-limit', build = 'cargo install --locked cargo-limit' },
 ```
 
 and run
@@ -119,7 +123,7 @@ nvim --headless "+Lazy! sync" +qa
 
 ### [paq-nvim](https://github.com/savq/paq-nvim):
 ```lua
-{ 'alopatindev/cargo-limit', build = ':!cargo install cargo-limit' },
+{ 'alopatindev/cargo-limit', build = ':!cargo install --locked cargo-limit' },
 ```
 
 and run
@@ -129,7 +133,7 @@ nvim +PaqSync +qa
 
 ### Using [packer.nvim](https://github.com/wbthomason/packer.nvim):
 ```lua
-{ use 'alopatindev/cargo-limit', run = ':!cargo install cargo-limit' }
+{ use 'alopatindev/cargo-limit', run = ':!cargo install --locked cargo-limit' }
 ```
 
 and run
@@ -139,13 +143,16 @@ nvim +PackerUpdate +qa
 
 ### Using [dein](https://github.com/Shougo/dein.vim):
 ```viml
-call dein#add('alopatindev/cargo-limit', { 'rev': 'master', 'hook_post_update': '!cargo install cargo-limit' })
+call dein#add('alopatindev/cargo-limit', { 'rev': 'master', 'hook_post_update': '!cargo install --locked cargo-limit' })
 ```
 
 and run
 ```bash
 nvim --cmd '!call dein#install()'
 ```
+
+</p>
+</details>
 
 ### Optionally: F2 to save, F2 again to jump to next affected line
 ```viml
@@ -271,6 +278,7 @@ endfunction
 **cargo-limit** can run external app/script and provide affected locations to stdin in the following JSON format:
 ```json
 {
+  "protocol_version": "0.0.11",
   "workspace_root": "/full/path/to/project",
   "files": [
     {
