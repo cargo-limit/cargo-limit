@@ -15,8 +15,7 @@ impl NeovimCommand {
     fn from_editor_data<R: Read>(mut input: R) -> Result<Option<Self>> {
         let mut raw_editor_data = String::new();
         input.read_to_string(&mut raw_editor_data)?;
-        let command =
-            format!("<Esc>:call g:CargoLimitOpen({raw_editor_data})<Enter><Esc>:echom ''<Enter>");
+        let command = format!("g:CargoLimitOpen({raw_editor_data})");
 
         let editor_data: EditorData = serde_json::from_str(&raw_editor_data)?;
         let escaped_workspace_root = editor_data.escaped_workspace_root();
@@ -28,14 +27,17 @@ impl NeovimCommand {
     }
 
     fn run(self) -> Result<ExitStatus> {
-        let NeovimCommand {
-            escaped_workspace_root,
-            command,
-        } = self;
+        let server_name = nvim_listen_address(self.escaped_workspace_root)?;
+        let remote_send_args = vec![
+            "--headless",
+            "--clean",
+            "--server",
+            &server_name,
+            "--remote-expr",
+            &self.command,
+        ];
 
-        let server_name = nvim_listen_address(escaped_workspace_root)?;
-        let remote_send_args = vec!["--server", &server_name, "--remote-send", &command];
-
+        // FIXME: prints exit code on success?
         match Command::new("nvim").args(remote_send_args).output() {
             Ok(Output {
                 status,
@@ -65,16 +67,16 @@ fn nvim_listen_address(escaped_workspace_root: String) -> Result<String> {
     const PREFIX: &str = "nvim-cargo-limit-";
 
     let result = {
-        #[cfg(windows)]
-        {
-            let user = env::var("USERNAME")?;
-            format!(r"\\.\pipe\{PREFIX}{user}-{escaped_workspace_root}")
-        }
-
         #[cfg(unix)]
         {
             let user = env::var("USER")?;
             format!("/tmp/{PREFIX}{user}/{escaped_workspace_root}")
+        }
+
+        #[cfg(windows)]
+        {
+            let user = env::var("USERNAME")?;
+            format!(r"\\.\pipe\{PREFIX}{user}-{escaped_workspace_root}")
         }
 
         #[cfg(not(any(unix, windows)))]
