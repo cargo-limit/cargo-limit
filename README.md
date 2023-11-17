@@ -107,7 +107,9 @@ and run
 nvim +PlugInstall +UpdateRemotePlugins +qa
 ```
 
-TODO: collapsable Using other Neovim package managers
+<details>
+<summary><b>💡 Using other Neovim plugin managers 👁️</b></summary>
+<p>
 
 ### Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 ```lua
@@ -148,6 +150,9 @@ and run
 ```bash
 nvim --cmd '!call dein#install()'
 ```
+
+</p>
+</details>
 
 ### Optionally: F2 to save, F2 again to jump to next affected line
 ```viml
