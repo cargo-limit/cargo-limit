@@ -1,6 +1,5 @@
 " TODO: enable linter
 " TODO: check if diff is somehow broken
-" TODO: reorder functions
 " FIXME: regression? jump should not happen while I'm editing a file
 
 function! s:main()
@@ -61,13 +60,55 @@ function! s:maybe_setup_handlers()
   augroup END
 endfunction
 
+" FIXME: naming
+function! s:open_all_locations_in_new_or_existing_tabs(locations)
+  call s:recreate_sources_temp_dir()
+
+  let l:current_file = s:current_file()
+  if l:current_file != '' && !filereadable(l:current_file)
+    return
+  endif
+
+  let s:LOCATIONS = reverse(a:locations)
+  call s:deduplicate_locations_by_paths_and_lines()
+  for location in s:LOCATIONS
+    let l:path = fnameescape(location.path)
+    if mode() == 'n' && &l:modified == 0
+      execute 'tab drop ' . l:path
+      "call s:on_buffer_write()
+      call cursor((location.line), (location.column))
+      call s:maybe_copy_to_sources(l:path)
+    else
+      break
+    endif
+  endfor
+  let s:LOCATIONS = reverse(s:LOCATIONS)[1:]
+endfunction
+
+function! s:open_next_location_in_new_or_existing_tab()
+  let l:current_file = s:current_file()
+  if l:current_file != '' && !filereadable(l:current_file) || empty(s:LOCATIONS) " TODO: correct?
+    return
+  endif
+
+  let l:location = s:LOCATIONS[0]
+  let l:path = fnameescape(l:location.path)
+  if &l:modified == 0
+    execute 'tab drop ' . l:path
+    "call s:on_buffer_write()
+    call cursor((l:location.line), (l:location.column))
+    "call s:maybe_copy_to_sources(l:path) " TODO
+    let s:LOCATIONS = s:LOCATIONS[1:]
+  endif
+endfunction
+
 function! s:on_cargo_metadata(_job_id, data, event)
   if a:event == 'stdout'
     call add(s:DATA_CHUNKS, join(a:data, ''))
   elseif a:event == 'stderr' && type(a:data) == v:t_list
     let l:stderr = join(a:data, "\n")
-    "if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`' " TODO
-    if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
+    if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`' " TODO
+    "if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`') " TODO: what's wrong?!
       call s:log_error(l:stderr)
     endif
   elseif a:event == 'exit'
@@ -187,48 +228,6 @@ function! s:parse_diff_stats(text, delimiter)
   return [l:offset, l:lines]
 endfunction
 
-" FIXME: naming
-function! s:open_all_locations_in_new_or_existing_tabs(locations)
-  call s:recreate_sources_temp_dir()
-
-  let l:current_file = s:current_file()
-  if l:current_file != '' && !filereadable(l:current_file)
-    return
-  endif
-
-  let s:LOCATIONS = reverse(a:locations)
-  call s:deduplicate_locations_by_paths_and_lines()
-  for location in s:LOCATIONS
-    let l:path = fnameescape(location.path)
-    if mode() == 'n' && &l:modified == 0
-      execute 'tab drop ' . l:path
-      "call s:on_buffer_write()
-      call cursor((location.line), (location.column))
-      call s:maybe_copy_to_sources(l:path)
-    else
-      break
-    endif
-  endfor
-  let s:LOCATIONS = reverse(s:LOCATIONS)[1:]
-endfunction
-
-function! s:open_next_location_in_new_or_existing_tab()
-  let l:current_file = s:current_file()
-  if l:current_file != '' && !filereadable(l:current_file) || empty(s:LOCATIONS) " TODO: correct?
-    return
-  endif
-
-  let l:location = s:LOCATIONS[0]
-  let l:path = fnameescape(l:location.path)
-  if &l:modified == 0
-    execute 'tab drop ' . l:path
-    "call s:on_buffer_write()
-    call cursor((l:location.line), (l:location.column))
-    "call s:maybe_copy_to_sources(l:path) " TODO
-    let s:LOCATIONS = s:LOCATIONS[1:]
-  endif
-endfunction
-
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
   let l:new_locations = []
   for i in s:LOCATIONS
@@ -290,14 +289,6 @@ function! s:recreate_sources_temp_dir()
   endif
 endfunction
 
-function! s:current_file()
-  return resolve(expand('%:p'))
-endfunction
-
-function! s:escape_path(path)
-  return substitute(a:path, '[/\\:]', '%', 'g')
-endfunction
-
 " TODO: naming
 function! s:temp_source_for_diff(path)
   "return s:SOURCES_TEMP_DIR . '/' . fnamemodify(a:path, ':t') " TODO
@@ -314,6 +305,14 @@ function! s:maybe_copy(source, destination)
     let l:data = readblob(a:source)
     call writefile(l:data, a:destination, 'bS')
   endif
+endfunction
+
+function! s:current_file()
+  return resolve(expand('%:p'))
+endfunction
+
+function! s:escape_path(path)
+  return substitute(a:path, '[/\\:]', '%', 'g')
 endfunction
 
 function! s:starts_with(longer, shorter)
