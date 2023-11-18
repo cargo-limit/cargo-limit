@@ -156,15 +156,6 @@ function! s:on_buffer_write()
   if l:current_file != '' && filereadable(l:current_file)
     call s:update_locations(l:current_file)
   endif
-
-"  let l:files = {}
-"  for location in s:LOCATIONS
-"    let l:files[location.path] = 1
-"  endfor
-"
-"  for f in keys(l:files)
-"    call s:update_locations(f)
-"  endfor
 endfunction
 
 function! s:update_locations(path)
@@ -177,19 +168,6 @@ function! s:update_locations(path)
     \ . ' '
     \ . a:path
   "call s:log_info(DIFF_COMMAND)
-
-  function! s:update_edited_line_numbers(edited_line_numbers, removal_offset, removals, diff_stdout_lines, diff_stdout_line_number)
-    let l:i = 0
-    while l:i < a:removals
-      let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + l:i]
-      let l:edited_new_line = empty(l:next_diff_line[1:])
-      if !l:edited_new_line
-        let a:edited_line_numbers[a:removal_offset + l:i] = 1
-      endif
-      let l:i += 1
-    endwhile
-    return a:edited_line_numbers
-  endfunction
 
   let l:line_to_shift = []
   let l:edited_line_numbers = {}
@@ -254,6 +232,19 @@ function! s:parse_diff_stats(text, delimiter)
   let l:offset = str2nr(l:offset_and_lines[0])
   let l:lines = len(l:offset_and_lines) > 1 ? str2nr(l:offset_and_lines[1]) : 1
   return [l:offset, l:lines]
+endfunction
+
+function! s:update_edited_line_numbers(edited_line_numbers, removal_offset, removals, diff_stdout_lines, diff_stdout_line_number)
+  let l:i = 0
+  while l:i < a:removals
+    let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + l:i]
+    let l:edited_new_line = empty(l:next_diff_line[1:])
+    if !l:edited_new_line
+      let a:edited_line_numbers[a:removal_offset + l:i] = 1
+    endif
+    let l:i += 1
+  endwhile
+  return a:edited_line_numbers
 endfunction
 
 " TODO: naming
