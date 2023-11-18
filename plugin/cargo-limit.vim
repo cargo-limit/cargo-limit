@@ -195,21 +195,23 @@ function! s:update_locations(path)
 
 
 
-  let l:locations_index = 0 " TODO
+  let l:shift_accumulator = 0
   let l:line_to_shift_index = 0
   while l:line_to_shift_index < len(l:line_to_shift)
     let l:shifted_lines = l:line_to_shift[l:line_to_shift_index][1]
     let l:start = l:line_to_shift[l:line_to_shift_index][0]
-    let l:end = l:line_to_shift_index + 1 < len(l:line_to_shift) ? l:line_to_shift[l:line_to_shift_index + 1][0] : 99999
+    let l:end = l:line_to_shift_index + 1 < len(l:line_to_shift) ? l:line_to_shift[l:line_to_shift_index + 1][0] : 99999 " TODO
 
 
 
+    let l:locations_index = 0 " TODO
     while l:locations_index < len(s:LOCATIONS)
       let l:current_location = s:LOCATIONS[l:locations_index]
       if l:current_location.path == a:path
         let l:current_line = l:current_location.line
-        if l:current_line > l:start && l:current_line <= l:end "+ l:shifted_lines
-          let s:LOCATIONS[l:locations_index].line += l:shifted_lines
+        "if l:current_line > l:start && l:current_line <= l:end - l:prev_shift "+ l:shifted_lines
+        if l:current_line >= l:start && l:current_line <= l:end
+          let s:LOCATIONS[l:locations_index].line += l:shifted_lines + l:shift_accumulator
         endif
         let l:locations_index += 1
       else
@@ -217,6 +219,7 @@ function! s:update_locations(path)
       endif
     endwhile
 
+    let l:shift_accumulator += l:shifted_lines
 
     let l:line_to_shift_index += 1
   endwhile
@@ -332,7 +335,7 @@ function! s:contains_str(text, pattern)
 endfunction
 
 function! s:jump_to_location(location_index)
-  if !empty(s:LOCATIONS)
+  if a:location_index < len(s:LOCATIONS) " TODO: is it really necessary?
     let l:location = s:LOCATIONS[a:location_index]
     call cursor((l:location.line), (l:location.column))
   endif
