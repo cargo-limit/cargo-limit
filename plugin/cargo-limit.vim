@@ -164,7 +164,7 @@ endfunction
 function! s:compute_shifts_and_edits(path)
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
-    \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff -- '
+    \ 'w !git diff --unified=0 --ignore-blank-lines --ignore-all-space --ignore-cr-at-eol --no-index --no-color --no-ext-diff -- '
     \ . fnameescape(s:temp_source_path(a:path))
     \ . ' '
     \ . a:path
@@ -219,10 +219,7 @@ function! s:update_edited_line_numbers(edited_line_numbers, removal_offset, remo
   let l:i = 0
   while l:i < a:removals
     let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + l:i]
-    let l:edited_new_line = empty(l:next_diff_line[1:])
-    if !l:edited_new_line
-      let a:edited_line_numbers[a:removal_offset + l:i] = 1
-    endif
+    let a:edited_line_numbers[a:removal_offset + l:i] = 1
     let l:i += 1
   endwhile
   return a:edited_line_numbers
