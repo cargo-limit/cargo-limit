@@ -114,7 +114,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
   endif
 
   let s:LOCATIONS = reverse(a:locations)
-  "call s:deduplicate_locations_by_paths_and_lines() " TODO
+  call s:deduplicate_locations_by_paths_and_lines() " TODO
   let l:location_index = 0
   while l:location_index < len(s:LOCATIONS)
     if mode() == 'n' && &l:modified == 0
@@ -169,6 +169,7 @@ function! s:update_locations(path)
     \ . a:path
   "call s:log_info(DIFF_COMMAND)
 
+  let l:line_to_shift = []
   let l:edited_line_numbers = {}
   let l:diff_stdout_lines = split(execute(DIFF_COMMAND), "\n")
   "call s:log_info(join(l:diff_stdout_lines, ''))
@@ -183,6 +184,8 @@ function! s:update_locations(path)
       let l:shifted_lines = l:additions - l:removals
       "let l:shifted_lines = (l:removal_offset - l:addition_offset) + l:additions - l:removals " TODO
 
+      call add(l:line_to_shift, [l:removal_offset, l:shifted_lines])
+
       let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
       let l:edited_new_line = empty(l:next_diff_line[1:])
       if !l:edited_new_line
@@ -192,26 +195,58 @@ function! s:update_locations(path)
       "call s:log_info(l:raw_diff_stats)
 
       "call s:log_info(l:shifted_lines)
-      if l:shifted_lines != 0
-        while l:locations_index < len(s:LOCATIONS)
-          let l:current_location = s:LOCATIONS[l:locations_index]
-          if l:current_location.path == a:path
-            let l:current_line = l:current_location.line
-            if l:current_line > l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:shifted_lines
-              let s:LOCATIONS[l:locations_index].line += l:shifted_lines
-            endif
-            let l:locations_index += 1
-          else
-            break " TODO: why do we stuck without it?
-          endif
-        endwhile
-      endif
+
+"      if l:shifted_lines != 0
+"        while l:locations_index < len(s:LOCATIONS)
+"          let l:current_location = s:LOCATIONS[l:locations_index]
+"          if l:current_location.path == a:path
+"            let l:current_line = l:current_location.line
+"            if l:current_line > l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:shifted_lines
+"              let s:LOCATIONS[l:locations_index].line += l:shifted_lines
+"            endif
+"            let l:locations_index += 1
+"          else
+"            break " TODO: why do we stuck without it?
+"          endif
+"        endwhile
+"
+""        let l:edited_line_numbers_index = 0
+""        while l:edited_line_numbers_index < len(l:edited_line_numbers)
+""            let l:line_number = l:edited_line_numbers[l:edited_line_numbers_index]
+""            let l:edited_line_numbers[l:edited_line_numbers_index] += l:shifted_lines
+""            let l:locations_index += 1
+""        endwhile
+"
+"      endif
     endif
     let l:diff_stdout_line_number += 1
   endwhile
 
+
+
+
+  if !empty(l:line_to_shift)
+    let [l:removal_offset, l:shifted_lines] = l:line_to_shift[0]
+    while l:locations_index < len(s:LOCATIONS)
+      let l:current_location = s:LOCATIONS[l:locations_index]
+      if l:current_location.path == a:path
+        let l:current_line = l:current_location.line
+        if l:current_line > l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:shifted_lines
+          let s:LOCATIONS[l:locations_index].line += l:shifted_lines
+        endif
+        let l:locations_index += 1
+      else
+        break " TODO: why do we stuck without it?
+      endif
+    endwhile
+
+  endif
+
+
+
+
   call s:deduplicate_locations_by_paths_and_lines()
-  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path) " TODO
+  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path) " TODO!
   " TODO: deduplicate_locations_by_paths_and_lines + ignore_edited_lines_of_current_file
 endfunction
 
@@ -224,6 +259,9 @@ endfunction
 
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
+  return
+  " TODO!!!
+
   let l:new_locations = []
   for i in s:LOCATIONS
     let l:is_edited_line = get(a:edited_line_numbers, i.line) && i.path == a:current_file
