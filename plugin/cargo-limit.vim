@@ -113,7 +113,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
   endif
 
   let s:LOCATIONS = reverse(a:locations)
-  call s:deduplicate_locations_by_paths_and_lines() " TODO
+  "call s:deduplicate_locations_by_paths_and_lines() " TODO
   let l:location_index = 0
   while l:location_index < len(s:LOCATIONS)
     if mode() == 'n' && &l:modified == 0
@@ -121,7 +121,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
       execute 'tab drop ' . l:path
 
       call s:update_locations(l:path)
-      call s:jump_to_location(s:LOCATIONS[l:location_index])
+      call s:jump_to_location(l:location_index)
 
       call s:maybe_copy_to_temp_sources(l:path)
     else
@@ -134,7 +134,7 @@ endfunction
 
 function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
-  if l:current_file != '' && !filereadable(l:current_file) || empty(s:LOCATIONS) " TODO: correct?
+  if (l:current_file != '' && !filereadable(l:current_file)) || empty(s:LOCATIONS) " TODO: correct?
     return
   endif
 
@@ -143,7 +143,7 @@ function! s:open_next_location_in_new_or_existing_tab()
     execute 'tab drop ' . l:path
 
     call s:update_locations(l:path)
-    call s:jump_to_location(s:LOCATIONS[0])
+    call s:jump_to_location(0)
 
     "call s:maybe_copy_to_temp_sources(l:path) " TODO
     let s:LOCATIONS = s:LOCATIONS[1:]
@@ -202,7 +202,9 @@ function! s:update_locations(path)
     let l:diff_stdout_line_number += 1
   endwhile
 
-  "call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path) " TODO
+  call s:deduplicate_locations_by_paths_and_lines()
+  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path) " TODO
+  " TODO: deduplicate_locations_by_paths_and_lines + ignore_edited_lines_of_current_file
 endfunction
 
 function! s:parse_diff_stats(text, delimiter)
@@ -212,6 +214,7 @@ function! s:parse_diff_stats(text, delimiter)
   return [l:offset, l:lines]
 endfunction
 
+" TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
   let l:new_locations = []
   for i in s:LOCATIONS
@@ -306,8 +309,11 @@ function! s:contains_str(text, pattern)
   return stridx(a:text, a:pattern) != -1
 endfunction
 
-function! s:jump_to_location(location)
-  call cursor((a:location.line), (a:location.column))
+function! s:jump_to_location(location_index)
+  if !empty(s:LOCATIONS)
+    let l:location = s:LOCATIONS[a:location_index]
+    call cursor((l:location.line), (l:location.column))
+  endif
 endfunction
 
 function! s:log_error(message)
