@@ -178,6 +178,19 @@ function! s:update_locations(path)
     \ . a:path
   "call s:log_info(DIFF_COMMAND)
 
+  function! s:update_edited_line_numbers(edited_line_numbers, removal_offset, removals, diff_stdout_lines, diff_stdout_line_number)
+    let l:i = 0
+    while l:i < a:removals
+      let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + l:i]
+      let l:edited_new_line = empty(l:next_diff_line[1:])
+      if !l:edited_new_line
+        let a:edited_line_numbers[a:removal_offset + l:i] = 1
+      endif
+      let l:i += 1
+    endwhile
+    return a:edited_line_numbers
+  endfunction
+
   let l:line_to_shift = []
   let l:edited_line_numbers = {}
   let l:diff_stdout_lines = split(execute(DIFF_COMMAND), "\n")
@@ -186,7 +199,7 @@ function! s:update_locations(path)
   while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
     if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
-      let l:raw_diff_stats = split(trim(split(l:diff_line, DIFF_STATS_PATTERN)[0]), ' ')
+      let l:raw_diff_stats = split(trim(split(l:diff_line, DIFF_STATS_PATTERN)[0]), ' ') " TODO: remove trim?
 
       let [l:removal_offset, l:removals] = s:parse_diff_stats(l:raw_diff_stats[0], '-')
       let [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_diff_stats[1], '+')
@@ -195,11 +208,7 @@ function! s:update_locations(path)
 
       call add(l:line_to_shift, [l:removal_offset, l:shifted_lines])
 
-      let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
-      let l:edited_new_line = empty(l:next_diff_line[1:])
-      if !l:edited_new_line
-        let l:edited_line_numbers[l:removal_offset] = 1
-      endif
+      let l:edited_line_numbers = s:update_edited_line_numbers(l:edited_line_numbers, l:removal_offset, l:removals, l:diff_stdout_lines, l:diff_stdout_line_number)
     endif
     let l:diff_stdout_line_number += 1
   endwhile
@@ -220,7 +229,6 @@ function! s:update_locations(path)
     while l:locations_index < len(s:LOCATIONS)
       let l:current_location = s:LOCATIONS[l:locations_index]
       if l:current_location.path == a:path
-        "call s:log_info('found matching location with path ' . a:path)
         "call s:log_info('current_line ' . l:current_line . ' >= ' . l:start . ' && (' . l:end . ' == v:null || ' . l:current_line . ' <= ' . l:end . ') = ' . (l:current_line >= l:start && (l:end == v:null || l:current_line <= l:end)))
         let l:current_line = l:current_location.line
         "if l:current_line > l:start && l:current_line <= l:end - l:prev_shift "+ l:shifted_lines
@@ -239,8 +247,6 @@ function! s:update_locations(path)
   call s:deduplicate_locations_by_paths_and_lines()
   call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path) " TODO!
   " TODO: deduplicate_locations_by_paths_and_lines + ignore_edited_lines_of_current_file
-
-  "call s:log_info('update_locations ' . a:path . ' END locations = ' . json_encode(s:LOCATIONS))
 endfunction
 
 function! s:parse_diff_stats(text, delimiter)
@@ -252,9 +258,6 @@ endfunction
 
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
-  return
-  " TODO!!!
-
   let l:new_locations = []
   for i in s:LOCATIONS
     let l:is_edited_line = get(a:edited_line_numbers, i.line) && i.path == a:current_file
