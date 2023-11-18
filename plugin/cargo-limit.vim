@@ -159,8 +159,6 @@ function! s:on_buffer_write()
 endfunction
 
 function! s:update_locations(path)
-  let l:locations_index = 0
-
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
     \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff -- '
@@ -191,39 +189,13 @@ function! s:update_locations(path)
       if !l:edited_new_line
         let l:edited_line_numbers[l:removal_offset] = 1
       endif
-
-      "call s:log_info(l:raw_diff_stats)
-
-      "call s:log_info(l:shifted_lines)
-
-"      if l:shifted_lines != 0
-"        while l:locations_index < len(s:LOCATIONS)
-"          let l:current_location = s:LOCATIONS[l:locations_index]
-"          if l:current_location.path == a:path
-"            let l:current_line = l:current_location.line
-"            if l:current_line > l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:shifted_lines
-"              let s:LOCATIONS[l:locations_index].line += l:shifted_lines
-"            endif
-"            let l:locations_index += 1
-"          else
-"            break " TODO: why do we stuck without it?
-"          endif
-"        endwhile
-"
-""        let l:edited_line_numbers_index = 0
-""        while l:edited_line_numbers_index < len(l:edited_line_numbers)
-""            let l:line_number = l:edited_line_numbers[l:edited_line_numbers_index]
-""            let l:edited_line_numbers[l:edited_line_numbers_index] += l:shifted_lines
-""            let l:locations_index += 1
-""        endwhile
-"
-"      endif
     endif
     let l:diff_stdout_line_number += 1
   endwhile
 
 
 
+  let l:locations_index = 0 " TODO
   let l:line_to_shift_index = 0
   while l:line_to_shift_index < len(l:line_to_shift)
     let l:shifted_lines = l:line_to_shift[l:line_to_shift_index][1]
@@ -248,26 +220,6 @@ function! s:update_locations(path)
 
     let l:line_to_shift_index += 1
   endwhile
-
-"  if !empty(l:line_to_shift)
-"    let [l:removal_offset, l:shifted_lines] = l:line_to_shift[0]
-"    while l:locations_index < len(s:LOCATIONS)
-"      let l:current_location = s:LOCATIONS[l:locations_index]
-"      if l:current_location.path == a:path
-"        let l:current_line = l:current_location.line
-"        if l:current_line > l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:shifted_lines
-"          let s:LOCATIONS[l:locations_index].line += l:shifted_lines
-"        endif
-"        let l:locations_index += 1
-"      else
-"        break
-"      endif
-"    endwhile
-"
-"  endif
-
-
-
 
   call s:deduplicate_locations_by_paths_and_lines()
   call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path) " TODO!
