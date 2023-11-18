@@ -27,7 +27,7 @@ Check out [🎙️  Rustacean Station podcast episode](https://rustacean-station
 
 ### From crates.io
 ```
-cargo install --locked cargo-limit nvim-send
+cargo install --locked cargo-limit
 ```
 
 ### From git
