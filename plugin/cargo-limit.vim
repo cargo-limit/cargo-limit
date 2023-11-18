@@ -121,16 +121,14 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
     if mode() == 'n' && &l:modified == 0
       let l:path = fnameescape(s:LOCATIONS[l:location_index].path)
       execute 'tab drop ' . l:path
-
-      "call s:update_locations(l:path)
       call s:jump_to_location(l:location_index)
-
       call s:maybe_copy_to_temp_sources(l:path)
     else
       break
     endif
     let l:location_index += 1
   endwhile
+
   let s:LOCATIONS = reverse(s:LOCATIONS)[1:]
 endfunction
 
@@ -143,10 +141,8 @@ function! s:open_next_location_in_new_or_existing_tab()
   if &l:modified == 0
     let l:path = fnameescape(s:LOCATIONS[0].path)
     execute 'tab drop ' . l:path
-
-    "call s:update_locations(l:path)
+    "call s:update_locations(l:path) " TODO
     call s:jump_to_location(0)
-
     "call s:maybe_copy_to_temp_sources(l:path) " TODO
     let s:LOCATIONS = s:LOCATIONS[1:]
   endif
@@ -217,7 +213,7 @@ function! s:update_locations(path)
     let l:line_to_shift_index += 1
   endwhile
 
-  call s:deduplicate_locations_by_paths_and_lines()
+  call s:deduplicate_locations_by_paths_and_lines() " TODO: why for all paths?
   call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
   " TODO: deduplicate_locations_by_paths_and_lines + ignore_edited_lines_of_current_file
 endfunction
