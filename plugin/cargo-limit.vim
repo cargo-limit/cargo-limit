@@ -1,5 +1,5 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
-" TODO: check if diff is somehow broken
+" TODO: check if diff is somehow broken?
 " FIXME: regression? jump should not happen while I'm editing a file
 
 function! s:main()
@@ -47,7 +47,6 @@ function! s:start_server(escaped_workspace_root)
   const TEMP_DIR_PREFIX = 'nvim-cargo-limit-'
   const SOURCES = '.sources'
 
-  " TODO: what happens when I change dir to other crate? or run :source $MYVIMRC?
   if has('unix')
     let l:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root
     let s:TEMP_SOURCES_DIR = l:server_address . SOURCES
@@ -68,27 +67,30 @@ function! s:start_server(escaped_workspace_root)
   endif
 endfunction
 
+function s:validate_plugin_version(editor_data)
+  const PLUGIN_VERSION = '0.0.10' " TODO: if we knew plugin full path, we could
+                                  " cargo metadata --quiet --format-version=1 --manifest-path ../Cargo.toml | jq | grep 'cargo-limit '
+
+  let l:crate_version = v:null
+  let l:version_matched = 0
+  if exists('a:editor_data.protocol_version')
+    let l:crate_version = a:editor_data.protocol_version
+    let l:version_matched = l:crate_version == PLUGIN_VERSION
+  endif
+
+  if !l:version_matched
+    " NOTE: this will become error after next breaking protocol change
+    " call s:log_error('version mismatch, plugin ' . PLUGIN_VERSION . ' != crate ' . l:crate_version)
+  endif
+endfunction
+
 function! s:maybe_setup_handlers()
   if exists('*CargoLimitOpen')
     return
   endif
 
   function! g:CargoLimitOpen(editor_data)
-    const PLUGIN_VERSION = '0.0.10' " TODO: if we knew plugin full path, we could
-                                    " cargo metadata --quiet --format-version=1 --manifest-path ../Cargo.toml | jq | grep 'cargo-limit '
-
-    let l:crate_version = v:null
-    let l:version_matched = 0
-    if exists('a:editor_data.protocol_version')
-      let l:crate_version = a:editor_data.protocol_version
-      let l:version_matched = l:crate_version == PLUGIN_VERSION
-    endif
-
-    if !l:version_matched
-      " NOTE: this will become error after next breaking protocol change
-      " call s:log_error('version mismatch, plugin ' . PLUGIN_VERSION . ' != crate ' . l:crate_version)
-    endif
-
+    call s:validate_plugin_version(a:editor_data)
     let l:locations = a:editor_data.files
     call s:open_all_locations_in_new_or_existing_tabs(l:locations)
   endfunction
