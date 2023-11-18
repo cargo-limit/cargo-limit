@@ -156,9 +156,20 @@ function! s:on_buffer_write()
   if l:current_file != '' && filereadable(l:current_file)
     call s:update_locations(l:current_file)
   endif
+
+"  let l:files = {}
+"  for location in s:LOCATIONS
+"    let l:files[location.path] = 1
+"  endfor
+"
+"  for f in keys(l:files)
+"    call s:update_locations(f)
+"  endfor
 endfunction
 
 function! s:update_locations(path)
+  "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:LOCATIONS))
+
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
     \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff -- '
@@ -193,6 +204,7 @@ function! s:update_locations(path)
     let l:diff_stdout_line_number += 1
   endwhile
 
+  "call s:log_info('line to shift = ' . json_encode(l:line_to_shift))
 
 
   let l:shift_accumulator = 0
@@ -208,15 +220,15 @@ function! s:update_locations(path)
     while l:locations_index < len(s:LOCATIONS)
       let l:current_location = s:LOCATIONS[l:locations_index]
       if l:current_location.path == a:path
+        "call s:log_info('found matching location with path ' . a:path)
+        "call s:log_info('current_line ' . l:current_line . ' >= ' . l:start . ' && (' . l:end . ' == v:null || ' . l:current_line . ' <= ' . l:end . ') = ' . (l:current_line >= l:start && (l:end == v:null || l:current_line <= l:end)))
         let l:current_line = l:current_location.line
         "if l:current_line > l:start && l:current_line <= l:end - l:prev_shift "+ l:shifted_lines
         if l:current_line >= l:start && (l:end == v:null || l:current_line <= l:end)
           let s:LOCATIONS[l:locations_index].line += l:shifted_lines + l:shift_accumulator
         endif
-        let l:locations_index += 1
-      else
-        break
       endif
+      let l:locations_index += 1
     endwhile
 
     let l:shift_accumulator += l:shifted_lines
@@ -227,6 +239,8 @@ function! s:update_locations(path)
   call s:deduplicate_locations_by_paths_and_lines()
   call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path) " TODO!
   " TODO: deduplicate_locations_by_paths_and_lines + ignore_edited_lines_of_current_file
+
+  "call s:log_info('update_locations ' . a:path . ' END locations = ' . json_encode(s:LOCATIONS))
 endfunction
 
 function! s:parse_diff_stats(text, delimiter)
@@ -337,6 +351,7 @@ endfunction
 function! s:jump_to_location(location_index)
   if a:location_index < len(s:LOCATIONS) " TODO: is it really necessary?
     let l:location = s:LOCATIONS[a:location_index]
+    "call s:log_info('jump to location ' . l:location.line)
     call cursor((l:location.line), (l:location.column))
   endif
 endfunction
