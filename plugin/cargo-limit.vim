@@ -158,6 +158,26 @@ endfunction
 function! s:update_locations(path)
   "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:LOCATIONS))
 
+  let [l:line_to_shift, l:edited_line_numbers] = s:diffy(a:path) " TODO: naming
+
+  let l:shift_accumulator = 0
+  let l:line_to_shift_index = 0
+  while l:line_to_shift_index < len(l:line_to_shift)
+    let l:shifted_lines = l:line_to_shift[l:line_to_shift_index][1]
+    let l:start = l:line_to_shift[l:line_to_shift_index][0]
+    let l:end = l:line_to_shift_index + 1 < len(l:line_to_shift) ? l:line_to_shift[l:line_to_shift_index + 1][0] : v:null
+    call s:shift_locations(a:path, l:start, l:end, l:shifted_lines + l:shift_accumulator)
+
+    let l:shift_accumulator += l:shifted_lines
+    let l:line_to_shift_index += 1
+  endwhile
+
+  call s:deduplicate_locations_by_paths_and_lines() " TODO: why for all paths?
+  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
+  " TODO: deduplicate_locations_by_paths_and_lines + ignore_edited_lines_of_current_file
+endfunction
+
+function! s:diffy(path)
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
     \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff -- '
@@ -166,7 +186,7 @@ function! s:update_locations(path)
     \ . a:path
   "call s:log_info(DIFF_COMMAND)
 
-  let l:line_to_shift = []
+  let l:line_to_shift = [] " TODO: naming
   let l:edited_line_numbers = {}
   let l:diff_stdout_lines = split(execute(DIFF_COMMAND), "\n")
   let l:diff_stdout_line_number = 0
@@ -185,24 +205,10 @@ function! s:update_locations(path)
     let l:diff_stdout_line_number += 1
   endwhile
 
-  let l:shift_accumulator = 0
-  let l:line_to_shift_index = 0
-  while l:line_to_shift_index < len(l:line_to_shift)
-    let l:shifted_lines = l:line_to_shift[l:line_to_shift_index][1]
-    let l:start = l:line_to_shift[l:line_to_shift_index][0]
-    let l:end = l:line_to_shift_index + 1 < len(l:line_to_shift) ? l:line_to_shift[l:line_to_shift_index + 1][0] : v:null
-    call s:apply_shifts(a:path, l:start, l:end, l:shifted_lines + l:shift_accumulator)
-
-    let l:shift_accumulator += l:shifted_lines
-    let l:line_to_shift_index += 1
-  endwhile
-
-  call s:deduplicate_locations_by_paths_and_lines() " TODO: why for all paths?
-  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
-  " TODO: deduplicate_locations_by_paths_and_lines + ignore_edited_lines_of_current_file
+  return [l:line_to_shift, l:edited_line_numbers]
 endfunction
 
-function! s:apply_shifts(path, start, end, shift)
+function! s:shift_locations(path, start, end, shift)
   let l:locations_index = 0
   while l:locations_index < len(s:LOCATIONS)
     let l:current_location = s:LOCATIONS[l:locations_index]
