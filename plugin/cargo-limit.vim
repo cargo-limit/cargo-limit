@@ -115,6 +115,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
 
   let s:LOCATIONS = reverse(a:locations)
   call s:deduplicate_locations_by_paths_and_lines() " TODO
+
   let l:location_index = 0
   while l:location_index < len(s:LOCATIONS)
     if mode() == 'n' && &l:modified == 0
@@ -172,27 +173,21 @@ function! s:update_locations(path)
   let l:line_to_shift = []
   let l:edited_line_numbers = {}
   let l:diff_stdout_lines = split(execute(DIFF_COMMAND), "\n")
-  "call s:log_info(join(l:diff_stdout_lines, ''))
   let l:diff_stdout_line_number = 0
   while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
     if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
-      let l:raw_diff_stats = split(trim(split(l:diff_line, DIFF_STATS_PATTERN)[0]), ' ') " TODO: remove trim?
+      let l:raw_diff_stats = split(split(l:diff_line, DIFF_STATS_PATTERN)[0], ' ')
 
       let [l:removal_offset, l:removals] = s:parse_diff_stats(l:raw_diff_stats[0], '-')
       let [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_diff_stats[1], '+')
       let l:shifted_lines = l:additions - l:removals
-      "let l:shifted_lines = (l:removal_offset - l:addition_offset) + l:additions - l:removals " TODO
 
       call add(l:line_to_shift, [l:removal_offset, l:shifted_lines])
-
       let l:edited_line_numbers = s:update_edited_line_numbers(l:edited_line_numbers, l:removal_offset, l:removals, l:diff_stdout_lines, l:diff_stdout_line_number)
     endif
     let l:diff_stdout_line_number += 1
   endwhile
-
-  "call s:log_info('line to shift = ' . json_encode(l:line_to_shift))
-
 
   let l:shift_accumulator = 0
   let l:line_to_shift_index = 0
@@ -223,7 +218,7 @@ function! s:update_locations(path)
   endwhile
 
   call s:deduplicate_locations_by_paths_and_lines()
-  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path) " TODO!
+  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
   " TODO: deduplicate_locations_by_paths_and_lines + ignore_edited_lines_of_current_file
 endfunction
 
@@ -343,11 +338,8 @@ function! s:contains_str(text, pattern)
 endfunction
 
 function! s:jump_to_location(location_index)
-  if a:location_index < len(s:LOCATIONS) " TODO: is it really necessary?
-    let l:location = s:LOCATIONS[a:location_index]
-    "call s:log_info('jump to location ' . l:location.line)
-    call cursor((l:location.line), (l:location.column))
-  endif
+  let l:location = s:LOCATIONS[a:location_index]
+  call cursor((l:location.line), (l:location.column))
 endfunction
 
 function! s:log_error(message)
