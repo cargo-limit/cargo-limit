@@ -101,6 +101,7 @@ function! s:maybe_setup_handlers()
   augroup CargoLimitAutocommands
     autocmd!
     autocmd VimLeavePre * call s:recreate_temp_sources_dir()
+    autocmd BufWritePost *.rs call s:on_buffer_write()
   augroup END
 endfunction
 
@@ -120,7 +121,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
       let l:path = fnameescape(s:LOCATIONS[l:location_index].path)
       execute 'tab drop ' . l:path
 
-      call s:update_locations(l:path)
+      "call s:update_locations(l:path)
       call s:jump_to_location(l:location_index)
 
       call s:maybe_copy_to_temp_sources(l:path)
@@ -142,11 +143,18 @@ function! s:open_next_location_in_new_or_existing_tab()
     let l:path = fnameescape(s:LOCATIONS[0].path)
     execute 'tab drop ' . l:path
 
-    call s:update_locations(l:path)
+    "call s:update_locations(l:path)
     call s:jump_to_location(0)
 
     "call s:maybe_copy_to_temp_sources(l:path) " TODO
     let s:LOCATIONS = s:LOCATIONS[1:]
+  endif
+endfunction
+
+function! s:on_buffer_write()
+  let l:current_file = s:current_file()
+  if l:current_file != '' && filereadable(l:current_file)
+    call s:update_locations(l:current_file)
   endif
 endfunction
 
