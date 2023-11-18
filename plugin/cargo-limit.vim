@@ -191,31 +191,31 @@ function! s:update_locations(path)
     let l:shifted_lines = l:line_to_shift[l:line_to_shift_index][1]
     let l:start = l:line_to_shift[l:line_to_shift_index][0]
     let l:end = l:line_to_shift_index + 1 < len(l:line_to_shift) ? l:line_to_shift[l:line_to_shift_index + 1][0] : v:null
-
-
-
-    let l:locations_index = 0
-    while l:locations_index < len(s:LOCATIONS)
-      let l:current_location = s:LOCATIONS[l:locations_index]
-      if l:current_location.path == a:path
-        "call s:log_info('current_line ' . l:current_line . ' >= ' . l:start . ' && (' . l:end . ' == v:null || ' . l:current_line . ' <= ' . l:end . ') = ' . (l:current_line >= l:start && (l:end == v:null || l:current_line <= l:end)))
-        let l:current_line = l:current_location.line
-        "if l:current_line > l:start && l:current_line <= l:end - l:prev_shift "+ l:shifted_lines
-        if l:current_line >= l:start && (l:end == v:null || l:current_line <= l:end)
-          let s:LOCATIONS[l:locations_index].line += l:shifted_lines + l:shift_accumulator
-        endif
-      endif
-      let l:locations_index += 1
-    endwhile
+    call s:apply_shifts(a:path, l:start, l:end, l:shifted_lines + l:shift_accumulator)
 
     let l:shift_accumulator += l:shifted_lines
-
     let l:line_to_shift_index += 1
   endwhile
 
   call s:deduplicate_locations_by_paths_and_lines() " TODO: why for all paths?
   call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
   " TODO: deduplicate_locations_by_paths_and_lines + ignore_edited_lines_of_current_file
+endfunction
+
+function! s:apply_shifts(path, start, end, shift)
+  let l:locations_index = 0
+  while l:locations_index < len(s:LOCATIONS)
+    let l:current_location = s:LOCATIONS[l:locations_index]
+    if l:current_location.path == a:path
+      "call s:log_info('current_line ' . l:current_line . ' >= ' . a:start . ' && (' . a:end . ' == v:null || ' . l:current_line . ' <= ' . a:end . ') = ' . (l:current_line >= a:start && (a:end == v:null || l:current_line <= a:end)))
+      let l:current_line = l:current_location.line
+      "if l:current_line > a:start && l:current_line <= a:end - l:prev_shift "+ l:shifted_lines
+      if l:current_line >= a:start && (a:end == v:null || l:current_line <= a:end)
+        let s:LOCATIONS[l:locations_index].line += a:shift
+      endif
+    endif
+    let l:locations_index += 1
+  endwhile
 endfunction
 
 function! s:parse_diff_stats(text, delimiter)
