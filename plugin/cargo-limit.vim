@@ -95,13 +95,11 @@ function! s:maybe_setup_handlers()
 
   function! g:CargoLimitOpenNextLocation()
     echom ''
-    "call s:on_buffer_write()
     call s:open_next_location_in_new_or_existing_tab()
   endfunction
 
   augroup CargoLimitAutocommands
     autocmd!
-    autocmd BufWritePost *.rs call s:on_buffer_write()
     autocmd VimLeavePre * call s:recreate_temp_sources_dir()
   augroup END
 endfunction
@@ -115,18 +113,22 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
   endif
 
   let s:LOCATIONS = reverse(a:locations)
-  call s:deduplicate_locations_by_paths_and_lines()
-  for location in s:LOCATIONS
-    let l:path = fnameescape(location.path)
+  call s:deduplicate_locations_by_paths_and_lines() " TODO
+  let l:location_index = 0
+  while l:location_index < len(s:LOCATIONS)
     if mode() == 'n' && &l:modified == 0
+      let l:path = fnameescape(s:LOCATIONS[l:location_index].path)
       execute 'tab drop ' . l:path
-      "call s:on_buffer_write()
-      call cursor((location.line), (location.column))
+
+      call s:update_locations(l:path)
+      call s:jump_to_location(s:LOCATIONS[l:location_index])
+
       call s:maybe_copy_to_temp_sources(l:path)
     else
       break
     endif
-  endfor
+    let l:location_index += 1
+  endwhile
   let s:LOCATIONS = reverse(s:LOCATIONS)[1:]
 endfunction
 
@@ -136,45 +138,27 @@ function! s:open_next_location_in_new_or_existing_tab()
     return
   endif
 
-  let l:location = s:LOCATIONS[0]
-  let l:path = fnameescape(l:location.path)
   if &l:modified == 0
+    let l:path = fnameescape(s:LOCATIONS[0].path)
     execute 'tab drop ' . l:path
-    "call s:on_buffer_write()
-    call cursor((l:location.line), (l:location.column))
+
+    call s:update_locations(l:path)
+    call s:jump_to_location(s:LOCATIONS[0])
+
     "call s:maybe_copy_to_temp_sources(l:path) " TODO
     let s:LOCATIONS = s:LOCATIONS[1:]
   endif
 endfunction
 
-" TODO: naming
-function! s:on_buffer_write()
-  " resolve(bufname()) ? nope
-  " FIXME: why current file? what if we switch tab?
-  " this will return file per each currently written tab
-  let l:current_file = s:current_file()
-  if l:current_file != '' && !filereadable(l:current_file) " TODO: correct?
-    return
-  endif
-  "call s:log_info(l:current_file)
-
+function! s:update_locations(path)
   let l:locations_index = 0
-  while l:locations_index < len(l:locations_index) - 1
-    if s:LOCATIONS[l:locations_index].path == l:current_file
-      break
-    else
-      let l:locations_index += 1
-    endif
-  endwhile
-"  call s:log_info(l:locations_index)
-"  call s:log_info(s:LOCATIONS)
 
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
     \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff -- '
-    \ . fnameescape(s:temp_source_path(l:current_file))
+    \ . fnameescape(s:temp_source_path(a:path))
     \ . ' '
-    \ . l:current_file
+    \ . a:path
   "call s:log_info(DIFF_COMMAND)
 
   let l:edited_line_numbers = {}
@@ -203,14 +187,14 @@ function! s:on_buffer_write()
       if l:shifted_lines != 0
         while l:locations_index < len(s:LOCATIONS)
           let l:current_location = s:LOCATIONS[l:locations_index]
-          if l:current_location.path == l:current_file
+          if l:current_location.path == a:path
             let l:current_line = l:current_location.line
             if l:current_line > l:removal_offset " TODO: && l:current_line <= l:removal_offset + l:shifted_lines
               let s:LOCATIONS[l:locations_index].line += l:shifted_lines
             endif
             let l:locations_index += 1
           else
-            break
+            break " TODO: why do we stuck without it?
           endif
         endwhile
       endif
@@ -218,7 +202,7 @@ function! s:on_buffer_write()
     let l:diff_stdout_line_number += 1
   endwhile
 
-  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, l:current_file)
+  "call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path) " TODO
 endfunction
 
 function! s:parse_diff_stats(text, delimiter)
@@ -320,6 +304,10 @@ endfunction
 
 function! s:contains_str(text, pattern)
   return stridx(a:text, a:pattern) != -1
+endfunction
+
+function! s:jump_to_location(location)
+  call cursor((a:location.line), (a:location.column))
 endfunction
 
 function! s:log_error(message)
