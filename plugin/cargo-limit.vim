@@ -158,7 +158,7 @@ endfunction
 function! s:update_locations(path)
   "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:LOCATIONS))
 
-  let [l:line_to_shift, l:edited_line_numbers] = s:diffy(a:path) " TODO: naming
+  let [l:line_to_shift, l:edited_line_numbers] = s:compute_shifts_and_edits(a:path)
 
   let l:shift_accumulator = 0
   let l:line_to_shift_index = 0
@@ -177,7 +177,7 @@ function! s:update_locations(path)
   " TODO: deduplicate_locations_by_paths_and_lines + ignore_edited_lines_of_current_file
 endfunction
 
-function! s:diffy(path)
+function! s:compute_shifts_and_edits(path)
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
     \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff -- '
