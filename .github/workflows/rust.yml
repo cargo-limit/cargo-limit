@@ -27,8 +27,10 @@ jobs:
             target: x86_64-unknown-linux-musl
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
+            no_test: true # NOTE: Relocations in generic ELF (EM: 183)
           - os: ubuntu-latest
             target: aarch64-unknown-linux-musl
+            no_test: true # NOTE: Relocations in generic ELF (EM: 183)
 
           # macOS
           - os: macos-latest
@@ -39,7 +41,13 @@ jobs:
 
           # Windows
           - os: windows-latest
+            target: x86_64-pc-windows-gnu
+          - os: windows-latest
             target: x86_64-pc-windows-msvc
+          - os: windows-latest
+            target: aarch64-pc-windows-gnullvm
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
