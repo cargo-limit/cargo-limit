@@ -21,34 +21,31 @@ jobs:
           # GNU/Linux
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            tests: true
+            rustfmt: true
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            tests: true
 
           # macOS
           - os: macos-latest
             target: x86_64-apple-darwin
-            tests: true
           - os: macos-latest
             target: aarch64-apple-darwin
+            tests: false
 
           # Windows
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            tests: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Install Rust toolchain
-        env:
-          CC: ${{ matrix.cc }}
-          RUSTFLAGS: ${{ matrix.rustflags }}
         run: |
           rustup update --no-self-update
           rustup target add ${{ matrix.target }}
-          rustup install "${NIGHTLY_VERSION}"
-          rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
+          [[ ${{ matrix.rustfmt }} = true ]] && {
+            rustup install "${NIGHTLY_VERSION}"
+            rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
+          }
           rustup install $(cat rust-toolchain)-${{ matrix.target }}
           rustup default $(cat rust-toolchain)-${{ matrix.target }}
           rustup component add clippy rust-src
@@ -57,13 +54,12 @@ jobs:
           echo 'toolchains:'
           rustup toolchain list
       - name: Rustfmt
-        run: |
-          cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
+        run: [[ ${{ matrix.rustfmt }} = true ]] && cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
+      - name: Check
+        run: cargo check --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Clippy
         run: cargo clippy
       - name: Test
-        run: cargo test --locked --verbose --all-features --target=${{ matrix.target }}
-      - name: Check
-        run: cargo check --locked --verbose --all-features --target=${{ matrix.target }}
+        run:  [[ ${{ matrix.rustfmt }} = false ]] || cargo test --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Build
         run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
