@@ -12,7 +12,7 @@ env:
 
 jobs:
   all:
-    name: Build on ${{ matrix.os }} ${{ matrix.target }} ${{ matrix.rustfmt && "with rustfmt" }} ${{ matrix.tests && "with tests" }}
+    name: Build
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
