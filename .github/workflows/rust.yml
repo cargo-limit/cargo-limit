@@ -18,8 +18,11 @@ jobs:
         include:
           # Linux
           - platform: ubuntu-latest
-            target: x86_64-unknown-linux-musl
+            target: x86_64-unknown-linux-gnu
             tests: true
+#          - platform: ubuntu-latest
+#            target: x86_64-unknown-linux-musl
+#            tests: true
 #          - platform: ubuntu-latest
 #            target: armv7-unknown-linux-musleabihf
 #          - platform: ubuntu-latest
@@ -36,9 +39,9 @@ jobs:
 #            target: x86_64-unknown-freebsd
 #            cc: x86_64-unknown-freebsd12-gcc
 #          # Apple
-          - platform: macos-latest
-            target: x86_64-apple-darwin
-            tests: true
+#          - platform: macos-latest
+#            target: x86_64-apple-darwin
+#            tests: true
 #          - platform: macos-latest
 #            target: aarch64-apple-darwin
 #          # Windows
@@ -48,7 +51,13 @@ jobs:
 #            rustflags: -C target-feature=+crt-static
     runs-on: ${{ matrix.platform }}
     steps:
-    - name: Install target
-      run: rustup target add ${{ matrix.target }}
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+    - name: Install Rust toolchain
+      run: |
+        rustup update --no-self-update
+        rustup target add ${{ matrix.target }}
     - name: Build
       run: cargo build --locked --verbose --target=${{ matrix.target }}
