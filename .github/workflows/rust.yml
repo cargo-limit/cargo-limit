@@ -43,13 +43,13 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             tests: true
-            rustflags: -C target-feature=+crt-static
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Install Rust toolchain
         env:
           CC: ${{ matrix.cc }}
+          RUSTFLAGS: ${{ matrix.rustflags }}
         run: |
           rustup update --no-self-update
           rustup target list
