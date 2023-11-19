@@ -98,3 +98,11 @@ fn main() -> Result<()> {
     };
     exit(code);
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn fail() {
+        assert!(false);
+    }
+}

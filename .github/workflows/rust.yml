@@ -16,6 +16,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      rustfmt: false
+      tests: true
       matrix:
         include:
           # GNU/Linux
