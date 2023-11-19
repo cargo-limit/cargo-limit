@@ -46,16 +46,18 @@ jobs:
           RUSTFLAGS: ${{ matrix.rustflags }}
         run: |
           rustup update --no-self-update
-          rustup target list
           rustup target add ${{ matrix.target }}
-          rustup toolchain list
           rustup install "${NIGHTLY_VERSION}"
           rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
           rustup install $(cat rust-toolchain)-${{ matrix.target }}
           rustup default $(cat rust-toolchain)-${{ matrix.target }}
           rustup component add clippy rust-src
+          echo 'targets:'
+          rustup target list
+          echo 'toolchains:'
+          rustup toolchain list
       - name: Rustfmt
-        run: cargo "+${NIGHTLY_VERSION}" rustfmt --all -- --check
+        run: cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
       - name: Clippy
         run: cargo clippy
       - name: Test
