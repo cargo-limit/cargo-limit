@@ -6,7 +6,7 @@ env:
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
   CI: 1
-  RUSTFLAGS: "-D warnings -W unreachable-pub -W bare-trait-objects"
+  RUSTFLAGS: "-D warnings -W bare-trait-objects"
   RUSTUP_MAX_RETRIES: 10
 
 jobs:
@@ -57,6 +57,8 @@ jobs:
       - name: Install Rust toolchain
         run: |
           rustup update --no-self-update
-          rustup target add ${{ matrix.target }}
+          rustup target list
+          rustup target add --toolchain $(cat rust-toolchain)-${{matrix.target}} ${{ matrix.target }}
+          rustup default $(cat rust-toolchain)-${{matrix.target}}
       - name: Build
         run: cargo build --locked --verbose --target=${{ matrix.target }}
