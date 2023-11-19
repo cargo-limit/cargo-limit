@@ -63,7 +63,7 @@ jobs:
       - name: Check
         run: cargo check --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Clippy
-        run: cargo clippy
+        run: cargo clippy -- -D warnings -D clippy::dbg_macro -D clippy::print_stderr -D clippy::print_stdout
       - name: Test
         if: ${{ !matrix.no_test }}
         run: cargo test --locked --verbose --all-features --target=${{ matrix.target }}
