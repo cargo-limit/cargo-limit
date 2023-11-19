@@ -12,7 +12,7 @@ env:
 
 jobs:
   all:
-    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (rustfmt=${{ matrix.rustfmt }}, test=${{ matrix.test }})
+    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (audit=${{ matrix.audit }}, rustfmt=${{ matrix.rustfmt }}, test=${{ matrix.test }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -21,26 +21,31 @@ jobs:
           # GNU/Linux
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            audit: true
             rustfmt: true
             test: true
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
+            audit: false
             rustfmt: false
             test: true
 
           # macOS
           - os: macos-latest
             target: x86_64-apple-darwin
+            audit: false
             rustfmt: false
             test: true
           - os: macos-latest
             target: aarch64-apple-darwin
+            audit: false
             rustfmt: false
             test: false # NOTE: Bad CPU type in executable (os error 86)
 
           # Windows
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            audit: false
             rustfmt: false
             test: true
     steps:
@@ -58,6 +63,12 @@ jobs:
         run: |
           rustup install "${NIGHTLY_VERSION}"
           rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
+      - name: Check vulnerabilities with existing patches
+        if: ${{ matrix.audit == true }}
+        run: |
+          cargo install --locked cargo-audit
+          ISSUES_WITHOUT_PATCHES=($(cargo audit --json | jq --raw-output '.vulnerabilities.list[] | select(.versions.patched | length == 0) | .advisory.id' | sed 's!^! --ignore !' | tr -d '\n'))
+          cargo audit ${ISSUES_WITHOUT_PATCHES[@]}
       - name: Rustfmt
         if: ${{ matrix.rustfmt == true }}
         run: cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
