@@ -11,8 +11,8 @@ env:
   NIGHTLY_VERSION: "nightly-2023-02-09"
 
 jobs:
-  check:
-    name: Check
+  all:
+    name: Build on ${{ matrix.os }} ${{ matrix.target }} ${{ if matrix.rustfmt "with rustfmt" }} ${{ if matrix.tests "with tests" }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
