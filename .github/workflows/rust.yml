@@ -8,6 +8,7 @@ env:
   CI: 1
   RUSTFLAGS: "-D warnings -W bare-trait-objects"
   RUSTUP_MAX_RETRIES: 10
+  NIGHTLY_VERSION: "nightly-2023-02-09"
 
 jobs:
   check:
@@ -24,8 +25,6 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             tests: true
-          - os: ubuntu-latest
-            target: x86_64-unknown-freebsd
 
           # macOS
           - os: macos-latest
@@ -50,8 +49,18 @@ jobs:
           rustup target list
           rustup target add ${{ matrix.target }}
           rustup toolchain list
+          rustup install "${NIGHTLY_VERSION}"
+          rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
           rustup install $(cat rust-toolchain)-${{ matrix.target }}
           rustup default $(cat rust-toolchain)-${{ matrix.target }}
-          rustup component add rust-src
+          rustup component add clippy rust-src
+      - name: Rustfmt
+        run: cargo "+${NIGHTLY_VERSION}" rustfmt --all -- --check
+      - name: Clippy
+        run: cargo clippy
+      - name: Test
+        run: cargo test --locked --verbose --all-features --target=${{ matrix.target }}
+      - name: Check
+        run: cargo check --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Build
-        run: cargo build --locked --verbose --target=${{ matrix.target }}
+        run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
