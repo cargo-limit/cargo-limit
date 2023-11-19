@@ -26,7 +26,6 @@ jobs:
             tests: true
           - os: ubuntu-latest
             target: x86_64-unknown-freebsd
-            rustflags: "-C linker=ld.lld90"
 
           # macOS
           - os: macos-latest
