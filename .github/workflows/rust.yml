@@ -36,7 +36,7 @@ jobs:
             target: x86_64-apple-darwin
           - os: macos-latest
             target: aarch64-apple-darwin
-            no_test: true # NOTE: Bad CPU type in executable (os error 86)
+          # no_test: true # NOTE: Bad CPU type in executable (os error 86)
 
           # Windows
           - os: windows-latest
@@ -47,7 +47,7 @@ jobs:
           #   target: aarch64-pc-windows-gnullvm
           - os: windows-latest
             target: aarch64-pc-windows-msvc
-            no_test: true # NOTE: could not execute process
+          # no_test: true # NOTE: could not execute process
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -55,7 +55,7 @@ jobs:
         run: |
           rustup update --no-self-update
           rustup target add ${{ matrix.target }}
-          rustup install $(cat rust-toolchain)-${{ matrix.target }}
+          rustup install --force-non-host $(cat rust-toolchain)-${{ matrix.target }}
           rustup default $(cat rust-toolchain)-${{ matrix.target }}
           rustup component add clippy rust-src
       - name: Install Nightly and Rustfmt
