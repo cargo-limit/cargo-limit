@@ -50,8 +50,9 @@ jobs:
           rustup update --no-self-update
           rustup target list
           rustup target add ${{ matrix.target }}
+          rustup toolchain list
           rustup install $(cat rust-toolchain)-${{ matrix.target }}
-          rustup default $(cat rust-toolchain)-${{ matrix.target }}
+          rustup default --force-non-host $(cat rust-toolchain)-${{ matrix.target }}
           rustup component add rust-src
       - name: Build
         run: cargo build --locked --verbose --target=${{ matrix.target }}
