@@ -2,72 +2,53 @@ on: [push, pull_request]
 
 name: Continuous integration
 
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  CI: 1
+  RUSTFLAGS: "-D warnings -W unreachable-pub -W bare-trait-objects"
+  RUSTUP_MAX_RETRIES: 10
+
 jobs:
   check:
     name: Check
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.platform }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          # Linux
+          - platform: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            tests: true
+#          - platform: ubuntu-latest
+#            target: armv7-unknown-linux-musleabihf
+#          - platform: ubuntu-latest
+#            target: aarch64-unknown-linux-musl
+#            tests: true
+#            rustflags: -C link-arg=-lgcc # from https://github.com/rust-embedded/cross/blob/master/docker/Dockerfile.aarch64-unknown-linux-musl
+#          - platform: ubuntu-latest
+#            target: arm-unknown-linux-musleabi
+#            tests: true
+#          - platform: ubuntu-latest
+#            target: mips-unknown-linux-musl
+#            rustflags: --cfg openssl
+#          - platform: ubuntu-latest
+#            target: x86_64-unknown-freebsd
+#            cc: x86_64-unknown-freebsd12-gcc
+#          # Apple
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            tests: true
+#          - platform: macos-latest
+#            target: aarch64-apple-darwin
+#          # Windows
+#          - platform: windows-latest
+#            target: x86_64-pc-windows-msvc
+#            tests: true
+#            rustflags: -C target-feature=+crt-static
+    runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.70.0
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
-
-  test:
-    name: Test Suite
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.70.0
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly-2023-02-09
-          override: true
-      - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
-  clippy:
-    name: Clippy
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.70.0
-          override: true
-      - run: rustup component add clippy
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings -D clippy::dbg_macro -D clippy::print_stderr -D clippy::print_stdout
+    - name: Install target
+      run: rustup target add ${{ matrix.target }}
+    - name: Build
+      run: cargo build --locked --verbose --target=${{ matrix.target }}
