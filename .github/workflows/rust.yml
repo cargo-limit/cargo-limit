@@ -42,10 +42,8 @@ jobs:
         run: |
           rustup update --no-self-update
           rustup target add ${{ matrix.target }}
-          [[ ${{ matrix.rustfmt }} = true ]] && {
-            rustup install "${NIGHTLY_VERSION}"
-            rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
-          }
+          rustup install "${NIGHTLY_VERSION}"
+          rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
           rustup install $(cat rust-toolchain)-${{ matrix.target }}
           rustup default $(cat rust-toolchain)-${{ matrix.target }}
           rustup component add clippy rust-src
