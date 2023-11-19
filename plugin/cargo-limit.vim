@@ -227,6 +227,10 @@ endfunction
 
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
+  call s:log_info('edited line numbers', a:edited_line_numbers)
+  return
+  " TODO!
+
   let l:new_locations = []
   for i in s:LOCATIONS
     let l:is_edited_line = get(a:edited_line_numbers, i.line) && i.path == a:current_file
@@ -273,10 +277,10 @@ function! s:maybe_delete_dead_unix_socket(server_address)
     let l:socket_is_dead = !s:contains_str(l:lsof_stdout, a:server_address)
     if l:socket_is_dead
       let l:ignore = luaeval('os.remove(_A)', a:server_address)
-      call s:log_info('removed dead socket ' . a:server_address)
+      call s:log_info('removed dead socket', a:server_address)
     endif
   else
-    call s:log_error('failed to execute "' . LSOF_COMMAND . '"')
+    call s:log_error('failed to execute', LSOF_COMMAND)
   endif
 endfunction
 
@@ -325,15 +329,15 @@ function! s:jump_to_location(location_index)
   call cursor((l:location.line), (l:location.column))
 endfunction
 
-function! s:log_error(message)
+function! s:log_error(...)
   echohl Error
-  echon 'cargo-limit: ' . a:message
+  echon 'cargo-limit: ' . join(a:000, ' ')
   echohl None
 endfunction
 
-function! s:log_info(message)
+function! s:log_info(...)
   echohl None
-  echomsg 'cargo-limit: ' . a:message
+  echon 'cargo-limit: ' . join(a:000, ' ')
 endfunction
 
 call s:main()
