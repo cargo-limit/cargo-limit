@@ -158,8 +158,6 @@ function! s:update_locations(path)
   endwhile
 
   call s:deduplicate_locations_by_paths_and_lines() " TODO: why for all paths?
-  "call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
-  " TODO: deduplicate_locations_by_paths_and_lines + ignore_edited_lines_of_current_file
 endfunction
 
 function! s:compute_shifts_and_edits(path)
@@ -201,7 +199,7 @@ function! s:shift_locations(path, start, end, shift)
       "call s:log_info('current_line ' . l:current_line . ' >= ' . a:start . ' && (' . a:end . ' == v:null || ' . l:current_line . ' <= ' . a:end . ') = ' . (l:current_line >= a:start && (a:end == v:null || l:current_line <= a:end)))
       let l:current_line = l:current_location.line
       "if l:current_line > a:start && l:current_line <= a:end - l:prev_shift "+ l:shifted_lines
-      if l:current_line >= a:start && (a:end == v:null || l:current_line <= a:end)
+      if l:current_line > a:start && (a:end == v:null || l:current_line <= a:end) " TODO: why not < a:end?
         let s:LOCATIONS[l:locations_index].line += a:shift
       endif
     endif
@@ -228,6 +226,7 @@ endfunction
 
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
+  "call s:log_info('edited line numbers', a:edited_line_numbers)
   let l:new_locations = []
   for i in s:LOCATIONS
     let l:is_edited_line = get(a:edited_line_numbers, i.line) && i.path == a:current_file
