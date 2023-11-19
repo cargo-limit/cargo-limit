@@ -12,52 +12,18 @@ env:
 jobs:
   check:
     name: Check
-    runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
-          # Linux
-          - platform: ubuntu-latest
+          - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            tests: true
-#          - platform: ubuntu-latest
-#            target: x86_64-unknown-linux-musl
-#            tests: true
-#          - platform: ubuntu-latest
-#            target: armv7-unknown-linux-musleabihf
-#          - platform: ubuntu-latest
-#            target: aarch64-unknown-linux-musl
-#            tests: true
-#            rustflags: -C link-arg=-lgcc # from https://github.com/rust-embedded/cross/blob/master/docker/Dockerfile.aarch64-unknown-linux-musl
-#          - platform: ubuntu-latest
-#            target: arm-unknown-linux-musleabi
-#            tests: true
-#          - platform: ubuntu-latest
-#            target: mips-unknown-linux-musl
-#            rustflags: --cfg openssl
-#          - platform: ubuntu-latest
-#            target: x86_64-unknown-freebsd
-#            cc: x86_64-unknown-freebsd12-gcc
-#          # Apple
-#          - platform: macos-latest
-#            target: x86_64-apple-darwin
-#            tests: true
-#          - platform: macos-latest
-#            target: aarch64-apple-darwin
-#          # Windows
-#          - platform: windows-latest
-#            target: x86_64-pc-windows-msvc
-#            tests: true
-#            rustflags: -C target-feature=+crt-static
-    runs-on: ${{ matrix.platform }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
-    - name: Install Rust toolchain
-      run: |
-        rustup update --no-self-update
-        rustup target add ${{ matrix.target }}
-    - name: Build
-      run: cargo build --locked --verbose --target=${{ matrix.target }}
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install Rust toolchain
+        run: |
+          rustup update --no-self-update
+          rustup target add ${{ matrix.target }}
+      - name: Build
+        run: cargo build --locked --verbose --target=${{ matrix.target }}
