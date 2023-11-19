@@ -2,72 +2,70 @@ on: [push, pull_request]
 
 name: Continuous integration
 
+env:
+  CI: 1
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+  RUSTFLAGS: "-D warnings -W bare-trait-objects"
+  NIGHTLY_VERSION: "nightly-2023-02-09"
+
 jobs:
-  check:
-    name: Check
+  all:
+    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (audit=${{ matrix.audit || 'false' }}, rustfmt=${{ matrix.rustfmt || 'false' }}, no_test=${{ matrix.no_test || 'false' }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.70.0
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
+        include:
+          # GNU/Linux
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            audit: true
+            rustfmt: true
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
 
-  test:
-    name: Test Suite
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.70.0
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
+          # macOS
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            no_test: true # NOTE: Bad CPU type in executable (os error 86)
 
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
+          # Windows
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly-2023-02-09
-          override: true
-      - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
-  clippy:
-    name: Clippy
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.70.0
-          override: true
-      - run: rustup component add clippy
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings -D clippy::dbg_macro -D clippy::print_stderr -D clippy::print_stdout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        run: |
+          rustup update --no-self-update
+          rustup target add ${{ matrix.target }}
+          rustup install $(cat rust-toolchain)-${{ matrix.target }}
+          rustup default $(cat rust-toolchain)-${{ matrix.target }}
+          rustup component add clippy rust-src
+      - name: Install Nightly and Rustfmt
+        if: ${{ matrix.rustfmt }}
+        run: |
+          rustup install "${NIGHTLY_VERSION}"
+          rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
+      - name: Check vulnerabilities with existing patches
+        if: ${{ matrix.audit }}
+        run: |
+          cargo install --locked cargo-audit
+          ISSUES_WITHOUT_PATCHES=($(cargo audit --json | jq --raw-output '.vulnerabilities.list[] | select(.versions.patched | length == 0) | .advisory.id' | sed 's!^! --ignore !' | tr -d '\n'))
+          cargo audit ${ISSUES_WITHOUT_PATCHES[@]}
+      - name: Rustfmt
+        if: ${{ matrix.rustfmt }}
+        run: cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
+      - name: Check
+        run: cargo check --locked --verbose --all-features --target=${{ matrix.target }}
+      - name: Clippy
+        run: cargo clippy
+      - name: Test
+        if: ${{ !matrix.no_test }}
+        run: cargo test --locked --verbose --all-features --target=${{ matrix.target }}
+      - name: Build
+        run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
