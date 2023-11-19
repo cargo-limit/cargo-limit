@@ -48,6 +48,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Install Rust toolchain
+        env:
+          CC: ${{ matrix.cc }}
         run: |
           rustup update --no-self-update
           rustup target list
