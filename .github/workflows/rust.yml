@@ -12,7 +12,7 @@ env:
 
 jobs:
   all:
-    name: Build
+    name: Build ( ${{ matrix.os }}, ${{ matrix.target }}, rustfmt=${{ matrix.rustfmt }}, tests=${{ matrix.tests }}  )
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -58,7 +58,7 @@ jobs:
       - name: Clippy
         run: cargo clippy
       - name: Test
-        if: ${{ matrix.test != false }}
+        if: ${{ matrix.tests != false }}
         run: cargo test --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Build
         run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
