@@ -52,12 +52,12 @@ jobs:
           echo 'toolchains:'
           rustup toolchain list
       - name: Rustfmt
-        run: [[ ${{ matrix.rustfmt }} = true ]] && cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
+        run: cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
       - name: Check
         run: cargo check --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Clippy
         run: cargo clippy
       - name: Test
-        run:  [[ ${{ matrix.rustfmt }} = false ]] || cargo test --locked --verbose --all-features --target=${{ matrix.target }}
+        run: cargo test --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Build
         run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
