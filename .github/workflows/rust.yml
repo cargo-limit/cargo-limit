@@ -57,7 +57,8 @@ jobs:
           echo 'toolchains:'
           rustup toolchain list
       - name: Rustfmt
-        run: cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
+        run: |
+          cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
       - name: Clippy
         run: cargo clippy
       - name: Test
