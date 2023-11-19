@@ -143,6 +143,7 @@ function! s:update_locations(path)
   "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:LOCATIONS))
 
   let [l:line_to_shift, l:edited_line_numbers] = s:compute_shifts_and_edits(a:path)
+  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
 
   let l:shift_accumulator = 0
   let l:line_to_shift_index = 0
@@ -157,7 +158,7 @@ function! s:update_locations(path)
   endwhile
 
   call s:deduplicate_locations_by_paths_and_lines() " TODO: why for all paths?
-  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
+  "call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
   " TODO: deduplicate_locations_by_paths_and_lines + ignore_edited_lines_of_current_file
 endfunction
 
@@ -227,10 +228,6 @@ endfunction
 
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
-  call s:log_info('edited line numbers', a:edited_line_numbers)
-  return
-  " TODO!
-
   let l:new_locations = []
   for i in s:LOCATIONS
     let l:is_edited_line = get(a:edited_line_numbers, i.line) && i.path == a:current_file
