@@ -61,6 +61,6 @@ jobs:
           rustup target add ${{ matrix.target }}
           rustup install $(cat rust-toolchain)-${{ matrix.target }}
           rustup default $(cat rust-toolchain)-${{ matrix.target }}
-          rustup component --toolchain $(cat rust-toolchain)-${{ matrix.target }} add rust-src
+          rustup component add rust-src
       - name: Build
         run: cargo build --locked --verbose --target=${{ matrix.target }}
