@@ -31,7 +31,7 @@ jobs:
             target: x86_64-apple-darwin
           - os: macos-latest
             target: aarch64-apple-darwin
-            test: false # NOTE: Bad CPU type in executable (os error 86)
+            no_test: true # NOTE: Bad CPU type in executable (os error 86)
 
           # Windows
           - os: windows-latest
@@ -65,7 +65,7 @@ jobs:
       - name: Clippy
         run: cargo clippy
       - name: Test
-        if: ${{ matrix.test }}
+        if: ${{ !matrix.no_test }}
         run: cargo test --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Build
         run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
