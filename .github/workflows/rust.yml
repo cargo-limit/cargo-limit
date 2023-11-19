@@ -47,18 +47,18 @@ jobs:
           rustup default $(cat rust-toolchain)-${{ matrix.target }}
           rustup component add clippy rust-src
       - name: Install Nightly and Rustfmt
-        if: ${{ matrix.rustfmt == true }}
+        if: ${{ matrix.rustfmt }}
         run: |
           rustup install "${NIGHTLY_VERSION}"
           rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
       - name: Check vulnerabilities with existing patches
-        if: ${{ matrix.audit == true }}
+        if: ${{ matrix.audit }}
         run: |
           cargo install --locked cargo-audit
           ISSUES_WITHOUT_PATCHES=($(cargo audit --json | jq --raw-output '.vulnerabilities.list[] | select(.versions.patched | length == 0) | .advisory.id' | sed 's!^! --ignore !' | tr -d '\n'))
           cargo audit ${ISSUES_WITHOUT_PATCHES[@]}
       - name: Rustfmt
-        if: ${{ matrix.rustfmt == true }}
+        if: ${{ matrix.rustfmt }}
         run: cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
       - name: Check
         run: cargo check --locked --verbose --all-features --target=${{ matrix.target }}
