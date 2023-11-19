@@ -7,7 +7,7 @@ use std::{
 };
 
 struct NeovimCommand {
-    escaped_workspace_root: String,
+    escaped_workspace_root: String ,
     command: String,
 }
 

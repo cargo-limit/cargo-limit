@@ -37,20 +37,19 @@ jobs:
             target: x86_64-pc-windows-msvc
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Rust toolchain
         run: |
           rustup update --no-self-update
           rustup target add ${{ matrix.target }}
-          rustup install "${NIGHTLY_VERSION}"
-          rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
           rustup install $(cat rust-toolchain)-${{ matrix.target }}
           rustup default $(cat rust-toolchain)-${{ matrix.target }}
           rustup component add clippy rust-src
-          echo 'targets:'
-          rustup target list
-          echo 'toolchains:'
-          rustup toolchain list
+      - name: Install Nightly and Rustfmt
+        if: ${{ matrix.rustfmt == true }}
+        run: |
+          rustup install "${NIGHTLY_VERSION}"
+          rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
       - name: Rustfmt
         if: ${{ matrix.rustfmt == true }}
         run: cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
