@@ -36,7 +36,7 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             rustfmt: false
-            test: false
+            test: false # NOTE: Bad CPU type in executable (os error 86)
 
           # Windows
           - os: windows-latest

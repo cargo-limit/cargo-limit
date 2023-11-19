@@ -7,7 +7,7 @@ use std::{
 };
 
 struct NeovimCommand {
-    escaped_workspace_root: String ,
+    escaped_workspace_root: String,
     command: String,
 }
 
@@ -97,12 +97,4 @@ fn main() -> Result<()> {
         0
     };
     exit(code);
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn fail() {
-        assert!(false);
-    }
 }
