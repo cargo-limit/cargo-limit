@@ -3,11 +3,11 @@ on: [push, pull_request]
 name: Continuous integration
 
 env:
+  CI: 1
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
-  CI: 1
-  RUSTFLAGS: "-D warnings -W bare-trait-objects"
   RUSTUP_MAX_RETRIES: 10
+  RUSTFLAGS: "-D warnings -W bare-trait-objects"
   NIGHTLY_VERSION: "nightly-2023-02-09"
 
 jobs:
