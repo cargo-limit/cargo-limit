@@ -12,7 +12,7 @@ env:
 
 jobs:
   all:
-    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (audit=${{ matrix.audit }}, rustfmt=${{ matrix.rustfmt }}, no_test=${{ matrix.no_test }})
+    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (audit=${{ matrix.audit || 'false' }}, rustfmt=${{ matrix.rustfmt || 'false' }}, no_test=${{ matrix.no_test || 'false' }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
