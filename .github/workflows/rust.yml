@@ -12,7 +12,7 @@ env:
 
 jobs:
   all:
-    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (audit=${{ matrix.audit || 'false' }}, rustfmt=${{ matrix.rustfmt || 'false' }}, no_test=${{ matrix.no_test || 'false' }})
+    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (audit=${{ matrix.audit || 'false' }}, rustfmt=${{ matrix.rustfmt || 'false' }}, no_build_tests=${{ matrix.no_build_tests || 'false' }}, no_run_tests=${{ matrix.no_run_tests || 'false' }}, no_release_build=${{ matrix.no_release_build || 'false' }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -25,29 +25,83 @@ jobs:
             rustfmt: true
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-          # - os: ubuntu-latest # NOTE: Relocations in generic ELF (EM: 183)
-          #   target: aarch64-unknown-linux-gnu
-          #   no_test: true
-          # - os: ubuntu-latest # NOTE: Relocations in generic ELF (EM: 183)
-          #   target: aarch64-unknown-linux-musl
+          - os: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            no_build_tests: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
+            no_release_build: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
+          - os: ubuntu-latest
+            target: riscv64gc-unknown-linux-gnu
+            no_build_tests: true # NOTE: Relocations in generic ELF (EM: 243)
+            no_release_build: true # NOTE: Relocations in generic ELF (EM: 243)
+          # - os: ubuntu-latest
+          #   target: i686-unknown-linux-musl # NOTE: target 'i686-unknown-linux-musl' not found in channel
+          # - os: ubuntu-latest
+          #   target: aarch64-unknown-linux-gnu # NOTE: Relocations in generic ELF (EM: 183)
+          #   no_build_tests: true
+          # - os: ubuntu-latest
+          #   target: aarch64-unknown-linux-musl # NOTE: Relocations in generic ELF (EM: 183)
+          # - os: ubuntu-latest
+          #   target: riscv64gc-unknown-linux-musl # NOTE: toolchain ... does not contain component 'rust-std' for target
 
           # macOS
           - os: macos-latest
             target: x86_64-apple-darwin
           - os: macos-latest
             target: aarch64-apple-darwin
-            no_test: true # NOTE: Bad CPU type in executable (os error 86)
+            no_run_tests: true # NOTE: Bad CPU type in executable (os error 86)
 
           # Windows
           - os: windows-latest
             target: x86_64-pc-windows-gnu
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-          # - os: windows-latest # NOTE: can't find crate for `core`
-          #   target: aarch64-pc-windows-gnullvm
+          - os: windows-latest
+            target: i686-pc-windows-msvc
+          - os: windows-latest
+            target: i686-pc-windows-gnu
+            no_build_tests: true # NOTE: linker `i686-w64-mingw32-gcc` not found
+            no_release_build: true # NOTE: linker `i686-w64-mingw32-gcc` not found
           - os: windows-latest
             target: aarch64-pc-windows-msvc
-            no_test: true # NOTE: could not execute process
+            no_build_tests: true # NOTE: could not execute process
+          # - os: windows-latest
+          #   target: aarch64-pc-windows-gnullvm # NOTE: can't find crate for `core`
+
+          # FreeBSD
+          - os: ubuntu-latest
+            target: x86_64-unknown-freebsd
+            no_build_tests: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+            no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+          # - os: ubuntu-latest
+          #   target: i686-unknown-freebsd # NOTE: target 'i686-unknown-freebsd' not found in channel
+          # - os: ubuntu-latest
+          #   target: aarch64-unknown-freebsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: riscv64gc-unknown-freebsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+
+          # NetBSD
+          - os: ubuntu-latest
+            target: x86_64-unknown-netbsd
+            no_build_tests: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+            no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+          # - os: ubuntu-latest
+          #   target: i686-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: aarch64-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: aarch64_be-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: riscv64gc-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+
+          # OpenBSD
+          # - os: ubuntu-latest
+          #   target: x86_64-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: i686-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: aarch64-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: riscv64gc-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -66,7 +120,6 @@ jobs:
       - name: Check vulnerabilities with existing patches
         if: ${{ matrix.audit }}
         run: |
-          cargo install --locked cargo-audit
           ISSUES_WITHOUT_PATCHES=($(cargo audit --json | jq --raw-output '.vulnerabilities.list[] | select(.versions.patched | length == 0) | .advisory.id' | sed 's!^! --ignore !' | tr -d '\n'))
           cargo audit ${ISSUES_WITHOUT_PATCHES[@]}
       - name: Rustfmt
@@ -76,8 +129,12 @@ jobs:
         run: cargo check --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Clippy
         run: cargo clippy -- -D warnings -D clippy::dbg_macro -D clippy::print_stderr -D clippy::print_stdout
-      - name: Test
-        if: ${{ !matrix.no_test }}
+      - name: Build Tests
+        if: ${{ !matrix.no_build_tests }}
+        run: cargo test --no-run --locked --verbose --all-features --target=${{ matrix.target }}
+      - name: Run Tests
+        if: ${{ !matrix.no_build_tests && !matrix.no_run_tests }}
         run: cargo test --locked --verbose --all-features --target=${{ matrix.target }}
-      - name: Build
+      - name: Release Build
+        if: ${{ !matrix.no_release_build }}
         run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
