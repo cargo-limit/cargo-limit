@@ -93,13 +93,14 @@ endfunction
 function! s:open_all_locations_in_new_or_existing_tabs(locations)
   call s:recreate_temp_sources_dir()
 
+  let s:LOCATIONS = a:locations
+  let s:LOCATION_INDEX = 0
+
   let l:current_file = s:current_file()
-  if l:current_file !=# '' && !filereadable(l:current_file)
+  if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:LOCATIONS)
     return
   endif
 
-  let s:LOCATIONS = a:locations
-  let s:LOCATION_INDEX = 0
   call s:open_all_locations_in_reverse_deduplicated_by_paths()
   call s:update_next_unique_location_index()
 endfunction
