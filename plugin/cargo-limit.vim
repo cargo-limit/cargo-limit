@@ -1,7 +1,6 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
 " TODO: check if diff is somehow broken?
 " FIXME: regression? jump should not happen while I'm editing a file
-" TODO: ==# and !=#
 
 function! s:main()
   const MIN_NVIM_VERSION = '0.7.0'
@@ -25,16 +24,16 @@ function! s:main()
 endfunction
 
 function! s:on_cargo_metadata(_job_id, data, event)
-  if a:event == 'stdout'
+  if a:event ==# 'stdout'
     call add(s:DATA_CHUNKS, join(a:data, ''))
-  elseif a:event == 'stderr' && type(a:data) == v:t_list
+  elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
     let l:stderr = trim(join(a:data, "\n"))
     "call s:log_info(a:event . ' ' . !empty(l:stderr) . ' ' . (l:stderr !~# 'could not find `Cargo.toml`') . ' ' . (!s:contains_str(l:stderr, 'could not find `Cargo.toml`')))
     "if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`' " TODO
     if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
       call s:log_error(l:stderr)
     endif
-  elseif a:event == 'exit'
+  elseif a:event ==# 'exit'
     let l:stdout = trim(join(s:DATA_CHUNKS, ''))
     if !empty(l:stdout)
       let l:metadata = json_decode(l:stdout)
@@ -95,7 +94,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
   call s:recreate_temp_sources_dir()
 
   let l:current_file = s:current_file()
-  if l:current_file != '' && !filereadable(l:current_file)
+  if l:current_file !=# '' && !filereadable(l:current_file)
     return
   endif
 
@@ -115,7 +114,7 @@ function! s:open_all_locations_in_reverse_deduplicated_by_paths()
     let l:path = s:LOCATIONS[i].path
     if !has_key(l:path_to_location_index, l:path)
       continue
-    elseif mode() == 'n' && &l:modified == 0
+    elseif mode() ==# 'n' && &l:modified ==# 0
       let l:location_index = l:path_to_location_index[l:path]
       call remove(l:path_to_location_index, l:path)
 
@@ -132,7 +131,7 @@ endfunction
 
 function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
-  if (l:current_file != '' && !filereadable(l:current_file)) || s:LOCATION_INDEX >= len(s:LOCATIONS) || &l:modified != 0 " TODO: correct?
+  if (l:current_file !=# '' && !filereadable(l:current_file)) || s:LOCATION_INDEX >= len(s:LOCATIONS) || &l:modified !=# 0 " TODO: correct?
     return
   endif
 
@@ -150,14 +149,14 @@ function! s:update_next_unique_location_index()
   let l:line = l:location.line
 
   let s:LOCATION_INDEX += 1
-  while s:LOCATION_INDEX < len(s:LOCATIONS) && s:LOCATIONS[s:LOCATION_INDEX].path == l:path && s:LOCATIONS[s:LOCATION_INDEX].line == l:line
+  while s:LOCATION_INDEX < len(s:LOCATIONS) && s:LOCATIONS[s:LOCATION_INDEX].path ==# l:path && s:LOCATIONS[s:LOCATION_INDEX].line ==# l:line
     let s:LOCATION_INDEX += 1
   endwhile
 endfunction
 
 function! s:on_buffer_write()
   let l:current_file = s:current_file()
-  if l:current_file != '' && filereadable(l:current_file)
+  if l:current_file !=# '' && filereadable(l:current_file)
     call s:update_locations(l:current_file)
   endif
 endfunction
@@ -212,9 +211,9 @@ endfunction
 function! s:shift_locations(path, start, end, shift_accumulator)
   for i in range(0, len(s:LOCATIONS) - 1)
     let l:current_location = s:LOCATIONS[i]
-    if l:current_location.path == a:path
+    if l:current_location.path ==# a:path
       let l:current_line = l:current_location.line
-      if l:current_line > a:start && (a:end == v:null || l:current_line <= a:end) " TODO: why not < a:end?
+      if l:current_line > a:start && (a:end ==# v:null || l:current_line <= a:end) " TODO: why not < a:end?
         let s:LOCATIONS[i].line += a:shift_accumulator
       endif
     endif
@@ -241,7 +240,7 @@ function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_fil
   "call s:log_info('edited line numbers', a:edited_line_numbers)
   let l:new_locations = []
   for i in s:LOCATIONS
-    let l:is_edited_line = has_key(a:edited_line_numbers, i.line) && i.path == a:current_file
+    let l:is_edited_line = has_key(a:edited_line_numbers, i.line) && i.path ==# a:current_file
     if !l:is_edited_line
       call add(l:new_locations, i)
     endif
@@ -258,13 +257,13 @@ function! s:maybe_delete_dead_unix_socket(server_address)
   endif
 
   call system('which ' . LSOF_EXECUTABLE)
-  let l:lsof_is_installed = v:shell_error == 0
+  let l:lsof_is_installed = v:shell_error ==# 0
   if !l:lsof_is_installed
     return
   endif
 
   let l:lsof_stdout = system(LSOF_COMMAND)
-  let l:lsof_succeed = v:shell_error == 0
+  let l:lsof_succeed = v:shell_error ==# 0
   if l:lsof_succeed
     let l:socket_is_dead = !s:contains_str(l:lsof_stdout, a:server_address)
     if l:socket_is_dead
@@ -313,7 +312,7 @@ function! s:starts_with(longer, shorter)
 endfunction
 
 function! s:contains_str(text, pattern)
-  return stridx(a:text, a:pattern) != -1
+  return stridx(a:text, a:pattern) !=# -1
 endfunction
 
 function! s:jump_to_location(location_index)
