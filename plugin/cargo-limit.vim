@@ -13,6 +13,7 @@ function! s:main()
     let s:DATA_CHUNKS = []
     let s:EDITOR_DATA = {'files': []}
     let s:LOCATION_INDEX = 0
+    let s:OPEN_INTERNAL_IS_CALLED = 0
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
     \ 'on_stderr': function('s:on_cargo_metadata'),
@@ -78,6 +79,7 @@ function! s:maybe_setup_handlers()
   function! g:CargoLimitOpenInternal(editor_data)
     let s:EDITOR_DATA = a:editor_data
     let s:LOCATION_INDEX = 0
+    let s:OPEN_INTERNAL_IS_CALLED = 1
   endfunction
 
   if exists('*CargoLimitOpen')
@@ -85,6 +87,11 @@ function! s:maybe_setup_handlers()
   endif
 
   function! g:CargoLimitOpen(editor_data)
+    if !s:OPEN_INTERNAL_IS_CALLED
+      call s:log_error('Versions mismatch, please update cargo-limit crate')
+      return
+    endif
+
     let l:current_file = s:current_file()
     if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:EDITOR_DATA.files)
       return
