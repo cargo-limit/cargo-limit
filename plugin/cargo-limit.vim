@@ -102,8 +102,11 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
 
   let s:LOCATIONS = a:locations
   let s:LOCATION_INDEX = 0
+  call s:open_all_locations_in_reverse_deduplicated_by_paths()
+  call s:update_next_unique_location_index()
+endfunction
 
-  " TODO: extract to open_all_in_reverse_deduplicated_by_paths?
+function! s:open_all_locations_in_reverse_deduplicated_by_paths()
   let l:path_to_location_index = {}
   for i in range(len(s:LOCATIONS) - 1, 0, -1)
     let l:path_to_location_index[s:LOCATIONS[i].path] = i
@@ -126,27 +129,19 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
       break
     endif
   endfor
-
-  call s:update_next_unique_location_index()
 endfunction
 
 function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
-  if (l:current_file != '' && !filereadable(l:current_file)) || s:LOCATION_INDEX >= len(s:LOCATIONS) " TODO: correct?
+  if (l:current_file != '' && !filereadable(l:current_file)) || s:LOCATION_INDEX >= len(s:LOCATIONS) || &l:modified != 0 " TODO: correct?
     return
   endif
 
-  " TODO
-  if &l:modified == 0
-    "call s:log_info(s:LOCATION_INDEX, s:LOCATIONS)
-
-    let l:path = fnameescape(s:LOCATIONS[s:LOCATION_INDEX].path)
-    execute 'tab drop ' . l:path
-    "call s:update_locations(l:path) " TODO
-    call s:jump_to_location(s:LOCATION_INDEX)
-    "call s:maybe_copy_to_temp_sources(l:path) " TODO
-    call s:update_next_unique_location_index()
-  endif
+  let l:path = fnameescape(s:LOCATIONS[s:LOCATION_INDEX].path)
+  execute 'tab drop ' . l:path
+  call s:jump_to_location(s:LOCATION_INDEX)
+  "call s:maybe_copy_to_temp_sources(l:path) " TODO
+  call s:update_next_unique_location_index()
 endfunction
 
 " TODO: naming
