@@ -100,11 +100,11 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
   let s:LOCATIONS = reverse(a:locations)
   call s:deduplicate_locations_by_paths_and_lines() " TODO
 
-  for location_index in range(0, len(s:LOCATIONS) - 1)
+  for i in range(0, len(s:LOCATIONS) - 1)
     if mode() == 'n' && &l:modified == 0
-      let l:path = fnameescape(s:LOCATIONS[location_index].path)
+      let l:path = fnameescape(s:LOCATIONS[i].path)
       execute 'tab drop ' . l:path
-      call s:jump_to_location(location_index)
+      call s:jump_to_location(i)
       call s:maybe_copy_to_temp_sources(l:path)
     else
       break
@@ -144,10 +144,10 @@ function! s:update_locations(path)
   call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
 
   let l:shift_accumulator = 0
-  for line_to_shift_index in range(0, len(l:line_to_shift) - 1)
-    let l:shifted_lines = l:line_to_shift[line_to_shift_index][1]
-    let l:start = l:line_to_shift[line_to_shift_index][0]
-    let l:end = line_to_shift_index + 1 < len(l:line_to_shift) ? l:line_to_shift[line_to_shift_index + 1][0] : v:null
+  for i in range(0, len(l:line_to_shift) - 1)
+    let l:shifted_lines = l:line_to_shift[i][1]
+    let l:start = l:line_to_shift[i][0]
+    let l:end = i + 1 < len(l:line_to_shift) ? l:line_to_shift[i + 1][0] : v:null
     let l:shift_accumulator += l:shifted_lines
     call s:shift_locations(a:path, l:start, l:end, l:shift_accumulator)
   endfor
@@ -187,12 +187,12 @@ function! s:compute_shifts_and_edits(path)
 endfunction
 
 function! s:shift_locations(path, start, end, shift_accumulator)
-  for locations_index in range(0, len(s:LOCATIONS) - 1)
-    let l:current_location = s:LOCATIONS[locations_index]
+  for i in range(0, len(s:LOCATIONS) - 1)
+    let l:current_location = s:LOCATIONS[i]
     if l:current_location.path == a:path
       let l:current_line = l:current_location.line
       if l:current_line > a:start && (a:end == v:null || l:current_line <= a:end) " TODO: why not < a:end?
-        let s:LOCATIONS[locations_index].line += a:shift_accumulator
+        let s:LOCATIONS[i].line += a:shift_accumulator
       endif
     endif
   endfor
