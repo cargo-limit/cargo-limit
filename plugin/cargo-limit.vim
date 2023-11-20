@@ -1,7 +1,6 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
 " TODO: check if diff is somehow broken?
 " FIXME: regression? jump should not happen while I'm editing a file
-" TODO: has_key
 " TODO: ==# and !=#
 
 function! s:main()
@@ -242,7 +241,7 @@ function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_fil
   "call s:log_info('edited line numbers', a:edited_line_numbers)
   let l:new_locations = []
   for i in s:LOCATIONS
-    let l:is_edited_line = get(a:edited_line_numbers, i.line) && i.path == a:current_file
+    let l:is_edited_line = has_key(a:edited_line_numbers, i.line) && i.path == a:current_file
     if !l:is_edited_line
       call add(l:new_locations, i)
     endif
