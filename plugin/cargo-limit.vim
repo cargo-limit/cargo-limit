@@ -11,8 +11,8 @@ function! s:main()
     endif
 
     let s:DATA_CHUNKS = []
-    let s:LOCATIONS = []
-    let s:LOCATION_INDEX = 0
+    let s:EDITOR_DATA = {'files': []}
+    let s:FILE_INDEX = 0
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
     \ 'on_stderr': function('s:on_cargo_metadata'),
@@ -70,8 +70,8 @@ endfunction
 
 function! s:maybe_setup_handlers()
   function! g:CargoLimitOpenInternal(editor_data)
-    let s:LOCATIONS = a:editor_data.files
-    let s:LOCATION_INDEX = 0
+    let s:EDITOR_DATA = a:editor_data
+    let s:FILE_INDEX = 0
   endfunction
 
   if exists('*CargoLimitOpen')
@@ -82,7 +82,7 @@ function! s:maybe_setup_handlers()
     call g:CargoLimitOpenInternal(a:editor_data)
 
     let l:current_file = s:current_file()
-    if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:LOCATIONS)
+    if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:EDITOR_DATA.files)
       return
     endif
 
@@ -106,12 +106,12 @@ function! s:open_all_locations_in_reverse_deduplicated_by_paths()
   call s:recreate_temp_sources_dir()
 
   let l:path_to_location_index = {}
-  for i in range(len(s:LOCATIONS) - 1, 0, -1)
-    let l:path_to_location_index[s:LOCATIONS[i].path] = i
+  for i in range(len(s:EDITOR_DATA.files) - 1, 0, -1)
+    let l:path_to_location_index[s:EDITOR_DATA.files[i].path] = i
   endfor
 
-  for i in range(len(s:LOCATIONS) - 1, 0, -1)
-    let l:path = s:LOCATIONS[i].path
+  for i in range(len(s:EDITOR_DATA.files) - 1, 0, -1)
+    let l:path = s:EDITOR_DATA.files[i].path
     if !has_key(l:path_to_location_index, l:path)
       continue
     elseif mode() ==# 'n' && &l:modified ==# 0
@@ -119,7 +119,7 @@ function! s:open_all_locations_in_reverse_deduplicated_by_paths()
       call remove(l:path_to_location_index, l:path)
 
       " FIXME: shadow
-      let l:path = fnameescape(s:LOCATIONS[i].path)
+      let l:path = fnameescape(s:EDITOR_DATA.files[i].path)
       execute 'tab drop ' . l:path
       call s:jump_to_location(l:location_index)
       call s:maybe_copy_to_temp_sources(l:path)
@@ -131,26 +131,26 @@ endfunction
 
 function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
-  if (l:current_file !=# '' && !filereadable(l:current_file)) || s:LOCATION_INDEX >= len(s:LOCATIONS) || &l:modified !=# 0 " TODO: correct?
+  if (l:current_file !=# '' && !filereadable(l:current_file)) || s:FILE_INDEX >= len(s:EDITOR_DATA.files) || &l:modified !=# 0 " TODO: correct?
     return
   endif
 
-  let l:path = fnameescape(s:LOCATIONS[s:LOCATION_INDEX].path)
+  let l:path = fnameescape(s:EDITOR_DATA.files[s:FILE_INDEX].path)
   execute 'tab drop ' . l:path
-  call s:jump_to_location(s:LOCATION_INDEX)
+  call s:jump_to_location(s:FILE_INDEX)
   "call s:maybe_copy_to_temp_sources(l:path) " TODO
   call s:update_next_unique_location_index()
 endfunction
 
 " TODO: naming
 function! s:update_next_unique_location_index()
-  let l:location = s:LOCATIONS[s:LOCATION_INDEX]
+  let l:location = s:EDITOR_DATA.files[s:FILE_INDEX]
   let l:path = l:location.path
   let l:line = l:location.line
 
-  let s:LOCATION_INDEX += 1
-  while s:LOCATION_INDEX < len(s:LOCATIONS) && s:LOCATIONS[s:LOCATION_INDEX].path ==# l:path && s:LOCATIONS[s:LOCATION_INDEX].line ==# l:line
-    let s:LOCATION_INDEX += 1
+  let s:FILE_INDEX += 1
+  while s:FILE_INDEX < len(s:EDITOR_DATA.files) && s:EDITOR_DATA.files[s:FILE_INDEX].path ==# l:path && s:EDITOR_DATA.files[s:FILE_INDEX].line ==# l:line
+    let s:FILE_INDEX += 1
   endwhile
 endfunction
 
@@ -167,7 +167,7 @@ function! s:on_buffer_write()
 endfunction
 
 function! s:update_locations(path)
-  "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:LOCATIONS))
+  "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:EDITOR_DATA.files))
 
   let [l:line_to_shift, l:edited_line_numbers] = s:compute_shifts_and_edits(a:path)
   call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
@@ -216,12 +216,12 @@ function! s:compute_shifts_and_edits(path)
 endfunction
 
 function! s:shift_locations(path, start, end, shift_accumulator)
-  for i in range(0, len(s:LOCATIONS) - 1)
-    let l:current_location = s:LOCATIONS[i]
+  for i in range(0, len(s:EDITOR_DATA.files) - 1)
+    let l:current_location = s:EDITOR_DATA.files[i]
     if l:current_location.path ==# a:path
       let l:current_line = l:current_location.line
       if l:current_line > a:start && (a:end ==# v:null || l:current_line <= a:end) " TODO: why not < a:end?
-        let s:LOCATIONS[i].line += a:shift_accumulator
+        let s:EDITOR_DATA.files[i].line += a:shift_accumulator
       endif
     endif
   endfor
@@ -246,13 +246,13 @@ endfunction
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
   "call s:log_info('edited line numbers', a:edited_line_numbers)
   let l:new_locations = []
-  for i in s:LOCATIONS
+  for i in s:EDITOR_DATA.files
     let l:is_edited_line = has_key(a:edited_line_numbers, i.line) && i.path ==# a:current_file
     if !l:is_edited_line
       call add(l:new_locations, i)
     endif
   endfor
-  let s:LOCATIONS = l:new_locations
+  let s:EDITOR_DATA.files = l:new_locations
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
@@ -323,7 +323,7 @@ function! s:contains_str(text, pattern)
 endfunction
 
 function! s:jump_to_location(location_index)
-  let l:location = s:LOCATIONS[a:location_index]
+  let l:location = s:EDITOR_DATA.files[a:location_index]
   call cursor((l:location.line), (l:location.column))
 endfunction
 
