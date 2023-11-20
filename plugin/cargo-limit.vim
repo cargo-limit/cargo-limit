@@ -79,8 +79,6 @@ function! s:maybe_setup_handlers()
   endif
 
   function! g:CargoLimitOpen(editor_data)
-    call g:CargoLimitOpenInternal(a:editor_data)
-
     let l:current_file = s:current_file()
     if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:EDITOR_DATA.files)
       return
