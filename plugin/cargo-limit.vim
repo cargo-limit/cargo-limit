@@ -80,6 +80,7 @@ function! s:maybe_setup_handlers()
     let s:EDITOR_DATA = a:editor_data
     let s:LOCATION_INDEX = 0
     let s:OPEN_INTERNAL_IS_CALLED = 1
+    " NOTE: in the 0.0.12 we'll likely check plugin version here and call g:CargoLimitOpen
   endfunction
 
   if exists('*CargoLimitOpen')
@@ -140,7 +141,7 @@ function! s:open_next_location_in_new_or_existing_tab()
     return
   endif
 
-  let l:path = fnameescape(s:EDITOR_DATA.files[s:LOCATION_INDEX].path)
+  let l:path = fnameescape(s:current_location().path)
   execute 'tab drop ' . l:path
   call s:jump_to_location(s:LOCATION_INDEX)
   "call s:maybe_copy_to_temp_sources(l:path) " TODO
@@ -149,12 +150,12 @@ endfunction
 
 " TODO: naming
 function! s:update_next_unique_location_index()
-  let l:location = s:EDITOR_DATA.files[s:LOCATION_INDEX]
+  let l:location = s:current_location()
   let l:path = l:location.path
   let l:line = l:location.line
 
   let s:LOCATION_INDEX += 1
-  while s:LOCATION_INDEX < len(s:EDITOR_DATA.files) && s:EDITOR_DATA.files[s:LOCATION_INDEX].path ==# l:path && s:EDITOR_DATA.files[s:LOCATION_INDEX].line ==# l:line
+  while s:LOCATION_INDEX < len(s:EDITOR_DATA.files) && s:current_location().path ==# l:path && s:current_location().line ==# l:line
     let s:LOCATION_INDEX += 1
   endwhile
 endfunction
@@ -220,7 +221,7 @@ endfunction
 
 function! s:shift_locations(path, start, end, shift_accumulator)
   for i in range(0, len(s:EDITOR_DATA.files) - 1)
-    let l:current_location = s:EDITOR_DATA.files[i]
+    let l:current_location = s:EDITOR_DATA.files[i] " TODO: why current? naming
     if l:current_location.path ==# a:path
       let l:current_line = l:current_location.line
       if l:current_line > a:start && (a:end ==# v:null || l:current_line <= a:end) " TODO: why not < a:end?
@@ -336,6 +337,10 @@ endfunction
 function! s:jump_to_location(location_index)
   let l:location = s:EDITOR_DATA.files[a:location_index]
   call cursor((l:location.line), (l:location.column))
+endfunction
+
+function! s:current_location()
+  return s:EDITOR_DATA.files[s:LOCATION_INDEX]
 endfunction
 
 function! s:log_error(...)
