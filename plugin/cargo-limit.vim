@@ -12,7 +12,7 @@ function! s:main()
 
     let s:DATA_CHUNKS = []
     let s:EDITOR_DATA = {'files': []}
-    let s:FILE_INDEX = 0
+    let s:LOCATION_INDEX = 0
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
     \ 'on_stderr': function('s:on_cargo_metadata'),
@@ -77,7 +77,7 @@ function! s:maybe_setup_handlers()
 
   function! g:CargoLimitOpenInternal(editor_data)
     let s:EDITOR_DATA = a:editor_data
-    let s:FILE_INDEX = 0
+    let s:LOCATION_INDEX = 0
   endfunction
 
   if exists('*CargoLimitOpen')
@@ -129,26 +129,26 @@ endfunction
 
 function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
-  if (l:current_file !=# '' && !filereadable(l:current_file)) || s:FILE_INDEX >= len(s:EDITOR_DATA.files) || &l:modified !=# 0 " TODO: correct?
+  if (l:current_file !=# '' && !filereadable(l:current_file)) || s:LOCATION_INDEX >= len(s:EDITOR_DATA.files) || &l:modified !=# 0 " TODO: correct?
     return
   endif
 
-  let l:path = fnameescape(s:EDITOR_DATA.files[s:FILE_INDEX].path)
+  let l:path = fnameescape(s:EDITOR_DATA.files[s:LOCATION_INDEX].path)
   execute 'tab drop ' . l:path
-  call s:jump_to_location(s:FILE_INDEX)
+  call s:jump_to_location(s:LOCATION_INDEX)
   "call s:maybe_copy_to_temp_sources(l:path) " TODO
   call s:update_next_unique_location_index()
 endfunction
 
 " TODO: naming
 function! s:update_next_unique_location_index()
-  let l:location = s:EDITOR_DATA.files[s:FILE_INDEX]
+  let l:location = s:EDITOR_DATA.files[s:LOCATION_INDEX]
   let l:path = l:location.path
   let l:line = l:location.line
 
-  let s:FILE_INDEX += 1
-  while s:FILE_INDEX < len(s:EDITOR_DATA.files) && s:EDITOR_DATA.files[s:FILE_INDEX].path ==# l:path && s:EDITOR_DATA.files[s:FILE_INDEX].line ==# l:line
-    let s:FILE_INDEX += 1
+  let s:LOCATION_INDEX += 1
+  while s:LOCATION_INDEX < len(s:EDITOR_DATA.files) && s:EDITOR_DATA.files[s:LOCATION_INDEX].path ==# l:path && s:EDITOR_DATA.files[s:LOCATION_INDEX].line ==# l:line
+    let s:LOCATION_INDEX += 1
   endwhile
 endfunction
 
@@ -240,14 +240,22 @@ endfunction
 
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
-  "call s:log_info('edited line numbers', a:edited_line_numbers)
+  let l:corrected_location_index = 0
   let l:new_locations = []
-  for i in s:EDITOR_DATA.files
-    let l:is_edited_line = has_key(a:edited_line_numbers, i.line) && i.path ==# a:current_file
-    if !l:is_edited_line
-      call add(l:new_locations, i)
+
+  for i in range(0, len(s:EDITOR_DATA.files) - 1)
+    let l:file = s:EDITOR_DATA.files[i]
+    let l:is_edited_line = has_key(a:edited_line_numbers, l:file.line) && l:file.path ==# a:current_file
+    if l:is_edited_line
+      if !l:corrected_location_index && i + 1 == s:LOCATION_INDEX
+        let s:LOCATION_INDEX -= 1
+        let l:corrected_location_index = 1
+      endif
+    else
+      call add(l:new_locations, l:file)
     endif
   endfor
+
   let s:EDITOR_DATA.files = l:new_locations
 endfunction
 

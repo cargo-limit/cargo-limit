@@ -7,7 +7,7 @@ pub struct EditorData {
     protocol_version: String,
     workspace_root: PathBuf,
 
-    #[serde(rename = "files")]
+    #[serde(rename = "files")] // TODO: perhaps we need to rename it to locations in the protocol
     locations: Vec<Location>,
 }
 

@@ -238,9 +238,10 @@ function! g:CargoLimitOpen(editor_data)
   endfor
 endfunction
 
+" called when any affected lines were moved or edited
 function! g:CargoLimitUpdate(editor_data)
-  " called when any affected lines were moved or edited
-  " TODO: save current buffer, call cursor on other buffers, go back to current buffer
+  " i.bufnr
+  " TODO: exit if current buffer something weird, save current buffer number, update cursor on other buffers, go back to current buffer
 endfunction
 ```
 
@@ -272,7 +273,6 @@ function! g:CargoLimitOpen(editor_data)
 endfunction
 
 function! g:CargoLimitUpdate(editor_data)
-  " called when any affected lines were moved or edited
   call s:populate_quickfix_list(a:editor_data)
 endfunction
 ```
