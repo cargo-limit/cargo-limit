@@ -1,6 +1,8 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
 " TODO: check if diff is somehow broken?
 " FIXME: regression? jump should not happen while I'm editing a file
+" TODO: has_key
+" TODO: ==# and !=#
 
 function! s:main()
   const MIN_NVIM_VERSION = '0.7.0'
@@ -12,6 +14,7 @@ function! s:main()
 
     let s:DATA_CHUNKS = []
     let s:LOCATIONS = []
+    let s:LOCATION_INDEX = 0
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
     \ 'on_stderr': function('s:on_cargo_metadata'),
@@ -97,37 +100,67 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
     return
   endif
 
-  let s:LOCATIONS = reverse(a:locations)
+  let s:LOCATIONS = a:locations
+  let s:LOCATION_INDEX = 0
+
   call s:deduplicate_locations_by_paths_and_lines() " TODO
 
-  for i in range(0, len(s:LOCATIONS) - 1)
-    if mode() == 'n' && &l:modified == 0
+  " TODO: extract to open_all_in_reverse_deduplicated_by_paths?
+  let l:path_to_location_index = {}
+  for i in range(len(s:LOCATIONS) - 1, 0, -1)
+    let l:path_to_location_index[s:LOCATIONS[i].path] = i
+  endfor
+
+  for i in range(len(s:LOCATIONS) - 1, 0, -1)
+    let l:path = s:LOCATIONS[i].path
+    if !has_key(l:path_to_location_index, l:path)
+      continue
+    elseif mode() == 'n' && &l:modified == 0
+      let l:location_index = l:path_to_location_index[l:path]
+      call remove(l:path_to_location_index, l:path)
+
+      " TODO: shadow
       let l:path = fnameescape(s:LOCATIONS[i].path)
       execute 'tab drop ' . l:path
-      call s:jump_to_location(i)
+      call s:jump_to_location(l:location_index)
       call s:maybe_copy_to_temp_sources(l:path)
     else
       break
     endif
   endfor
 
-  let s:LOCATIONS = reverse(s:LOCATIONS)[1:]
+  call s:next_unique_location_index()
 endfunction
 
 function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
-  if (l:current_file != '' && !filereadable(l:current_file)) || empty(s:LOCATIONS) " TODO: correct?
+  if (l:current_file != '' && !filereadable(l:current_file)) || s:LOCATION_INDEX >= len(s:LOCATIONS) " TODO: correct?
     return
   endif
 
+  " TODO
   if &l:modified == 0
-    let l:path = fnameescape(s:LOCATIONS[0].path)
+    "call s:log_info(s:LOCATION_INDEX, s:LOCATIONS)
+
+    let l:path = fnameescape(s:LOCATIONS[s:LOCATION_INDEX].path)
     execute 'tab drop ' . l:path
     "call s:update_locations(l:path) " TODO
-    call s:jump_to_location(0)
+    call s:jump_to_location(s:LOCATION_INDEX)
     "call s:maybe_copy_to_temp_sources(l:path) " TODO
-    let s:LOCATIONS = s:LOCATIONS[1:]
+    call s:next_unique_location_index()
   endif
+endfunction
+
+" TODO: naming
+function! s:next_unique_location_index()
+  let l:location = s:LOCATIONS[s:LOCATION_INDEX]
+  let l:path = l:location.path
+  let l:line = l:location.line
+
+  let s:LOCATION_INDEX += 1
+  while s:LOCATION_INDEX < len(s:LOCATIONS) && s:LOCATIONS[s:LOCATION_INDEX].path == l:path && s:LOCATIONS[s:LOCATION_INDEX].line == l:line
+    let s:LOCATION_INDEX += 1
+  endwhile
 endfunction
 
 function! s:on_buffer_write()
@@ -152,7 +185,7 @@ function! s:update_locations(path)
     call s:shift_locations(a:path, l:start, l:end, l:shift_accumulator)
   endfor
 
-  call s:deduplicate_locations_by_paths_and_lines() " TODO: why for all paths?
+  call s:deduplicate_locations_by_paths_and_lines() " TODO: why for all paths? do we even need it here?
 endfunction
 
 function! s:compute_shifts_and_edits(path)
@@ -227,6 +260,9 @@ function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_fil
 endfunction
 
 function! s:deduplicate_locations_by_paths_and_lines()
+  return
+  " TODO
+
   let l:new_locations = []
   let l:added_lines = {}
 
