@@ -148,8 +148,8 @@ function! s:update_locations(path)
     let l:shifted_lines = l:line_to_shift[line_to_shift_index][1]
     let l:start = l:line_to_shift[line_to_shift_index][0]
     let l:end = line_to_shift_index + 1 < len(l:line_to_shift) ? l:line_to_shift[line_to_shift_index + 1][0] : v:null
-    call s:shift_locations(a:path, l:start, l:end, l:shifted_lines + l:shift_accumulator)
-    let l:shift_accumulator += l:shifted_lines " TODO
+    let l:shift_accumulator += l:shifted_lines
+    call s:shift_locations(a:path, l:start, l:end, l:shift_accumulator)
   endfor
 
   call s:deduplicate_locations_by_paths_and_lines() " TODO: why for all paths?
@@ -186,15 +186,13 @@ function! s:compute_shifts_and_edits(path)
   return [l:line_to_shift, l:edited_line_numbers]
 endfunction
 
-function! s:shift_locations(path, start, end, shift)
+function! s:shift_locations(path, start, end, shift_accumulator)
   for locations_index in range(0, len(s:LOCATIONS) - 1)
     let l:current_location = s:LOCATIONS[locations_index]
     if l:current_location.path == a:path
-      "call s:log_info('current_line ' . l:current_line . ' >= ' . a:start . ' && (' . a:end . ' == v:null || ' . l:current_line . ' <= ' . a:end . ') = ' . (l:current_line >= a:start && (a:end == v:null || l:current_line <= a:end)))
       let l:current_line = l:current_location.line
-      "if l:current_line > a:start && l:current_line <= a:end - l:prev_shift "+ l:shifted_lines
       if l:current_line > a:start && (a:end == v:null || l:current_line <= a:end) " TODO: why not < a:end?
-        let s:LOCATIONS[locations_index].line += a:shift
+        let s:LOCATIONS[locations_index].line += a:shift_accumulator
       endif
     endif
   endfor
