@@ -156,11 +156,9 @@ function! s:on_buffer_write()
   let l:current_file = s:current_file()
   if l:current_file !=# '' && filereadable(l:current_file)
     call s:update_locations(l:current_file)
-
-    " TODO
-    " if exists('g:CargoLimitUpdate')
-    "   call g:CargoLimitUpdate(editor_data) # TODO: call s:update_locations from here?
-    " endif
+    if exists('*CargoLimitUpdate')
+      call g:CargoLimitUpdate(s:EDITOR_DATA)
+    endif
   endif
 endfunction
 
