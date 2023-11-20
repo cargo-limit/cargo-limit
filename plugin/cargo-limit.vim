@@ -174,6 +174,11 @@ function! s:update_locations(path)
   let [l:line_to_shift, l:edited_line_numbers] = s:compute_shifts_and_edits(a:path)
   call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
 
+  " TODO: correct LOCATION_INDEX here? or from shift_locations?
+  "let l:current_location = s:current_location()
+  "if l:current_location.path == a:path && l:current_location.line ???
+  "endif
+
   let l:shift_accumulator = 0
   for i in range(0, len(l:line_to_shift) - 1)
     let l:shifted_lines = l:line_to_shift[i][1]
@@ -185,18 +190,22 @@ function! s:update_locations(path)
 endfunction
 
 function! s:compute_shifts_and_edits(path)
-  " TODO: check if temp file exists (since it's not copied if too large)
+  let l:temp_source_path = s:temp_source_path(a:path)
 
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
     \ 'w !git diff --unified=0 --ignore-blank-lines --ignore-all-space --ignore-cr-at-eol --no-index --no-color --no-ext-diff -- '
-    \ . fnameescape(s:temp_source_path(a:path))
+    \ . fnameescape(l:temp_source_path)
     \ . ' '
     \ . a:path
   "call s:log_info(DIFF_COMMAND)
 
   let l:line_to_shift = [] " TODO: naming
   let l:edited_line_numbers = {}
+  if !filereadable(l:temp_source_path)
+    return [l:line_to_shift, l:edited_line_numbers]
+  endif
+
   let l:diff_stdout_lines = split(execute(DIFF_COMMAND), "\n")
   let l:diff_stdout_line_number = 0
   while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
@@ -246,18 +255,12 @@ endfunction
 
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
-  let l:corrected_location_index = 0 " TODO: remove?
   let l:new_locations = []
 
   for i in range(0, len(s:EDITOR_DATA.files) - 1)
     let l:file = s:EDITOR_DATA.files[i]
     let l:is_edited_line = has_key(a:edited_line_numbers, l:file.line) && l:file.path ==# a:current_file
-    if l:is_edited_line
-      if !l:corrected_location_index && i + 1 == s:LOCATION_INDEX
-        let s:LOCATION_INDEX -= 1 " TODO: multiple times?
-        "let l:corrected_location_index = 1
-      endif
-    else
+    if !l:is_edited_line
       call add(l:new_locations, l:file)
     endif
   endfor
