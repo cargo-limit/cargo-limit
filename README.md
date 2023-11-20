@@ -166,7 +166,7 @@ function! SaveAllFilesOrOpenNextLocation()
   endfor
 
   if l:all_files_are_saved
-    if exists('g:CargoLimitOpenNextLocation')
+    if exists('*CargoLimitOpenNextLocation')
       call g:CargoLimitOpenNextLocation()
     endif
   else
@@ -214,7 +214,7 @@ Also auto-jump may not happen to affected line that supposed to be **already mod
 </details>
 
 ## Customizations
-Add a **custom open handler** to your `init.vim` if you want other Neovim behavior.
+Add **custom open/update handlers** to your `init.vim` if you want other Neovim behavior.
 
 <details>
 <summary><b>💡 See examples! 👁️</b></summary>
@@ -237,13 +237,18 @@ function! g:CargoLimitOpen(editor_data)
     endif
   endfor
 endfunction
+
+function! g:CargoLimitUpdate(editor_data)
+  " called when any affected lines were moved or edited
+  " TODO: save current buffer, call cursor on other buffers, go back to current buffer
+endfunction
 ```
 
 ### Populate a QuickFix List
 ```viml
 set errorformat =%f:%l:%c:%m
 
-function! g:CargoLimitOpen(editor_data)
+function! s:populate_quickfix_list(editor_data)
   let l:winnr = winnr()
 
   cgetexpr []
@@ -260,6 +265,15 @@ function! g:CargoLimitOpen(editor_data)
   if l:winnr !=# winnr()
     wincmd p
   endif
+endfunction
+
+function! g:CargoLimitOpen(editor_data)
+  call s:populate_quickfix_list(a:editor_data)
+endfunction
+
+function! g:CargoLimitUpdate(editor_data)
+  " called when any affected lines were moved or edited
+  call s:populate_quickfix_list(a:editor_data)
 endfunction
 ```
 

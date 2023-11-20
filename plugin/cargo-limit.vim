@@ -69,13 +69,25 @@ function! s:start_server(escaped_workspace_root)
 endfunction
 
 function! s:maybe_setup_handlers()
+  function! g:CargoLimitOpenInternal(editor_data)
+    let s:LOCATIONS = a:editor_data.files
+    let s:LOCATION_INDEX = 0
+  endfunction
+
   if exists('*CargoLimitOpen')
     return
   endif
 
   function! g:CargoLimitOpen(editor_data)
-    let l:locations = a:editor_data.files
-    call s:open_all_locations_in_new_or_existing_tabs(l:locations)
+    call g:CargoLimitOpenInternal(a:editor_data)
+
+    let l:current_file = s:current_file()
+    if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:LOCATIONS)
+      return
+    endif
+
+    call s:open_all_locations_in_reverse_deduplicated_by_paths()
+    call s:update_next_unique_location_index()
   endfunction
 
   function! g:CargoLimitOpenNextLocation()
@@ -90,22 +102,9 @@ function! s:maybe_setup_handlers()
   augroup END
 endfunction
 
-function! s:open_all_locations_in_new_or_existing_tabs(locations)
+function! s:open_all_locations_in_reverse_deduplicated_by_paths()
   call s:recreate_temp_sources_dir()
 
-  let s:LOCATIONS = a:locations
-  let s:LOCATION_INDEX = 0
-
-  let l:current_file = s:current_file()
-  if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:LOCATIONS)
-    return
-  endif
-
-  call s:open_all_locations_in_reverse_deduplicated_by_paths()
-  call s:update_next_unique_location_index()
-endfunction
-
-function! s:open_all_locations_in_reverse_deduplicated_by_paths()
   let l:path_to_location_index = {}
   for i in range(len(s:LOCATIONS) - 1, 0, -1)
     let l:path_to_location_index[s:LOCATIONS[i].path] = i
@@ -159,6 +158,11 @@ function! s:on_buffer_write()
   let l:current_file = s:current_file()
   if l:current_file !=# '' && filereadable(l:current_file)
     call s:update_locations(l:current_file)
+
+    " TODO
+    " if exists('g:CargoLimitUpdate')
+    "   call g:CargoLimitUpdate(editor_data) # TODO: call s:update_locations from here?
+    " endif
   endif
 endfunction
 
@@ -179,6 +183,8 @@ function! s:update_locations(path)
 endfunction
 
 function! s:compute_shifts_and_edits(path)
+  " TODO: check if temp file exists (since it's not copied if too large)
+
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
     \ 'w !git diff --unified=0 --ignore-blank-lines --ignore-all-space --ignore-cr-at-eol --no-index --no-color --no-ext-diff -- '
