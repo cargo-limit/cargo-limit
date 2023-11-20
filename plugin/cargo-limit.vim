@@ -69,6 +69,12 @@ function! s:start_server(escaped_workspace_root)
 endfunction
 
 function! s:maybe_setup_handlers()
+  augroup CargoLimitAutocommands
+    autocmd!
+    autocmd VimLeavePre * call s:recreate_temp_sources_dir()
+    autocmd BufWritePost *.rs call s:on_buffer_write()
+  augroup END
+
   function! g:CargoLimitOpenInternal(editor_data)
     let s:EDITOR_DATA = a:editor_data
     let s:FILE_INDEX = 0
@@ -92,12 +98,6 @@ function! s:maybe_setup_handlers()
     echomsg ''
     call s:open_next_location_in_new_or_existing_tab()
   endfunction
-
-  augroup CargoLimitAutocommands
-    autocmd!
-    autocmd VimLeavePre * call s:recreate_temp_sources_dir()
-    autocmd BufWritePost *.rs call s:on_buffer_write()
-  augroup END
 endfunction
 
 function! s:open_all_locations_in_reverse_deduplicated_by_paths()
