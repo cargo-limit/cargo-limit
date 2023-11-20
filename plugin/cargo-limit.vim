@@ -100,18 +100,16 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
   let s:LOCATIONS = reverse(a:locations)
   call s:deduplicate_locations_by_paths_and_lines() " TODO
 
-  let l:location_index = 0
-  while l:location_index < len(s:LOCATIONS)
+  for location_index in range(0, len(s:LOCATIONS) - 1)
     if mode() == 'n' && &l:modified == 0
-      let l:path = fnameescape(s:LOCATIONS[l:location_index].path)
+      let l:path = fnameescape(s:LOCATIONS[location_index].path)
       execute 'tab drop ' . l:path
-      call s:jump_to_location(l:location_index)
+      call s:jump_to_location(location_index)
       call s:maybe_copy_to_temp_sources(l:path)
     else
       break
     endif
-    let l:location_index += 1
-  endwhile
+  endfor
 
   let s:LOCATIONS = reverse(s:LOCATIONS)[1:]
 endfunction
@@ -146,16 +144,13 @@ function! s:update_locations(path)
   call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
 
   let l:shift_accumulator = 0
-  let l:line_to_shift_index = 0
-  while l:line_to_shift_index < len(l:line_to_shift)
-    let l:shifted_lines = l:line_to_shift[l:line_to_shift_index][1]
-    let l:start = l:line_to_shift[l:line_to_shift_index][0]
-    let l:end = l:line_to_shift_index + 1 < len(l:line_to_shift) ? l:line_to_shift[l:line_to_shift_index + 1][0] : v:null
+  for line_to_shift_index in range(0, len(l:line_to_shift) - 1)
+    let l:shifted_lines = l:line_to_shift[line_to_shift_index][1]
+    let l:start = l:line_to_shift[line_to_shift_index][0]
+    let l:end = line_to_shift_index + 1 < len(l:line_to_shift) ? l:line_to_shift[line_to_shift_index + 1][0] : v:null
     call s:shift_locations(a:path, l:start, l:end, l:shifted_lines + l:shift_accumulator)
-
-    let l:shift_accumulator += l:shifted_lines
-    let l:line_to_shift_index += 1
-  endwhile
+    let l:shift_accumulator += l:shifted_lines " TODO
+  endfor
 
   call s:deduplicate_locations_by_paths_and_lines() " TODO: why for all paths?
 endfunction
@@ -192,19 +187,17 @@ function! s:compute_shifts_and_edits(path)
 endfunction
 
 function! s:shift_locations(path, start, end, shift)
-  let l:locations_index = 0
-  while l:locations_index < len(s:LOCATIONS)
-    let l:current_location = s:LOCATIONS[l:locations_index]
+  for locations_index in range(0, len(s:LOCATIONS) - 1)
+    let l:current_location = s:LOCATIONS[locations_index]
     if l:current_location.path == a:path
       "call s:log_info('current_line ' . l:current_line . ' >= ' . a:start . ' && (' . a:end . ' == v:null || ' . l:current_line . ' <= ' . a:end . ') = ' . (l:current_line >= a:start && (a:end == v:null || l:current_line <= a:end)))
       let l:current_line = l:current_location.line
       "if l:current_line > a:start && l:current_line <= a:end - l:prev_shift "+ l:shifted_lines
       if l:current_line > a:start && (a:end == v:null || l:current_line <= a:end) " TODO: why not < a:end?
-        let s:LOCATIONS[l:locations_index].line += a:shift
+        let s:LOCATIONS[locations_index].line += a:shift
       endif
     endif
-    let l:locations_index += 1
-  endwhile
+  endfor
 endfunction
 
 function! s:parse_diff_stats(text, delimiter)
@@ -215,12 +208,10 @@ function! s:parse_diff_stats(text, delimiter)
 endfunction
 
 function! s:update_edited_line_numbers(edited_line_numbers, removal_offset, removals, diff_stdout_lines, diff_stdout_line_number)
-  let l:i = 0
-  while l:i < a:removals
-    let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + l:i]
-    let a:edited_line_numbers[a:removal_offset + l:i] = 1
-    let l:i += 1
-  endwhile
+  for i in range(0, a:removals - 1)
+    let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + i]
+    let a:edited_line_numbers[a:removal_offset + i] = 1
+  endfor
   return a:edited_line_numbers
 endfunction
 
