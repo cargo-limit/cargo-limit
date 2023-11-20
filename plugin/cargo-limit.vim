@@ -153,8 +153,6 @@ function! s:update_next_unique_location_index()
   let l:location = s:current_location()
   let l:path = l:location.path
   let l:line = l:location.line
-
-  let s:LOCATION_INDEX += 1
   while s:LOCATION_INDEX < len(s:EDITOR_DATA.files) && s:current_location().path ==# l:path && s:current_location().line ==# l:line
     let s:LOCATION_INDEX += 1
   endwhile
@@ -248,7 +246,7 @@ endfunction
 
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
-  let l:corrected_location_index = 0
+  let l:corrected_location_index = 0 " TODO: remove?
   let l:new_locations = []
 
   for i in range(0, len(s:EDITOR_DATA.files) - 1)
@@ -256,8 +254,8 @@ function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_fil
     let l:is_edited_line = has_key(a:edited_line_numbers, l:file.line) && l:file.path ==# a:current_file
     if l:is_edited_line
       if !l:corrected_location_index && i + 1 == s:LOCATION_INDEX
-        let s:LOCATION_INDEX -= 1
-        let l:corrected_location_index = 1
+        let s:LOCATION_INDEX -= 1 " TODO: multiple times?
+        "let l:corrected_location_index = 1
       endif
     else
       call add(l:new_locations, l:file)
