@@ -27,35 +27,19 @@ jobs:
             target: x86_64-unknown-linux-musl
           - os: ubuntu-latest
             target: i686-unknown-linux-gnu
-          - os: ubuntu-latest
-            target: i686-unknown-linux-musl
-          # - os: ubuntu-latest # NOTE: Relocations in generic ELF (EM: 183)
-          #   target: aarch64-unknown-linux-gnu
-          #   no_test: true
-          # - os: ubuntu-latest # NOTE: Relocations in generic ELF (EM: 183)
-          #   target: aarch64-unknown-linux-musl
-          - os: ubuntu-latest
-            target: riscv64gc-unknown-linux-musl
+            no_test: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
           - os: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
-          - os: ubuntu-latest
-            target: mips64-openwrt-linux-musl
-          - os: ubuntu-latest
-            target: mips64-unknown-linux-gnuabi64
-          - os: ubuntu-latest
-            target: mips64-unknown-linux-muslabi64
-          - os: ubuntu-latest
-            target: mips64el-unknown-linux-gnuabi64
-          - os: ubuntu-latest
-            target: mips64el-unknown-linux-muslabi64
-          - os: ubuntu-latest
-            target: mipsel-unknown-linux-gnu
-          - os: ubuntu-latest
-            target: mipsel-unknown-linux-musl
-          - os: ubuntu-latest
-            target: aarch64_be-unknown-linux-gnu_ilp32
-          - os: ubuntu-latest
-            target: aarch64_be-unknown-linux-gnu
+            no_test: true # NOTE: Relocations in generic ELF (EM: 243)
+          # - os: ubuntu-latest
+          #   target: i686-unknown-linux-musl # NOTE: target 'i686-unknown-linux-musl' not found in channel
+          # - os: ubuntu-latest
+          #   target: aarch64-unknown-linux-gnu # NOTE: Relocations in generic ELF (EM: 183)
+          #   no_test: true
+          # - os: ubuntu-latest
+          #   target: aarch64-unknown-linux-musl # NOTE: Relocations in generic ELF (EM: 183)
+          # - os: ubuntu-latest
+          #   target: riscv64gc-unknown-linux-musl # NOTE: toolchain ... does not contain component 'rust-std' for target
 
           # macOS
           - os: macos-latest
@@ -70,48 +54,49 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
           - os: windows-latest
-            target: i686-pc-windows-gnu
-          - os: windows-latest
             target: i686-pc-windows-msvc
-          # - os: windows-latest # NOTE: can't find crate for `core`
-          #   target: aarch64-pc-windows-gnullvm
+          - os: windows-latest
+            target: i686-pc-windows-gnu
+            no_test: true # NOTE: linker `i686-w64-mingw32-gcc` not found
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             no_test: true # NOTE: could not execute process
+          # - os: windows-latest
+          #   target: aarch64-pc-windows-gnullvm # NOTE: can't find crate for `core`
 
           # FreeBSD
           - os: ubuntu-latest
             target: x86_64-unknown-freebsd
-          - os: ubuntu-latest
-            target: i686-unknown-freebsd
-          - os: ubuntu-latest
-            target: aarch64-unknown-freebsd
-          - os: ubuntu-latest
-            target: riscv64gc-unknown-freebsd
+            no_test: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+          # - os: ubuntu-latest
+          #   target: i686-unknown-freebsd # NOTE: target 'i686-unknown-freebsd' not found in channel
+          # - os: ubuntu-latest
+          #   target: aarch64-unknown-freebsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: riscv64gc-unknown-freebsd # NOTE: toolchain ... does not contain component 'rust-std' for target
 
           # NetBSD
           - os: ubuntu-latest
-            target: i686-unknown-netbsd
-          - os: ubuntu-latest
-            target: aarch64-unknown-netbsd
-          - os: ubuntu-latest
-            target: aarch64_be-unknown-netbsd
-          - os: ubuntu-latest
-            target: mipsel-unknown-netbsd
-          - os: ubuntu-latest
-            target: riscv64gc-unknown-netbsd
-          - os: ubuntu-latest
             target: x86_64-unknown-netbsd
+            no_test: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+          # - os: ubuntu-latest
+          #   target: i686-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: aarch64-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: aarch64_be-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: riscv64gc-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
 
           # OpenBSD
-          - os: ubuntu-latest
-            target: x86_64-unknown-openbsd
-          - os: ubuntu-latest
-            target: i686-unknown-openbsd
-          - os: ubuntu-latest
-            target: aarch64-unknown-openbsd
-          - os: ubuntu-latest
-            target: riscv64gc-unknown-openbsd
+          # - os: ubuntu-latest
+          #   target: x86_64-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: i686-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: aarch64-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          # - os: ubuntu-latest
+          #   target: riscv64gc-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
