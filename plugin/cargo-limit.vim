@@ -103,8 +103,6 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
   let s:LOCATIONS = a:locations
   let s:LOCATION_INDEX = 0
 
-  call s:deduplicate_locations_by_paths_and_lines() " TODO
-
   " TODO: extract to open_all_in_reverse_deduplicated_by_paths?
   let l:path_to_location_index = {}
   for i in range(len(s:LOCATIONS) - 1, 0, -1)
@@ -119,7 +117,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
       let l:location_index = l:path_to_location_index[l:path]
       call remove(l:path_to_location_index, l:path)
 
-      " TODO: shadow
+      " FIXME: shadow
       let l:path = fnameescape(s:LOCATIONS[i].path)
       execute 'tab drop ' . l:path
       call s:jump_to_location(l:location_index)
@@ -129,7 +127,7 @@ function! s:open_all_locations_in_new_or_existing_tabs(locations)
     endif
   endfor
 
-  call s:next_unique_location_index()
+  call s:update_next_unique_location_index()
 endfunction
 
 function! s:open_next_location_in_new_or_existing_tab()
@@ -147,12 +145,12 @@ function! s:open_next_location_in_new_or_existing_tab()
     "call s:update_locations(l:path) " TODO
     call s:jump_to_location(s:LOCATION_INDEX)
     "call s:maybe_copy_to_temp_sources(l:path) " TODO
-    call s:next_unique_location_index()
+    call s:update_next_unique_location_index()
   endif
 endfunction
 
 " TODO: naming
-function! s:next_unique_location_index()
+function! s:update_next_unique_location_index()
   let l:location = s:LOCATIONS[s:LOCATION_INDEX]
   let l:path = l:location.path
   let l:line = l:location.line
@@ -184,8 +182,6 @@ function! s:update_locations(path)
     let l:shift_accumulator += l:shifted_lines
     call s:shift_locations(a:path, l:start, l:end, l:shift_accumulator)
   endfor
-
-  call s:deduplicate_locations_by_paths_and_lines() " TODO: why for all paths? do we even need it here?
 endfunction
 
 function! s:compute_shifts_and_edits(path)
@@ -256,25 +252,6 @@ function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_fil
       call add(l:new_locations, i)
     endif
   endfor
-  let s:LOCATIONS = l:new_locations
-endfunction
-
-function! s:deduplicate_locations_by_paths_and_lines()
-  return
-  " TODO
-
-  let l:new_locations = []
-  let l:added_lines = {}
-
-  for i in s:LOCATIONS
-    let l:added_line_key = string([i.path, i.line])
-    let l:is_added_line = get(l:added_lines, l:added_line_key)
-    if !l:is_added_line
-      call add(l:new_locations, i)
-      let l:added_lines[l:added_line_key] = 1
-    endif
-  endfor
-
   let s:LOCATIONS = l:new_locations
 endfunction
 
