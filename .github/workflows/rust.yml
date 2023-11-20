@@ -12,7 +12,7 @@ env:
 
 jobs:
   all:
-    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (audit=${{ matrix.audit || 'false' }}, rustfmt=${{ matrix.rustfmt || 'false' }}, no_test=${{ matrix.no_test || 'false' }})
+    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (audit=${{ matrix.audit || 'false' }}, rustfmt=${{ matrix.rustfmt || 'false' }}, no_test=${{ matrix.no_test || 'false' }}, no_build=${{ matrix.no_build || 'false' }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -28,9 +28,11 @@ jobs:
           - os: ubuntu-latest
             target: i686-unknown-linux-gnu
             no_test: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
+            no_build: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
           - os: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
             no_test: true # NOTE: Relocations in generic ELF (EM: 243)
+            no_build: true # NOTE: Relocations in generic ELF (EM: 243)
           # - os: ubuntu-latest
           #   target: i686-unknown-linux-musl # NOTE: target 'i686-unknown-linux-musl' not found in channel
           # - os: ubuntu-latest
@@ -58,6 +60,7 @@ jobs:
           - os: windows-latest
             target: i686-pc-windows-gnu
             no_test: true # NOTE: linker `i686-w64-mingw32-gcc` not found
+            no_build: true # NOTE: linker `i686-w64-mingw32-gcc` not found
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             no_test: true # NOTE: could not execute process
@@ -68,6 +71,7 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-freebsd
             no_test: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+            no_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
           # - os: ubuntu-latest
           #   target: i686-unknown-freebsd # NOTE: target 'i686-unknown-freebsd' not found in channel
           # - os: ubuntu-latest
@@ -79,6 +83,7 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-netbsd
             no_test: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+            no_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
           # - os: ubuntu-latest
           #   target: i686-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
           # - os: ubuntu-latest
@@ -128,4 +133,5 @@ jobs:
         if: ${{ !matrix.no_test }}
         run: cargo test --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Build
+        if: ${{ !matrix.no_build }}
         run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
