@@ -166,7 +166,9 @@ function! SaveAllFilesOrOpenNextLocation()
   endfor
 
   if l:all_files_are_saved
-    call g:CargoLimitOpenNextLocation()
+    if exists('g:CargoLimitOpenNextLocation')
+      call g:CargoLimitOpenNextLocation()
+    endif
   else
     execute 'wa'
   endif

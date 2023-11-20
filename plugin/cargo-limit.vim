@@ -79,7 +79,7 @@ function! s:maybe_setup_handlers()
   endfunction
 
   function! g:CargoLimitOpenNextLocation()
-    echom ''
+    echomsg ''
     call s:open_next_location_in_new_or_existing_tab()
   endfunction
 
