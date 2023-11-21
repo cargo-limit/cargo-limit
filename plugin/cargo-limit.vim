@@ -245,7 +245,7 @@ function! s:shift_locations(path, edited_line_numbers, start, end, shift_accumul
     let l:current_location = s:EDITOR_DATA.files[i] " TODO: why current? naming
     if l:current_location.path ==# a:path
       let l:current_line = l:current_location.line
-      if l:current_line ># a:start && (a:end ==# v:null || l:current_line <=# a:end) " TODO: why not <# a:end?
+      if l:current_line ># a:start && (a:end ==# v:null || l:current_line <# a:end)
         let s:EDITOR_DATA.files[i].line += a:shift_accumulator
       endif
     endif
@@ -260,7 +260,7 @@ function! s:shift_locations(path, edited_line_numbers, start, end, shift_accumul
 
   " TODO
   for line in keys(a:edited_line_numbers)
-    if line ># a:start && (a:end ==# v:null || line <=# a:end) " TODO: why not <# a:end?
+    if line ># a:start && (a:end ==# v:null || line <# a:end)
       call remove(a:edited_line_numbers, line)
       let a:edited_line_numbers[line + a:shift_accumulator] = 1
     endif
