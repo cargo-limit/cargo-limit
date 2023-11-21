@@ -172,6 +172,7 @@ function! s:on_buffer_write()
   let l:current_file = s:current_file()
   if l:current_file !=# '' && filereadable(l:current_file)
     call s:update_locations(l:current_file)
+    call s:maybe_copy_to_temp_sources(l:current_file)
     if exists('*CargoLimitUpdate')
       call g:CargoLimitUpdate(s:EDITOR_DATA)
     endif
@@ -229,10 +230,17 @@ function! s:compute_shifts_and_edits(path)
     let l:diff_stdout_line_number += 1
   endwhile
 
+  "call s:log_info(l:line_to_shift)
   return [l:line_to_shift, l:edited_line_numbers]
 endfunction
 
 function! s:shift_locations(path, edited_line_numbers, start, end, shift_accumulator)
+"  let l:wat_lines = []
+"  for i in s:EDITOR_DATA.files
+"    call add(l:wat_lines, i.line)
+"  endfor
+"  call s:log_info('BEG lines', l:wat_lines)
+
   for i in range(0, len(s:EDITOR_DATA.files) - 1)
     let l:current_location = s:EDITOR_DATA.files[i] " TODO: why current? naming
     if l:current_location.path ==# a:path
@@ -242,6 +250,13 @@ function! s:shift_locations(path, edited_line_numbers, start, end, shift_accumul
       endif
     endif
   endfor
+
+
+"  let l:wat_lines = []
+"  for i in s:EDITOR_DATA.files
+"    call add(l:wat_lines, i.line)
+"  endfor
+"  call s:log_info('END lines', l:wat_lines)
 
   " TODO
   for line in keys(a:edited_line_numbers)
