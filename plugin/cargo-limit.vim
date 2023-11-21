@@ -137,7 +137,7 @@ endfunction
 
 function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
-  if (l:current_file !=# '' && !filereadable(l:current_file)) || s:LOCATION_INDEX >= len(s:EDITOR_DATA.files) || &l:modified !=# 0 " TODO: correct?
+  if (l:current_file !=# '' && !filereadable(l:current_file)) || s:LOCATION_INDEX >=# len(s:EDITOR_DATA.files) || &l:modified !=# 0 " TODO: correct?
     return
   endif
 
@@ -153,7 +153,7 @@ function! s:update_next_unique_location_index()
   let l:location = s:current_location()
   let l:path = l:location.path
   let l:line = l:location.line
-  while s:LOCATION_INDEX < len(s:EDITOR_DATA.files) && s:current_location().path ==# l:path && s:current_location().line ==# l:line
+  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.files) && s:current_location().path ==# l:path && s:current_location().line ==# l:line
     let s:LOCATION_INDEX += 1
   endwhile
 endfunction
@@ -163,7 +163,7 @@ function! s:update_prev_unique_location_index()
   let l:location = s:current_location()
   let l:path = l:location.path
   let l:line = l:location.line
-  while s:LOCATION_INDEX >= 0 && s:current_location().path ==# l:path && s:current_location().line ==# l:line
+  while s:LOCATION_INDEX >=# 0 && s:current_location().path ==# l:path && s:current_location().line ==# l:line
     let s:LOCATION_INDEX -= 1
   endwhile
 endfunction
@@ -193,7 +193,7 @@ function! s:update_locations(path)
   for i in range(0, len(l:line_to_shift) - 1)
     let l:shifted_lines = l:line_to_shift[i][1]
     let l:start = l:line_to_shift[i][0]
-    let l:end = i + 1 < len(l:line_to_shift) ? l:line_to_shift[i + 1][0] : v:null
+    let l:end = i + 1 <# len(l:line_to_shift) ? l:line_to_shift[i + 1][0] : v:null
     let l:shift_accumulator += l:shifted_lines
     call s:shift_locations(a:path, l:start, l:end, l:shift_accumulator)
   endfor
@@ -218,7 +218,7 @@ function! s:compute_shifts_and_edits(path)
 
   let l:diff_stdout_lines = split(execute(DIFF_COMMAND), "\n")
   let l:diff_stdout_line_number = 0
-  while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
+  while l:diff_stdout_line_number <# len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
     if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
       let l:raw_diff_stats = split(split(l:diff_line, DIFF_STATS_PATTERN)[0], ' ')
@@ -241,7 +241,7 @@ function! s:shift_locations(path, start, end, shift_accumulator)
     let l:current_location = s:EDITOR_DATA.files[i] " TODO: why current? naming
     if l:current_location.path ==# a:path
       let l:current_line = l:current_location.line
-      if l:current_line > a:start && (a:end ==# v:null || l:current_line <= a:end) " TODO: why not < a:end?
+      if l:current_line ># a:start && (a:end ==# v:null || l:current_line <=# a:end) " TODO: why not <# a:end?
         let s:EDITOR_DATA.files[i].line += a:shift_accumulator
       endif
     endif
@@ -251,7 +251,7 @@ endfunction
 function! s:parse_diff_stats(text, delimiter)
   let l:offset_and_lines = split(split(a:text, a:delimiter)[0], ',')
   let l:offset = str2nr(l:offset_and_lines[0])
-  let l:lines = len(l:offset_and_lines) > 1 ? str2nr(l:offset_and_lines[1]) : 1
+  let l:lines = len(l:offset_and_lines) ># 1 ? str2nr(l:offset_and_lines[1]) : 1
   return [l:offset, l:lines]
 endfunction
 
@@ -324,7 +324,7 @@ endfunction
 
 function! s:maybe_copy(source, destination)
   const MAX_SIZE_BYTES = 1024 * 1024
-  if getfsize(a:source) <= MAX_SIZE_BYTES
+  if getfsize(a:source) <=# MAX_SIZE_BYTES
     let l:data = readblob(a:source)
     call writefile(l:data, a:destination, 'bS')
   endif
