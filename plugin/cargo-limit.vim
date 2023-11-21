@@ -182,12 +182,6 @@ function! s:update_locations(path)
   "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:EDITOR_DATA.files))
 
   let [l:line_to_shift, l:edited_line_numbers] = s:compute_shifts_and_edits(a:path)
-  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
-
-  " TODO: correct LOCATION_INDEX here? or from shift_locations?
-  "let l:current_location = s:current_location()
-  "if l:current_location.path == a:path && l:current_location.line ???
-  "endif
 
   let l:shift_accumulator = 0
   for i in range(0, len(l:line_to_shift) - 1)
@@ -195,8 +189,10 @@ function! s:update_locations(path)
     let l:start = l:line_to_shift[i][0]
     let l:end = i + 1 <# len(l:line_to_shift) ? l:line_to_shift[i + 1][0] : v:null
     let l:shift_accumulator += l:shifted_lines
-    call s:shift_locations(a:path, l:start, l:end, l:shift_accumulator)
+    let l:edited_line_numbers = s:shift_locations(a:path, l:edited_line_numbers, l:start, l:end, l:shift_accumulator)
   endfor
+
+  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
 endfunction
 
 function! s:compute_shifts_and_edits(path)
@@ -236,7 +232,7 @@ function! s:compute_shifts_and_edits(path)
   return [l:line_to_shift, l:edited_line_numbers]
 endfunction
 
-function! s:shift_locations(path, start, end, shift_accumulator)
+function! s:shift_locations(path, edited_line_numbers, start, end, shift_accumulator)
   for i in range(0, len(s:EDITOR_DATA.files) - 1)
     let l:current_location = s:EDITOR_DATA.files[i] " TODO: why current? naming
     if l:current_location.path ==# a:path
@@ -246,6 +242,16 @@ function! s:shift_locations(path, start, end, shift_accumulator)
       endif
     endif
   endfor
+
+  " TODO
+  for line in keys(a:edited_line_numbers)
+    if line ># a:start && (a:end ==# v:null || line <=# a:end) " TODO: why not <# a:end?
+      call remove(a:edited_line_numbers, line)
+      let a:edited_line_numbers[line + a:shift_accumulator] = 1
+    endif
+  endfor
+
+  return a:edited_line_numbers
 endfunction
 
 function! s:parse_diff_stats(text, delimiter)
