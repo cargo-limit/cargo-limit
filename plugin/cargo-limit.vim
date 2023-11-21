@@ -143,8 +143,8 @@ function! s:open_next_location_in_new_or_existing_tab()
 
   let l:path = fnameescape(s:current_location().path)
   execute 'tab drop ' . l:path
-  call s:jump_to_location(s:LOCATION_INDEX)
-  "call s:maybe_copy_to_temp_sources(l:path) " TODO
+  call s:jump_to_location(s:LOCATION_INDEX) " FIXME: we jump here to not updated location?
+  "call s:maybe_copy_to_temp_sources(l:path) " TODO, also why after fnameescape?
   call s:update_next_unique_location_index()
 endfunction
 
@@ -155,6 +155,16 @@ function! s:update_next_unique_location_index()
   let l:line = l:location.line
   while s:LOCATION_INDEX < len(s:EDITOR_DATA.files) && s:current_location().path ==# l:path && s:current_location().line ==# l:line
     let s:LOCATION_INDEX += 1
+  endwhile
+endfunction
+
+" TODO: naming? remove?
+function! s:update_prev_unique_location_index()
+  let l:location = s:current_location()
+  let l:path = l:location.path
+  let l:line = l:location.line
+  while s:LOCATION_INDEX >= 0 && s:current_location().path ==# l:path && s:current_location().line ==# l:line
+    let s:LOCATION_INDEX -= 1
   endwhile
 endfunction
 
@@ -255,6 +265,7 @@ endfunction
 
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
+  " TODO: or even correct LOCATION_INDEX here?
   let l:new_locations = []
 
   for i in range(0, len(s:EDITOR_DATA.files) - 1)
