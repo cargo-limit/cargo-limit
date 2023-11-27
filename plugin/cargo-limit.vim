@@ -13,7 +13,7 @@ function! s:main()
     let s:DATA_CHUNKS = []
     let s:EDITOR_DATA = {'files': []}
     let s:LOCATION_INDEX = 0
-    let s:OPEN_INTERNAL_IS_CALLED = 0
+    let s:OPEN_INTERNAL_IS_CALLED = v:false
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
     \ 'on_stderr': function('s:on_cargo_metadata'),
@@ -79,7 +79,7 @@ function! s:maybe_setup_handlers()
   function! g:CargoLimitOpenInternal(editor_data)
     let s:EDITOR_DATA = a:editor_data
     let s:LOCATION_INDEX = 0
-    let s:OPEN_INTERNAL_IS_CALLED = 1
+    let s:OPEN_INTERNAL_IS_CALLED = v:true
     " NOTE: in the 0.0.12 we'll likely check plugin version here and call g:CargoLimitOpen
   endfunction
 
@@ -215,7 +215,7 @@ function! s:compute_shifts_and_edits(path)
   endif
 
   let l:diff_stdout_lines = split(execute(DIFF_COMMAND), "\n")
-  let l:diff_stdout_line_number = 0
+  let l:diff_stdout_line_number = 0 " TODO: rename to index?
   while l:diff_stdout_line_number <# len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
     if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
@@ -263,7 +263,7 @@ function! s:shift_locations(path, edited_line_numbers, start, end, shift_accumul
   for line in keys(a:edited_line_numbers)
     if line ># a:start && (a:end ==# v:null || line <# a:end)
       call remove(a:edited_line_numbers, line)
-      let a:edited_line_numbers[line + a:shift_accumulator] = 1
+      let a:edited_line_numbers[line + a:shift_accumulator] = v:true
     endif
   endfor
 
@@ -280,7 +280,7 @@ endfunction
 function! s:update_edited_line_numbers(edited_line_numbers, removal_offset, removals, diff_stdout_lines, diff_stdout_line_number)
   for i in range(0, a:removals - 1)
     let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + i]
-    let a:edited_line_numbers[a:removal_offset + i] = 1
+    let a:edited_line_numbers[a:removal_offset + i] = v:true
   endfor
   return a:edited_line_numbers
 endfunction
