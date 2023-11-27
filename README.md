@@ -21,7 +21,7 @@ Initially this project was a workaround for **[this issue](https://github.com/ru
 
 Check out [🎙️  Rustacean Station podcast episode](https://rustacean-station.org/episode/alexander-lopatin/) for more.
 
-[![asciicast](https://gist.github.com/alopatindev/2376b843dffef8d1a3af7ef44aef67be/raw/bfa15c2221cb5be128857068dd786374f9f6f186/cargo-limit-demo.svg)](https://asciinema.org/a/441673)
+[![asciicast](https://gist.githubusercontent.com/alopatindev/2376b843dffef8d1a3af7ef44aef67be/raw/bfa15c2221cb5be128857068dd786374f9f6f186/cargo-limit-demo.svg)](https://asciinema.org/a/441673)
 
 ## Installation
 
