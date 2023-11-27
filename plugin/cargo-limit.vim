@@ -32,7 +32,7 @@ function! s:on_cargo_metadata(_job_id, data, event)
     "call s:log_info(a:event . ' ' . !empty(l:stderr) . ' ' . (l:stderr !~# 'could not find `Cargo.toml`') . ' ' . (!s:contains_str(l:stderr, 'could not find `Cargo.toml`')))
     "if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`' " TODO
     if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
-      call s:log_error(l:stderr)
+      call s:log_error('cargo metadata failed', l:stderr, !empty(l:stderr), !s:contains_str(l:stderr, 'could not find `Cargo.toml`'), len(l:stderr), l:stderr !~# 'could not find `Cargo.toml`')
     endif
   elseif a:event ==# 'exit'
     let l:stdout = trim(join(s:DATA_CHUNKS, ''))
@@ -109,6 +109,7 @@ function! s:maybe_setup_handlers()
 endfunction
 
 function! s:open_all_locations_in_reverse_deduplicated_by_paths()
+  call s:log_info(len(s:EDITOR_DATA.files))
   call s:recreate_temp_sources_dir()
 
   let l:path_to_location_index = {}
@@ -286,6 +287,10 @@ endfunction
 
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
+  "call s:log_info(a:edited_line_numbers)
+  "return
+  "TODO !!
+
   " TODO: or even correct LOCATION_INDEX here?
   let l:new_locations = []
 
@@ -378,13 +383,20 @@ endfunction
 
 function! s:log_error(...)
   echohl Error
-  echon 'cargo-limit: ' . join(a:000, ' ')
+  redraw
+  "echom s:log_str(a:000)
+  echon s:log_str(a:000)
   echohl None
 endfunction
 
 function! s:log_info(...)
   echohl None
-  echon 'cargo-limit: ' . join(a:000, ' ')
+  redraw
+  echon s:log_str(a:000)
+endfunction
+
+function! s:log_str(args)
+  return '[cargo-limit] ' . join(a:args, ' ')
 endfunction
 
 call s:main()
