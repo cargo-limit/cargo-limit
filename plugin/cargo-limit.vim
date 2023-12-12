@@ -1,6 +1,7 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
 " TODO: check if diff is somehow broken?
 " FIXME: regression? jump should not happen while I'm editing a file
+" TODO: should we have CargoLimitOpenInternal (ccff595)? that makes precise jumps possible for custom functions
 
 function! s:main()
   const MIN_NVIM_VERSION = '0.7.0'
@@ -130,6 +131,7 @@ function! s:open_all_locations_in_reverse_deduplicated_by_paths()
   endfor
 endfunction
 
+" TODO: don't extract?
 function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
   " TODO: &l:modified !=# 0 - is it correct here?
@@ -144,6 +146,7 @@ function! s:open_next_location_in_new_or_existing_tab()
   call s:jump_to_location(s:LOCATION_INDEX)
 endfunction
 
+" TODO: don't extract?
 function! s:open_prev_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
   " TODO: &l:modified !=# 0 - is it correct here?
