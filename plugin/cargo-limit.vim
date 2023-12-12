@@ -13,7 +13,6 @@ function! s:main()
     let s:DATA_CHUNKS = []
     let s:EDITOR_DATA = {'files': []}
     let s:LOCATION_INDEX = -1
-    let s:OPEN_INTERNAL_IS_CALLED = v:false
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
     \ 'on_stderr': function('s:on_cargo_metadata'),
@@ -76,22 +75,13 @@ function! s:maybe_setup_handlers()
     autocmd BufWritePost *.rs call s:on_buffer_write()
   augroup END
 
-  function! g:CargoLimitOpenInternal(editor_data)
-    let s:EDITOR_DATA = a:editor_data
-    let s:LOCATION_INDEX = -1
-    let s:OPEN_INTERNAL_IS_CALLED = v:true
-    " NOTE: in the 0.0.12 we'll likely check plugin version here and call g:CargoLimitOpen
-  endfunction
-
   if exists('*CargoLimitOpen')
     return
   endif
 
   function! g:CargoLimitOpen(editor_data)
-    if !s:OPEN_INTERNAL_IS_CALLED
-      call s:log_error('Versions mismatch, please update cargo-limit crate')
-      return
-    endif
+    let s:EDITOR_DATA = a:editor_data
+    let s:LOCATION_INDEX = -1
 
     let l:current_file = s:current_file()
     if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:EDITOR_DATA.files)
