@@ -151,20 +151,28 @@ endfunction
 
 " TODO: naming
 function! s:update_next_unique_location_index()
+  if s:LOCATION_INDEX <# len(s:EDITOR_DATA.files) - 1
+    let s:LOCATION_INDEX += 1
+  endif
+
   let l:location = s:current_location()
   let l:path = l:location.path
   let l:line = l:location.line
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.files) && s:current_location().path ==# l:path && s:current_location().line ==# l:line
+  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.files) - 1 && s:next_location().path ==# l:path && s:next_location().line ==# l:line
     let s:LOCATION_INDEX += 1
   endwhile
 endfunction
 
 " TODO: naming? remove?
 function! s:update_prev_unique_location_index()
+  if s:LOCATION_INDEX >=# 1
+    let s:LOCATION_INDEX -= 1
+  endif
+
   let l:location = s:current_location()
   let l:path = l:location.path
   let l:line = l:location.line
-  while s:LOCATION_INDEX >=# 0 && s:current_location().path ==# l:path && s:current_location().line ==# l:line
+  while s:LOCATION_INDEX >=# 1 && s:prev_location().path ==# l:path && s:prev_location().line ==# l:line
     let s:LOCATION_INDEX -= 1
   endwhile
 endfunction
@@ -379,6 +387,14 @@ endfunction
 
 function! s:current_location()
   return s:EDITOR_DATA.files[s:LOCATION_INDEX]
+endfunction
+
+function! s:next_location()
+  return s:EDITOR_DATA.files[s:LOCATION_INDEX + 1]
+endfunction
+
+function! s:prev_location()
+  return s:EDITOR_DATA.files[s:LOCATION_INDEX - 1]
 endfunction
 
 function! s:log_error(...)
