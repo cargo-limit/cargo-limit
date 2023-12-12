@@ -12,7 +12,7 @@ function! s:main()
 
     let s:DATA_CHUNKS = []
     let s:EDITOR_DATA = {'files': []}
-    let s:LOCATION_INDEX = 0
+    let s:LOCATION_INDEX = -1
     let s:OPEN_INTERNAL_IS_CALLED = v:false
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
@@ -78,7 +78,7 @@ function! s:maybe_setup_handlers()
 
   function! g:CargoLimitOpenInternal(editor_data)
     let s:EDITOR_DATA = a:editor_data
-    let s:LOCATION_INDEX = 0
+    let s:LOCATION_INDEX = -1
     let s:OPEN_INTERNAL_IS_CALLED = v:true
     " NOTE: in the 0.0.12 we'll likely check plugin version here and call g:CargoLimitOpen
   endfunction
@@ -106,6 +106,11 @@ function! s:maybe_setup_handlers()
     echomsg ''
     call s:open_next_location_in_new_or_existing_tab()
   endfunction
+
+  function! g:CargoLimitOpenPrevLocation()
+    echomsg ''
+    call s:open_prev_location_in_new_or_existing_tab()
+  endfunction
 endfunction
 
 function! s:open_all_locations_in_reverse_deduplicated_by_paths()
@@ -127,7 +132,6 @@ function! s:open_all_locations_in_reverse_deduplicated_by_paths()
 
       " FIXME: shadow
       let l:path = fnameescape(s:EDITOR_DATA.files[i].path)
-      execute 'tab drop ' . l:path
       call s:jump_to_location(l:location_index)
       call s:maybe_copy_to_temp_sources(l:path)
     else
@@ -138,18 +142,30 @@ endfunction
 
 function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
-  if (l:current_file !=# '' && !filereadable(l:current_file)) || s:LOCATION_INDEX >=# len(s:EDITOR_DATA.files) || &l:modified !=# 0 " TODO: correct?
+  " TODO: &l:modified !=# 0 - is it correct here?
+  if empty(s:EDITOR_DATA.files) || s:LOCATION_INDEX >=# len(s:EDITOR_DATA.files) || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
     return
   endif
 
-  let l:path = fnameescape(s:current_location().path)
-  execute 'tab drop ' . l:path
-  call s:jump_to_location(s:LOCATION_INDEX) " FIXME: we jump here to not updated location?
-  "call s:maybe_copy_to_temp_sources(l:path) " TODO, also why after fnameescape?
-  call s:update_next_unique_location_index()
+  if s:LOCATION_INDEX !=# -1
+    call s:update_next_unique_location_index()
+  endif
+
+  call s:jump_to_location(s:LOCATION_INDEX)
 endfunction
 
-" TODO: naming
+function! s:open_prev_location_in_new_or_existing_tab()
+  let l:current_file = s:current_file()
+  " TODO: &l:modified !=# 0 - is it correct here?
+  if empty(s:EDITOR_DATA.files) || s:LOCATION_INDEX <=# 0 || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
+    return
+  endif
+
+  call s:update_prev_unique_location_index()
+  call s:jump_to_location(s:LOCATION_INDEX)
+endfunction
+
+" TODO: naming?
 function! s:update_next_unique_location_index()
   if s:LOCATION_INDEX <# len(s:EDITOR_DATA.files) - 1
     let s:LOCATION_INDEX += 1
@@ -382,6 +398,8 @@ endfunction
 
 function! s:jump_to_location(location_index)
   let l:location = s:EDITOR_DATA.files[a:location_index]
+  " TODO: is fnameescape required here?
+  execute 'tab drop ' . fnameescape(l:location.path)
   call cursor((l:location.line), (l:location.column))
 endfunction
 
