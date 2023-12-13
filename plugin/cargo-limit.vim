@@ -206,8 +206,7 @@ function! s:update_next_unique_location_index()
   endwhile
 
   " go to last unedited location on the same line
-  let l:location = s:current_location()
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_same_location(s:next_location(), l:location)
+  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_same_location(s:next_location(), s:current_location())
     let s:LOCATION_INDEX += 1
   endwhile
 
@@ -215,8 +214,7 @@ function! s:update_next_unique_location_index()
     let s:LOCATION_INDEX += 1
   endwhile
 
-  let l:location = s:current_location()
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_same_location(s:next_location(), l:location)
+  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_same_location(s:next_location(), s:current_location())
     let s:LOCATION_INDEX += 1
   endwhile
 endfunction
