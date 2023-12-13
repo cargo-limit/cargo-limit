@@ -200,17 +200,13 @@ endfunction
 function! s:update_next_unique_location_index()
   " go to next unedited location with different path or line
   let l:location = s:current_location()
-  let l:path = l:location.path
-  let l:line = l:location.line
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && ((s:current_location().path ==# l:path && s:current_location().line ==# l:line) || s:is_edited_location(s:current_location()))
+  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && (s:is_same_location(s:current_location(), l:location) || s:is_edited_location(s:current_location()))
     let s:LOCATION_INDEX += 1
   endwhile
 
   " go to last unedited location on the same line
   let l:location = s:current_location()
-  let l:path = l:location.path
-  let l:line = l:location.line
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && (s:next_location().path ==# l:path && s:next_location().line ==# l:line)
+  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_same_location(s:next_location(), l:location)
     let s:LOCATION_INDEX += 1
     while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_edited_location(s:current_location())
       let s:LOCATION_INDEX += 1
@@ -221,9 +217,7 @@ endfunction
 " TODO: naming? remove? refactoring?
 function! s:update_prev_unique_location_index()
   let l:location = s:current_location()
-  let l:path = l:location.path
-  let l:line = l:location.line
-  while s:LOCATION_INDEX >=# 1 && ((s:current_location().path ==# l:path && s:current_location().line ==# l:line) || has_key(s:EDITED_LOCATIONS[s:current_location().path], s:current_location().line))
+  while s:LOCATION_INDEX >=# 1 && (s:is_same_location(s:current_location(), l:location) || s:is_edited_location(s:current_location()))
     let s:LOCATION_INDEX -= 1
   endwhile
 endfunction
@@ -357,6 +351,10 @@ endfunction
 
 function! s:is_edited_location(location)
   return has_key(s:EDITED_LOCATIONS, a:location.path) && has_key(s:EDITED_LOCATIONS[a:location.path], a:location.line)
+endfunction
+
+function! s:is_same_location(first, second)
+  return a:first['path'] ==# a:second['path'] && a:first['line'] ==# a:second['line']
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
