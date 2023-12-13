@@ -178,8 +178,9 @@ function! s:open_prev_location_in_new_or_existing_tab()
   endif
 endfunction
 
-" TODO: naming?
+" TODO: naming? refactoring?
 function! s:update_next_unique_location_index()
+  " go to next unedited location with different path or line
   let l:location = s:current_location()
   let l:path = l:location.path
   let l:line = l:location.line
@@ -187,19 +188,19 @@ function! s:update_next_unique_location_index()
     let s:LOCATION_INDEX += 1
   endwhile
 
-  " deduplicate next locations
+  " go to last unedited location on the same line
   let l:location = s:current_location()
   let l:path = l:location.path
   let l:line = l:location.line
   while s:LOCATION_INDEX <# len(s:EDITOR_DATA.files) - 1 && (s:next_location().path ==# l:path && s:next_location().line ==# l:line)
     let s:LOCATION_INDEX += 1
-    if has_key(s:EDITED_LOCATIONS[s:current_location().path], s:current_location().line) && s:LOCATION_INDEX <# len(s:EDITOR_DATA.files) - 1 " ignore edited location
+    while s:LOCATION_INDEX <# len(s:EDITOR_DATA.files) - 1 && has_key(s:EDITED_LOCATIONS[s:current_location().path], s:current_location().line)
       let s:LOCATION_INDEX += 1
-    endif
+    endwhile
   endwhile
 endfunction
 
-" TODO: naming? remove?
+" TODO: naming? remove? refactoring?
 function! s:update_prev_unique_location_index()
   let l:location = s:current_location()
   let l:path = l:location.path
