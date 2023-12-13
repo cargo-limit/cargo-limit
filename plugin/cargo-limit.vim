@@ -20,7 +20,7 @@ function! s:main()
 
     let s:DATA_CHUNKS = []
     let s:EDITOR_DATA = {'files': []}
-    let s:LOCATION_INDEX = -1
+    let s:LOCATION_INDEX = v:null
     let s:EDITED_LOCATIONS = {}
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
@@ -148,27 +148,34 @@ endfunction
 function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
   " TODO: &l:modified !=# 0 - is it correct here?
-  if empty(s:EDITOR_DATA.files) || s:LOCATION_INDEX >=# len(s:EDITOR_DATA.files) || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
+  if s:LOCATION_INDEX !=# v:null && (empty(s:EDITOR_DATA.files) || s:LOCATION_INDEX >=# len(s:EDITOR_DATA.files) || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file)))
     return
   endif
 
-  if s:LOCATION_INDEX !=# -1
-    call s:update_next_unique_location_index()
-  endif
+  let l:initial_location_index = s:LOCATION_INDEX
 
-  call s:jump_to_location(s:LOCATION_INDEX)
+  call s:update_next_unique_location_index()
+
+  if l:initial_location_index !=# s:LOCATION_INDEX
+    call s:jump_to_location(s:LOCATION_INDEX)
+  endif
 endfunction
 
 " TODO: don't extract?
 function! s:open_prev_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
   " TODO: &l:modified !=# 0 - is it correct here?
-  if empty(s:EDITOR_DATA.files) || s:LOCATION_INDEX <=# 0 || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
+  if s:LOCATION_INDEX !=# v:null && (empty(s:EDITOR_DATA.files) || s:LOCATION_INDEX <=# 0 || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file)))
     return
   endif
 
+  let l:initial_location_index = s:LOCATION_INDEX
+
   call s:update_prev_unique_location_index()
-  call s:jump_to_location(s:LOCATION_INDEX)
+
+  if l:initial_location_index !=# s:LOCATION_INDEX
+    call s:jump_to_location(s:LOCATION_INDEX)
+  endif
 endfunction
 
 " TODO: naming?
@@ -318,10 +325,9 @@ endfunction
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
   " TODO
-  return
-  for i in range(0, len(a:edited_line_numbers) - 1)
-    let l:line = a:edited_line_numbers[i]
-    let s:EDITED_LOCATIONS[a:current_file][l:line] = v:true
+  "return
+  for line in keys(a:edited_line_numbers)
+    let s:EDITED_LOCATIONS[a:current_file][line] = v:true
   endfor
 
 "  "call s:log_info(a:edited_line_numbers)
