@@ -106,14 +106,14 @@ function! s:maybe_setup_handlers()
   endif
 
   function! g:CargoLimitOpen(editor_data)
-    call s:validate_plugin_version(s:editor_data)
+    call s:validate_plugin_version(a:editor_data)
 
     let s:editor_data = a:editor_data
     let s:location_index = -1
     let s:edited_locations = {}
 
-    if has_key(s:editor_data, 'files')
-      let s:editor_data['locations'] = s:editor_data.files
+    if exists('s:editor_data.files')
+      let s:editor_data.locations = s:editor_data.files
       call remove(s:editor_data, 'files')
     endif
 
