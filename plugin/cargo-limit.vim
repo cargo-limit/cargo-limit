@@ -191,14 +191,10 @@ endfunction
 
 " TODO: naming? remove?
 function! s:update_prev_unique_location_index()
-  if s:LOCATION_INDEX >=# 1
-    let s:LOCATION_INDEX -= 1
-  endif
-
   let l:location = s:current_location()
   let l:path = l:location.path
   let l:line = l:location.line
-  while s:LOCATION_INDEX >=# 1 && s:current_location().path ==# l:path && s:current_location().line ==# l:line
+  while s:LOCATION_INDEX >=# 1 && ((s:current_location().path ==# l:path && s:current_location().line ==# l:line) || has_key(s:EDITED_LOCATIONS[s:current_location().path], s:current_location().line))
     let s:LOCATION_INDEX -= 1
   endwhile
 endfunction
