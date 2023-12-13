@@ -2,7 +2,9 @@
 " TODO: check if diff is somehow broken?
 " FIXME: regression? jump should not happen while I'm editing a file
 " TODO: should we have CargoLimitOpenInternal (ccff595)?
-"       that makes precise jumps possible for custom functions.
+"       that makes precise jumps possible for custom functions
+"         also plugin version validation can be forced for everyone
+"           instead we could check plugin version from rust code
 "       or just call another function with corrected EDITOR_DATA?
 "       or the same g:CargoLimitOpen with corrected flag argument/field?
 "         or even location index? this one is probably unusable for custom functions
