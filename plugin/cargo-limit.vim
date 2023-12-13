@@ -202,7 +202,7 @@ function! s:update_next_unique_location_index()
   let l:location = s:current_location()
   let l:path = l:location.path
   let l:line = l:location.line
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && ((s:current_location().path ==# l:path && s:current_location().line ==# l:line) || has_key(s:EDITED_LOCATIONS[s:current_location().path], s:current_location().line))
+  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && ((s:current_location().path ==# l:path && s:current_location().line ==# l:line) || s:is_edited_location(s:current_location()))
     let s:LOCATION_INDEX += 1
   endwhile
 
@@ -212,7 +212,7 @@ function! s:update_next_unique_location_index()
   let l:line = l:location.line
   while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && (s:next_location().path ==# l:path && s:next_location().line ==# l:line)
     let s:LOCATION_INDEX += 1
-    while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && has_key(s:EDITED_LOCATIONS[s:current_location().path], s:current_location().line)
+    while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_edited_location(s:current_location())
       let s:LOCATION_INDEX += 1
     endwhile
   endwhile
@@ -353,6 +353,10 @@ function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_fil
     endif
     let s:EDITED_LOCATIONS[a:current_file][line] = v:true
   endfor
+endfunction
+
+function! s:is_edited_location(location)
+  return has_key(s:EDITED_LOCATIONS, a:location.path) && has_key(s:EDITED_LOCATIONS[a:location.path], a:location.line)
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
