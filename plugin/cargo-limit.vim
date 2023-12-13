@@ -6,8 +6,6 @@
 "       or just call another function with corrected EDITOR_DATA?
 "       or the same g:CargoLimitOpen with corrected flag argument/field?
 "         or even location index? this one is probably unusable for custom functions
-" TODO: label edited lines, don't jump there
-" FIXME: jump back doesn't deduplicate line
 
 function! s:main()
   const MIN_NVIM_VERSION = '0.7.0'
@@ -76,6 +74,23 @@ function! s:start_server(escaped_workspace_root)
   endif
 endfunction
 
+function s:validate_plugin_version(editor_data)
+  const PLUGIN_VERSION = '0.0.11'
+
+  let l:crate_version = v:null
+  let l:version_matched = v:false
+  let l:crate_message_postfix = ' > crate version'
+  if exists('a:editor_data.protocol_version')
+    let l:crate_version = a:editor_data.protocol_version
+    let l:version_matched = l:crate_version == PLUGIN_VERSION
+    let l:crate_message_postfix = ' != crate ' . l:crate_version
+  endif
+
+  if !l:version_matched
+    call s:log_error('version mismatch, plugin ' . PLUGIN_VERSION . l:crate_message_postfix)
+  endif
+endfunction
+
 function! s:maybe_setup_handlers()
   augroup CargoLimitAutocommands
     autocmd!
@@ -91,6 +106,8 @@ function! s:maybe_setup_handlers()
     let s:EDITOR_DATA = a:editor_data
     let s:LOCATION_INDEX = -1
     let s:EDITED_LOCATIONS = {}
+
+    call s:validate_plugin_version(s:EDITOR_DATA)
 
     if has_key(s:EDITOR_DATA, 'files')
       let s:EDITOR_DATA['locations'] = s:EDITOR_DATA.files
@@ -122,7 +139,6 @@ function! s:maybe_setup_handlers()
 endfunction
 
 function! s:open_all_locations_in_reverse_deduplicated_by_paths()
-  call s:log_info(len(s:EDITOR_DATA.locations))
   call s:recreate_temp_sources_dir()
 
   let l:path_to_location_index = {}
