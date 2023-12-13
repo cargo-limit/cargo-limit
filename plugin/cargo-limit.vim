@@ -1,7 +1,14 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
 " TODO: check if diff is somehow broken?
 " FIXME: regression? jump should not happen while I'm editing a file
-" TODO: should we have CargoLimitOpenInternal (ccff595)? that makes precise jumps possible for custom functions
+" TODO: should we have CargoLimitOpenInternal (ccff595)?
+"       that makes precise jumps possible for custom functions.
+"       or just call another function with corrected EDITOR_DATA?
+"       or the same g:CargoLimitOpen with corrected flag argument/field?
+"         or even location index? this one is probably unusable for custom functions
+" TODO: label edited lines, don't jump there
+" FIXME: jump back doesn't deduplicate line
+" TODO: rename .files => .locations?
 
 function! s:main()
   const MIN_NVIM_VERSION = '0.7.0'
@@ -14,6 +21,7 @@ function! s:main()
     let s:DATA_CHUNKS = []
     let s:EDITOR_DATA = {'files': []}
     let s:LOCATION_INDEX = -1
+    let s:EDITED_LOCATIONS = {}
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
     \ 'on_stderr': function('s:on_cargo_metadata'),
@@ -83,11 +91,16 @@ function! s:maybe_setup_handlers()
   function! g:CargoLimitOpen(editor_data)
     let s:EDITOR_DATA = a:editor_data
     let s:LOCATION_INDEX = -1
+    let s:EDITED_LOCATIONS = {}
 
     let l:current_file = s:current_file()
     if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:EDITOR_DATA.files)
       return
     endif
+
+    for i in range(0, len(s:EDITOR_DATA.files) - 1)
+      let s:EDITED_LOCATIONS[s:EDITOR_DATA.files[i].path] = {}
+    endfor
 
     call s:open_all_locations_in_reverse_deduplicated_by_paths()
     call s:update_next_unique_location_index()
@@ -160,14 +173,11 @@ endfunction
 
 " TODO: naming?
 function! s:update_next_unique_location_index()
-  if s:LOCATION_INDEX <# len(s:EDITOR_DATA.files) - 1
-    let s:LOCATION_INDEX += 1
-  endif
-
   let l:location = s:current_location()
   let l:path = l:location.path
   let l:line = l:location.line
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.files) - 1 && s:next_location().path ==# l:path && s:next_location().line ==# l:line
+
+  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.files) - 1 && ((s:current_location().path ==# l:path && s:current_location().line ==# l:line) || has_key(s:EDITED_LOCATIONS[s:current_location().path], s:current_location().line))
     let s:LOCATION_INDEX += 1
   endwhile
 endfunction
@@ -181,7 +191,7 @@ function! s:update_prev_unique_location_index()
   let l:location = s:current_location()
   let l:path = l:location.path
   let l:line = l:location.line
-  while s:LOCATION_INDEX >=# 1 && s:prev_location().path ==# l:path && s:prev_location().line ==# l:line
+  while s:LOCATION_INDEX >=# 1 && s:current_location().path ==# l:path && s:current_location().line ==# l:line
     let s:LOCATION_INDEX -= 1
   endwhile
 endfunction
@@ -304,22 +314,29 @@ endfunction
 
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
-  "call s:log_info(a:edited_line_numbers)
-  "return
-  "TODO !!
-
-  " TODO: or even correct LOCATION_INDEX here?
-  let l:new_locations = []
-
-  for i in range(0, len(s:EDITOR_DATA.files) - 1)
-    let l:file = s:EDITOR_DATA.files[i]
-    let l:is_edited_line = has_key(a:edited_line_numbers, l:file.line) && l:file.path ==# a:current_file
-    if !l:is_edited_line
-      call add(l:new_locations, l:file)
-    endif
+  " TODO
+  return
+  for i in range(0, len(a:edited_line_numbers) - 1)
+    let l:line = a:edited_line_numbers[i]
+    let s:EDITED_LOCATIONS[a:current_file][l:line] = v:true
   endfor
 
-  let s:EDITOR_DATA.files = l:new_locations
+"  "call s:log_info(a:edited_line_numbers)
+"  "return
+"  "TODO !!
+"
+"  " TODO: or even correct LOCATION_INDEX here?
+"  let l:new_locations = []
+"
+"  for i in range(0, len(s:EDITOR_DATA.files) - 1)
+"    let l:file = s:EDITOR_DATA.files[i]
+"    let l:is_edited_line = has_key(a:edited_line_numbers, l:file.line) && l:file.path ==# a:current_file
+"    if !l:is_edited_line
+"      call add(l:new_locations, l:file)
+"    endif
+"  endfor
+"
+"  let s:EDITOR_DATA.files = l:new_locations
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
