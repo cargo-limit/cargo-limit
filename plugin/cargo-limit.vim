@@ -121,10 +121,6 @@ function! s:maybe_setup_handlers()
       return
     endif
 
-    for i in range(0, len(s:EDITOR_DATA.locations) - 1)
-      let s:EDITED_LOCATIONS[s:EDITOR_DATA.locations[i].path] = {}
-    endfor
-
     call s:open_all_locations_in_reverse_deduplicated_by_paths()
     call s:update_next_unique_location_index()
   endfunction
@@ -233,6 +229,7 @@ function! s:update_prev_unique_location_index()
 endfunction
 
 function! s:on_buffer_write()
+  " TODO: can this function too early, before rustfmt finish?
   let l:current_file = s:current_file()
   if l:current_file !=# '' && filereadable(l:current_file)
     call s:update_locations(l:current_file)
@@ -350,28 +347,12 @@ endfunction
 
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
-  " TODO
-  "return
   for line in keys(a:edited_line_numbers)
+    if !has_key(s:EDITED_LOCATIONS, a:current_file)
+      let s:EDITED_LOCATIONS[a:current_file] = {}
+    endif
     let s:EDITED_LOCATIONS[a:current_file][line] = v:true
   endfor
-
-"  "call s:log_info(a:edited_line_numbers)
-"  "return
-"  "TODO !!
-"
-"  " TODO: or even correct LOCATION_INDEX here?
-"  let l:new_locations = []
-"
-"  for i in range(0, len(s:EDITOR_DATA.locations) - 1)
-"    let l:file = s:EDITOR_DATA.locations[i]
-"    let l:is_edited_line = has_key(a:edited_line_numbers, l:file.line) && l:file.path ==# a:current_file
-"    if !l:is_edited_line
-"      call add(l:new_locations, l:file)
-"    endif
-"  endfor
-"
-"  let s:EDITOR_DATA.locations = l:new_locations
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
