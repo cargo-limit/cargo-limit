@@ -9,6 +9,7 @@
 "       or the same g:CargoLimitOpen with corrected flag argument/field?
 "         or even location index? this one is probably unusable for custom functions
 " TODO: use 'key' instead of .key for dicts everywhere
+" TODO: rename s:script_local_variables?
 
 function! s:main()
   const MIN_NVIM_VERSION = '0.7.0'
@@ -201,12 +202,12 @@ endfunction
 function! s:update_next_unique_location_index()
   " go to next unedited location with different path or line
   let l:location = s:current_location()
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && (s:is_same_location(s:current_location(), l:location) || s:is_edited_location(s:current_location()))
+  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && (s:is_same_location(l:location, s:current_location()) || s:is_edited_location(s:current_location()))
     let s:LOCATION_INDEX += 1
   endwhile
 
   " go to last unedited location on the same line
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_same_location(s:next_location(), s:current_location())
+  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_same_location(s:current_location(), s:next_location())
     let s:LOCATION_INDEX += 1
   endwhile
 
@@ -214,7 +215,7 @@ function! s:update_next_unique_location_index()
     let s:LOCATION_INDEX += 1
   endwhile
 
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_same_location(s:next_location(), s:current_location())
+  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_same_location(s:current_location(), s:next_location())
     let s:LOCATION_INDEX += 1
   endwhile
 endfunction
