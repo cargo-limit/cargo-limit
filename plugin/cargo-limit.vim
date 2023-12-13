@@ -8,7 +8,6 @@
 "       or just call another function with corrected EDITOR_DATA?
 "       or the same g:CargoLimitOpen with corrected flag argument/field?
 "         or even location index? this one is probably unusable for custom functions
-" TODO: use 'key' instead of .key for dicts everywhere?
 
 function! s:main()
   const MIN_NVIM_VERSION = '0.7.0'
@@ -229,6 +228,7 @@ endfunction
 
 function! s:on_buffer_write()
   " TODO: can this function too early, before rustfmt finish?
+  " TODO: run git diff with jobstart? or rerun it later?
   let l:current_file = s:current_file()
   if l:current_file !=# '' && filereadable(l:current_file)
     call s:update_locations(l:current_file)
@@ -359,7 +359,7 @@ function! s:is_edited_location(location)
 endfunction
 
 function! s:is_same_location(first, second)
-  return a:first['path'] ==# a:second['path'] && a:first['line'] ==# a:second['line']
+  return a:first.path ==# a:second.path && a:first.line ==# a:second.line
 endfunction
 
 function! s:maybe_delete_dead_unix_socket(server_address)
