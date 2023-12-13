@@ -8,6 +8,7 @@
 "       or just call another function with corrected EDITOR_DATA?
 "       or the same g:CargoLimitOpen with corrected flag argument/field?
 "         or even location index? this one is probably unusable for custom functions
+" TODO: use 'key' instead of .key for dicts everywhere
 
 function! s:main()
   const MIN_NVIM_VERSION = '0.7.0'
@@ -208,9 +209,9 @@ function! s:update_next_unique_location_index()
   let l:location = s:current_location()
   while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_same_location(s:next_location(), l:location)
     let s:LOCATION_INDEX += 1
-    while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_edited_location(s:current_location())
-      let s:LOCATION_INDEX += 1
-    endwhile
+  endwhile
+  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_edited_location(s:current_location()) " FIXME: we might appear in the first item of the same new line
+    let s:LOCATION_INDEX += 1
   endwhile
 endfunction
 
