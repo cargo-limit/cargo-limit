@@ -8,6 +8,7 @@
 "       or just call another function with corrected EDITOR_DATA?
 "       or the same g:CargoLimitOpen with corrected flag argument/field?
 "         or even location index? this one is probably unusable for custom functions
+" TODO: use 'abort' annotation?
 
 function! s:main()
   const MIN_NVIM_VERSION = '0.7.0'
@@ -164,9 +165,13 @@ endfunction
 
 " TODO: don't extract?
 function! s:open_next_location_in_new_or_existing_tab()
+  if empty(s:editor_data.locations)
+    return
+  endif
+
   let l:current_file = s:current_file()
   " TODO: &l:modified !=# 0 - is it correct here?
-  if s:location_index !=# v:null && (empty(s:editor_data.locations) || s:location_index >=# len(s:editor_data.locations) || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file)))
+  if s:location_index >=# len(s:editor_data.locations) || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
     return
   endif
 
@@ -181,9 +186,13 @@ endfunction
 
 " TODO: don't extract?
 function! s:open_prev_location_in_new_or_existing_tab()
+  if empty(s:editor_data.locations)
+    return
+  endif
+
   let l:current_file = s:current_file()
   " TODO: &l:modified !=# 0 - is it correct here?
-  if s:location_index !=# v:null && (empty(s:editor_data.locations) || s:location_index <=# 0 || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file)))
+  if s:location_index <=# 0 || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
     return
   endif
 
@@ -227,8 +236,16 @@ function! s:update_prev_unique_location_index()
 endfunction
 
 function! s:on_buffer_write()
-  " TODO: can this function too early, before rustfmt finish?
-  " TODO: run git diff with jobstart? or rerun it later?
+  let l:current_file = s:current_file()
+  if l:current_file !=# '' && filereadable(l:current_file)
+    call s:update_locations(l:current_file)
+    call s:maybe_copy_to_temp_sources(l:current_file)
+    call timer_start(100, 's:finalize_locations_update')
+  endif
+endfunction
+
+" NOTE: workaround for rustfmt which might take long time to execute
+function! s:finalize_locations_update(timer) abort
   let l:current_file = s:current_file()
   if l:current_file !=# '' && filereadable(l:current_file)
     call s:update_locations(l:current_file)
