@@ -8,8 +8,7 @@
 "       or just call another function with corrected EDITOR_DATA?
 "       or the same g:CargoLimitOpen with corrected flag argument/field?
 "         or even location index? this one is probably unusable for custom functions
-" TODO: use 'key' instead of .key for dicts everywhere
-" TODO: rename s:script_local_variables?
+" TODO: use 'key' instead of .key for dicts everywhere?
 
 function! s:main()
   const MIN_NVIM_VERSION = '0.7.0'
@@ -19,10 +18,10 @@ function! s:main()
       throw 'unsupported nvim version, expected >=' . MIN_NVIM_VERSION
     endif
 
-    let s:DATA_CHUNKS = []
-    let s:EDITOR_DATA = {'locations': []}
-    let s:LOCATION_INDEX = v:null
-    let s:EDITED_LOCATIONS = {}
+    let s:data_chunks = []
+    let s:editor_data = {'locations': []}
+    let s:location_index = v:null
+    let s:edited_locations = {}
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
     \ 'on_stderr': function('s:on_cargo_metadata'),
@@ -35,7 +34,7 @@ endfunction
 
 function! s:on_cargo_metadata(_job_id, data, event)
   if a:event ==# 'stdout'
-    call add(s:DATA_CHUNKS, join(a:data, ''))
+    call add(s:data_chunks, join(a:data, ''))
   elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
     let l:stderr = trim(join(a:data, "\n"))
     "call s:log_info(a:event . ' ' . !empty(l:stderr) . ' ' . (l:stderr !~# 'could not find `Cargo.toml`') . ' ' . (!s:contains_str(l:stderr, 'could not find `Cargo.toml`')))
@@ -44,7 +43,7 @@ function! s:on_cargo_metadata(_job_id, data, event)
       call s:log_error('cargo metadata failed', l:stderr, !empty(l:stderr), !s:contains_str(l:stderr, 'could not find `Cargo.toml`'), len(l:stderr), l:stderr !~# 'could not find `Cargo.toml`')
     endif
   elseif a:event ==# 'exit'
-    let l:stdout = trim(join(s:DATA_CHUNKS, ''))
+    let l:stdout = trim(join(s:data_chunks, ''))
     if !empty(l:stdout)
       let l:metadata = json_decode(l:stdout)
       let l:workspace_root = get(l:metadata, 'workspace_root')
@@ -60,12 +59,12 @@ function! s:start_server(escaped_workspace_root)
 
   if has('unix')
     let l:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root
-    let s:TEMP_SOURCES_DIR = l:server_address . SOURCES
+    let s:temp_sources_dir = l:server_address . SOURCES
     call s:maybe_delete_dead_unix_socket(l:server_address)
   elseif has('win32')
     const SERVER_ADDRESS_POSTFIX = TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
     let l:server_address = '\\.\pipe\' . SERVER_ADDRESS_POSTFIX
-    let s:TEMP_SOURCES_DIR = $TEMP . '\' . SERVER_ADDRESS_POSTFIX . SOURCES
+    let s:temp_sources_dir = $TEMP . '\' . SERVER_ADDRESS_POSTFIX . SOURCES
   else
     throw 'unsupported OS'
   endif
@@ -107,19 +106,19 @@ function! s:maybe_setup_handlers()
   endif
 
   function! g:CargoLimitOpen(editor_data)
-    let s:EDITOR_DATA = a:editor_data
-    let s:LOCATION_INDEX = -1
-    let s:EDITED_LOCATIONS = {}
+    call s:validate_plugin_version(s:editor_data)
 
-    call s:validate_plugin_version(s:EDITOR_DATA)
+    let s:editor_data = a:editor_data
+    let s:location_index = -1
+    let s:edited_locations = {}
 
-    if has_key(s:EDITOR_DATA, 'files')
-      let s:EDITOR_DATA['locations'] = s:EDITOR_DATA.files
-      call remove(s:EDITOR_DATA, 'files')
+    if has_key(s:editor_data, 'files')
+      let s:editor_data['locations'] = s:editor_data.files
+      call remove(s:editor_data, 'files')
     endif
 
     let l:current_file = s:current_file()
-    if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:EDITOR_DATA.locations)
+    if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:editor_data.locations)
       return
     endif
 
@@ -142,12 +141,12 @@ function! s:open_all_locations_in_reverse_deduplicated_by_paths()
   call s:recreate_temp_sources_dir()
 
   let l:path_to_location_index = {}
-  for i in range(len(s:EDITOR_DATA.locations) - 1, 0, -1)
-    let l:path_to_location_index[s:EDITOR_DATA.locations[i].path] = i
+  for i in range(len(s:editor_data.locations) - 1, 0, -1)
+    let l:path_to_location_index[s:editor_data.locations[i].path] = i
   endfor
 
-  for i in range(len(s:EDITOR_DATA.locations) - 1, 0, -1)
-    let l:path = s:EDITOR_DATA.locations[i].path
+  for i in range(len(s:editor_data.locations) - 1, 0, -1)
+    let l:path = s:editor_data.locations[i].path
     if !has_key(l:path_to_location_index, l:path)
       continue
     elseif mode() ==# 'n' && &l:modified ==# 0
@@ -155,7 +154,7 @@ function! s:open_all_locations_in_reverse_deduplicated_by_paths()
       call remove(l:path_to_location_index, l:path)
 
       " FIXME: shadow
-      let l:path = fnameescape(s:EDITOR_DATA.locations[i].path)
+      let l:path = fnameescape(s:editor_data.locations[i].path)
       call s:jump_to_location(l:location_index)
       call s:maybe_copy_to_temp_sources(l:path)
     else
@@ -168,16 +167,16 @@ endfunction
 function! s:open_next_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
   " TODO: &l:modified !=# 0 - is it correct here?
-  if s:LOCATION_INDEX !=# v:null && (empty(s:EDITOR_DATA.locations) || s:LOCATION_INDEX >=# len(s:EDITOR_DATA.locations) || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file)))
+  if s:location_index !=# v:null && (empty(s:editor_data.locations) || s:location_index >=# len(s:editor_data.locations) || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file)))
     return
   endif
 
-  let l:initial_location_index = s:LOCATION_INDEX
+  let l:initial_location_index = s:location_index
 
   call s:update_next_unique_location_index()
 
-  if l:initial_location_index !=# s:LOCATION_INDEX
-    call s:jump_to_location(s:LOCATION_INDEX)
+  if l:initial_location_index !=# s:location_index
+    call s:jump_to_location(s:location_index)
   endif
 endfunction
 
@@ -185,16 +184,16 @@ endfunction
 function! s:open_prev_location_in_new_or_existing_tab()
   let l:current_file = s:current_file()
   " TODO: &l:modified !=# 0 - is it correct here?
-  if s:LOCATION_INDEX !=# v:null && (empty(s:EDITOR_DATA.locations) || s:LOCATION_INDEX <=# 0 || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file)))
+  if s:location_index !=# v:null && (empty(s:editor_data.locations) || s:location_index <=# 0 || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file)))
     return
   endif
 
-  let l:initial_location_index = s:LOCATION_INDEX
+  let l:initial_location_index = s:location_index
 
   call s:update_prev_unique_location_index()
 
-  if l:initial_location_index !=# s:LOCATION_INDEX
-    call s:jump_to_location(s:LOCATION_INDEX)
+  if l:initial_location_index !=# s:location_index
+    call s:jump_to_location(s:location_index)
   endif
 endfunction
 
@@ -202,29 +201,29 @@ endfunction
 function! s:update_next_unique_location_index()
   " go to next unedited location with different path or line
   let l:location = s:current_location()
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && (s:is_same_location(l:location, s:current_location()) || s:is_edited_location(s:current_location()))
-    let s:LOCATION_INDEX += 1
+  while s:location_index <# len(s:editor_data.locations) - 1 && (s:is_same_location(l:location, s:current_location()) || s:is_edited_location(s:current_location()))
+    let s:location_index += 1
   endwhile
 
   " go to last unedited location on the same line
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_same_location(s:current_location(), s:next_location())
-    let s:LOCATION_INDEX += 1
+  while s:location_index <# len(s:editor_data.locations) - 1 && s:is_same_location(s:current_location(), s:next_location())
+    let s:location_index += 1
   endwhile
 
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_edited_location(s:current_location())
-    let s:LOCATION_INDEX += 1
+  while s:location_index <# len(s:editor_data.locations) - 1 && s:is_edited_location(s:current_location())
+    let s:location_index += 1
   endwhile
 
-  while s:LOCATION_INDEX <# len(s:EDITOR_DATA.locations) - 1 && s:is_same_location(s:current_location(), s:next_location())
-    let s:LOCATION_INDEX += 1
+  while s:location_index <# len(s:editor_data.locations) - 1 && s:is_same_location(s:current_location(), s:next_location())
+    let s:location_index += 1
   endwhile
 endfunction
 
 " TODO: naming? remove? refactoring?
 function! s:update_prev_unique_location_index()
   let l:location = s:current_location()
-  while s:LOCATION_INDEX >=# 1 && (s:is_same_location(s:current_location(), l:location) || s:is_edited_location(s:current_location()))
-    let s:LOCATION_INDEX -= 1
+  while s:location_index >=# 1 && (s:is_same_location(s:current_location(), l:location) || s:is_edited_location(s:current_location()))
+    let s:location_index -= 1
   endwhile
 endfunction
 
@@ -235,13 +234,13 @@ function! s:on_buffer_write()
     call s:update_locations(l:current_file)
     call s:maybe_copy_to_temp_sources(l:current_file)
     if exists('*CargoLimitUpdate')
-      call g:CargoLimitUpdate(s:EDITOR_DATA)
+      call g:CargoLimitUpdate(s:editor_data)
     endif
   endif
 endfunction
 
 function! s:update_locations(path)
-  "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:EDITOR_DATA.locations))
+  "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:editor_data.locations))
 
   let [l:line_to_shift, l:edited_line_numbers] = s:compute_shifts_and_edits(a:path)
 
@@ -297,24 +296,24 @@ endfunction
 
 function! s:shift_locations(path, edited_line_numbers, start, end, shift_accumulator)
 "  let l:wat_lines = []
-"  for i in s:EDITOR_DATA.locations
+"  for i in s:editor_data.locations
 "    call add(l:wat_lines, i.line)
 "  endfor
 "  call s:log_info('BEG lines', l:wat_lines)
 
-  for i in range(0, len(s:EDITOR_DATA.locations) - 1)
-    let l:current_location = s:EDITOR_DATA.locations[i] " TODO: why current? naming
+  for i in range(0, len(s:editor_data.locations) - 1)
+    let l:current_location = s:editor_data.locations[i] " TODO: why current? naming
     if l:current_location.path ==# a:path
       let l:current_line = l:current_location.line
       if l:current_line ># a:start && (a:end ==# v:null || l:current_line <# a:end)
-        let s:EDITOR_DATA.locations[i].line += a:shift_accumulator
+        let s:editor_data.locations[i].line += a:shift_accumulator
       endif
     endif
   endfor
 
 
 "  let l:wat_lines = []
-"  for i in s:EDITOR_DATA.locations
+"  for i in s:editor_data.locations
 "    call add(l:wat_lines, i.line)
 "  endfor
 "  call s:log_info('END lines', l:wat_lines)
@@ -348,15 +347,15 @@ endfunction
 " TODO: naming
 function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file)
   for line in keys(a:edited_line_numbers)
-    if !has_key(s:EDITED_LOCATIONS, a:current_file)
-      let s:EDITED_LOCATIONS[a:current_file] = {}
+    if !has_key(s:edited_locations, a:current_file)
+      let s:edited_locations[a:current_file] = {}
     endif
-    let s:EDITED_LOCATIONS[a:current_file][line] = v:true
+    let s:edited_locations[a:current_file][line] = v:true
   endfor
 endfunction
 
 function! s:is_edited_location(location)
-  return has_key(s:EDITED_LOCATIONS, a:location.path) && has_key(s:EDITED_LOCATIONS[a:location.path], a:location.line)
+  return has_key(s:edited_locations, a:location.path) && has_key(s:edited_locations[a:location.path], a:location.line)
 endfunction
 
 function! s:is_same_location(first, second)
@@ -391,15 +390,15 @@ function! s:maybe_delete_dead_unix_socket(server_address)
 endfunction
 
 function! s:recreate_temp_sources_dir()
-  if exists('s:TEMP_SOURCES_DIR')
-    call delete(s:TEMP_SOURCES_DIR, 'rf')
-    call mkdir(s:TEMP_SOURCES_DIR, 'p', 0700)
+  if exists('s:temp_sources_dir')
+    call delete(s:temp_sources_dir, 'rf')
+    call mkdir(s:temp_sources_dir, 'p', 0700)
   endif
 endfunction
 
 function! s:temp_source_path(path)
-  "return s:TEMP_SOURCES_DIR . '/' . fnamemodify(a:path, ':t') " TODO
-  return s:TEMP_SOURCES_DIR . '/' . s:escape_path(a:path)
+  "return s:temp_sources_dir . '/' . fnamemodify(a:path, ':t') " TODO
+  return s:temp_sources_dir . '/' . s:escape_path(a:path)
 endfunction
 
 function! s:maybe_copy_to_temp_sources(path)
@@ -431,22 +430,22 @@ function! s:contains_str(text, pattern)
 endfunction
 
 function! s:jump_to_location(location_index)
-  let l:location = s:EDITOR_DATA.locations[a:location_index]
+  let l:location = s:editor_data.locations[a:location_index]
   " TODO: is fnameescape required here?
   execute 'tab drop ' . fnameescape(l:location.path)
   call cursor((l:location.line), (l:location.column))
 endfunction
 
 function! s:current_location()
-  return s:EDITOR_DATA.locations[s:LOCATION_INDEX]
+  return s:editor_data.locations[s:location_index]
 endfunction
 
 function! s:next_location()
-  return s:EDITOR_DATA.locations[s:LOCATION_INDEX + 1]
+  return s:editor_data.locations[s:location_index + 1]
 endfunction
 
 function! s:prev_location()
-  return s:EDITOR_DATA.locations[s:LOCATION_INDEX - 1]
+  return s:editor_data.locations[s:location_index - 1]
 endfunction
 
 function! s:log_error(...)
