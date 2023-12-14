@@ -169,6 +169,7 @@ impl FilteredAndOrderedMessages {
             .map(|i| {
                 let spans_from_leaf_to_root = i.message.spans.iter().rev();
                 let key = spans_from_leaf_to_root
+                    .filter(|span| Path::new(&span.file_name).is_relative())
                     .map(|span| (span.file_name.clone(), span.line_start))
                     .collect::<Vec<_>>();
                 (key, i)
@@ -301,9 +302,7 @@ impl TransformedMessages {
         let mut project_span = span.clone();
         while let Some(expansion) = span.expansion {
             span = expansion.span;
-            if Path::new(&span.file_name).is_relative() {
-                project_span = span.clone();
-            }
+            project_span = span.clone();
         }
         project_span
     }
