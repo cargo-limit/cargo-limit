@@ -25,6 +25,8 @@ Check out [🎙️  Rustacean Station podcast episode](https://rustacean-station
 
 ## Installation
 
+<a href="https://repology.org/project/cargo-limit/versions"><img align="right" src="https://repology.org/badge/vertical-allrepos/cargo-limit.svg" alt="Packaging status"></a>
+
 ### From crates.io
 ```
 cargo install --locked cargo-limit
