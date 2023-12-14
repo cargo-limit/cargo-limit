@@ -8,8 +8,9 @@
 "       or just call another function with corrected EDITOR_DATA?
 "       or the same g:CargoLimitOpen with corrected flag argument/field?
 "         or even location index? this one is probably unusable for custom functions
+" TODO: retest precise jumping on >3k lines of code files
 
-function! s:main() abort
+fun! s:main() abort
   const MIN_NVIM_VERSION = '0.7.0'
 
   if has('nvim')
@@ -31,7 +32,7 @@ function! s:main() abort
   endif
 endfunction
 
-function! s:on_cargo_metadata(_job_id, data, event) abort
+fun! s:on_cargo_metadata(_job_id, data, event) abort
   if a:event ==# 'stdout'
     call add(s:data_chunks, join(a:data, ''))
   elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
@@ -52,7 +53,7 @@ function! s:on_cargo_metadata(_job_id, data, event) abort
   endif
 endfunction
 
-function! s:start_server(escaped_workspace_root) abort
+fun! s:start_server(escaped_workspace_root) abort
   const TEMP_DIR_PREFIX = 'nvim-cargo-limit-'
   const SOURCES = '.sources'
 
@@ -93,7 +94,7 @@ function s:validate_plugin_version(editor_data)
   endif
 endfunction
 
-function! s:maybe_setup_handlers() abort
+fun! s:maybe_setup_handlers() abort
   augroup CargoLimitAutocommands
     autocmd!
     autocmd VimLeavePre * call s:recreate_temp_sources_dir()
@@ -104,7 +105,7 @@ function! s:maybe_setup_handlers() abort
     return
   endif
 
-  function! g:CargoLimitOpen(editor_data) abort
+  fun! g:CargoLimitOpen(editor_data) abort
     call s:validate_plugin_version(a:editor_data)
 
     let s:editor_data = a:editor_data
@@ -126,19 +127,19 @@ function! s:maybe_setup_handlers() abort
   endfunction
 
   " TODO: is it useful to define global function like that?
-  function! g:CargoLimitOpenNextLocation() abort
+  fun! g:CargoLimitOpenNextLocation() abort
     echomsg ''
     call s:open_next_location_in_new_or_existing_tab()
   endfunction
 
   " TODO: is it useful to define global function like that?
-  function! g:CargoLimitOpenPrevLocation() abort
+  fun! g:CargoLimitOpenPrevLocation() abort
     echomsg ''
     call s:open_prev_location_in_new_or_existing_tab()
   endfunction
 endfunction
 
-function! s:open_all_locations_in_reverse_deduplicated_by_paths() abort
+fun! s:open_all_locations_in_reverse_deduplicated_by_paths() abort
   call s:recreate_temp_sources_dir()
 
   let l:path_to_location_index = {}
@@ -165,7 +166,7 @@ function! s:open_all_locations_in_reverse_deduplicated_by_paths() abort
 endfunction
 
 " TODO: don't extract?
-function! s:open_next_location_in_new_or_existing_tab() abort
+fun! s:open_next_location_in_new_or_existing_tab() abort
   if empty(s:editor_data.locations)
     return
   endif
@@ -186,7 +187,7 @@ function! s:open_next_location_in_new_or_existing_tab() abort
 endfunction
 
 " TODO: don't extract?
-function! s:open_prev_location_in_new_or_existing_tab() abort
+fun! s:open_prev_location_in_new_or_existing_tab() abort
   if empty(s:editor_data.locations)
     return
   endif
@@ -207,7 +208,7 @@ function! s:open_prev_location_in_new_or_existing_tab() abort
 endfunction
 
 " TODO: naming? refactoring?
-function! s:update_next_unique_location_index() abort
+fun! s:update_next_unique_location_index() abort
   " go to next unedited location with different path or line
   let l:location = s:current_location()
   while s:location_index <# len(s:editor_data.locations) - 1 && (s:is_same_location(l:location, s:current_location()) || s:is_edited_location(s:current_location()))
@@ -229,14 +230,14 @@ function! s:update_next_unique_location_index() abort
 endfunction
 
 " TODO: naming? remove? refactoring?
-function! s:update_prev_unique_location_index() abort
+fun! s:update_prev_unique_location_index() abort
   let l:location = s:current_location()
   while s:location_index >=# 1 && (s:is_same_location(s:current_location(), l:location) || s:is_edited_location(s:current_location()))
     let s:location_index -= 1
   endwhile
 endfunction
 
-function! s:on_buffer_write() abort
+fun! s:on_buffer_write() abort
   let l:current_file = s:current_file()
   if l:current_file !=# '' && filereadable(l:current_file)
     let l:changes = s:update_locations(l:current_file)
@@ -249,7 +250,7 @@ function! s:on_buffer_write() abort
   endif
 endfunction
 
-function! s:update_locations(path) abort
+fun! s:update_locations(path) abort
   "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:editor_data.locations))
 
   let [l:line_to_shift, l:edited_line_numbers] = s:compute_shifts_and_edits(a:path)
@@ -267,7 +268,7 @@ function! s:update_locations(path) abort
   return len(l:line_to_shift) + len(l:edited_line_numbers)
 endfunction
 
-function! s:compute_shifts_and_edits(path) abort
+fun! s:compute_shifts_and_edits(path) abort
   let l:temp_source_path = s:temp_source_path(a:path)
 
   const DIFF_STATS_PATTERN = '@@ '
@@ -305,7 +306,7 @@ function! s:compute_shifts_and_edits(path) abort
   return [l:line_to_shift, l:edited_line_numbers]
 endfunction
 
-function! s:shift_locations(path, edited_line_numbers, start, end, shift_accumulator) abort
+fun! s:shift_locations(path, edited_line_numbers, start, end, shift_accumulator) abort
 "  let l:wat_lines = []
 "  for i in s:editor_data.locations
 "    call add(l:wat_lines, i.line)
@@ -340,14 +341,14 @@ function! s:shift_locations(path, edited_line_numbers, start, end, shift_accumul
   return a:edited_line_numbers
 endfunction
 
-function! s:parse_diff_stats(text, delimiter) abort
+fun! s:parse_diff_stats(text, delimiter) abort
   let l:offset_and_lines = split(split(a:text, a:delimiter)[0], ',')
   let l:offset = str2nr(l:offset_and_lines[0])
   let l:lines = len(l:offset_and_lines) ># 1 ? str2nr(l:offset_and_lines[1]) : 1
   return [l:offset, l:lines]
 endfunction
 
-function! s:update_edited_line_numbers(edited_line_numbers, removal_offset, removals, diff_stdout_lines, diff_stdout_line_number) abort
+fun! s:update_edited_line_numbers(edited_line_numbers, removal_offset, removals, diff_stdout_lines, diff_stdout_line_number) abort
   for i in range(0, a:removals - 1)
     let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + i]
     let a:edited_line_numbers[a:removal_offset + i] = v:true
@@ -356,7 +357,7 @@ function! s:update_edited_line_numbers(edited_line_numbers, removal_offset, remo
 endfunction
 
 " TODO: naming
-function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file) abort
+fun! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file) abort
   for line in keys(a:edited_line_numbers)
     if !has_key(s:edited_locations, a:current_file)
       let s:edited_locations[a:current_file] = {}
@@ -365,15 +366,15 @@ function! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_fil
   endfor
 endfunction
 
-function! s:is_edited_location(location) abort
+fun! s:is_edited_location(location) abort
   return has_key(s:edited_locations, a:location.path) && has_key(s:edited_locations[a:location.path], a:location.line)
 endfunction
 
-function! s:is_same_location(first, second) abort
+fun! s:is_same_location(first, second) abort
   return a:first.path ==# a:second.path && a:first.line ==# a:second.line
 endfunction
 
-function! s:maybe_delete_dead_unix_socket(server_address) abort
+fun! s:maybe_delete_dead_unix_socket(server_address) abort
   const LSOF_EXECUTABLE = 'lsof'
   const LSOF_COMMAND = LSOF_EXECUTABLE . ' -U'
 
@@ -400,23 +401,23 @@ function! s:maybe_delete_dead_unix_socket(server_address) abort
   endif
 endfunction
 
-function! s:recreate_temp_sources_dir() abort
+fun! s:recreate_temp_sources_dir() abort
   if exists('s:temp_sources_dir')
     call delete(s:temp_sources_dir, 'rf')
     call mkdir(s:temp_sources_dir, 'p', 0700)
   endif
 endfunction
 
-function! s:temp_source_path(path) abort
+fun! s:temp_source_path(path) abort
   "return s:temp_sources_dir . '/' . fnamemodify(a:path, ':t') " TODO
   return s:temp_sources_dir . '/' . s:escape_path(a:path)
 endfunction
 
-function! s:maybe_copy_to_temp_sources(path) abort
+fun! s:maybe_copy_to_temp_sources(path) abort
   call s:maybe_copy(a:path, s:temp_source_path(a:path))
 endfunction
 
-function! s:maybe_copy(source, destination) abort
+fun! s:maybe_copy(source, destination) abort
   const MAX_SIZE_BYTES = 1024 * 1024
   if getfsize(a:source) <=# MAX_SIZE_BYTES
     let l:data = readblob(a:source)
@@ -424,42 +425,42 @@ function! s:maybe_copy(source, destination) abort
   endif
 endfunction
 
-function! s:current_file() abort
+fun! s:current_file() abort
   return resolve(expand('%:p'))
 endfunction
 
-function! s:escape_path(path) abort
+fun! s:escape_path(path) abort
   return substitute(a:path, '[/\\:]', '%', 'g')
 endfunction
 
-function! s:starts_with(longer, shorter) abort
+fun! s:starts_with(longer, shorter) abort
   return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
 endfunction
 
-function! s:contains_str(text, pattern) abort
+fun! s:contains_str(text, pattern) abort
   return stridx(a:text, a:pattern) !=# -1
 endfunction
 
-function! s:jump_to_location(location_index) abort
+fun! s:jump_to_location(location_index) abort
   let l:location = s:editor_data.locations[a:location_index]
   " TODO: is fnameescape required here?
   execute 'tab drop ' . fnameescape(l:location.path)
   call cursor((l:location.line), (l:location.column))
 endfunction
 
-function! s:current_location() abort
+fun! s:current_location() abort
   return s:editor_data.locations[s:location_index]
 endfunction
 
-function! s:next_location() abort
+fun! s:next_location() abort
   return s:editor_data.locations[s:location_index + 1]
 endfunction
 
-function! s:prev_location() abort
+fun! s:prev_location() abort
   return s:editor_data.locations[s:location_index - 1]
 endfunction
 
-function! s:log_error(...) abort
+fun! s:log_error(...) abort
   echohl Error
   redraw
   "echom s:log_str(a:000)
@@ -467,13 +468,13 @@ function! s:log_error(...) abort
   echohl None
 endfunction
 
-function! s:log_info(...) abort
+fun! s:log_info(...) abort
   echohl None
   redraw
   echon s:log_str(a:000)
 endfunction
 
-function! s:log_str(args) abort
+fun! s:log_str(args) abort
   return '[cargo-limit] ' . join(a:args, ' ')
 endfunction
 

@@ -156,7 +156,7 @@ nvim --cmd '!call dein#install()'
 
 ### Optionally: F2 to save, F2 again to jump to next affected line
 ```viml
-function! SaveAllFilesOrOpenNextLocation()
+fun! SaveAllFilesOrOpenNextLocation()
   let l:all_files_are_saved = 1
   for i in getbufinfo({'bufmodified': 1})
     if i.name != ''
@@ -222,7 +222,7 @@ Add **custom open/update handlers** to your `init.vim` if you want other Neovim 
 
 ### Open Files in Buffers Instead of Tabs
 ```viml
-function! g:CargoLimitOpen(editor_data)
+fun! g:CargoLimitOpen(editor_data)
   let l:current_file = resolve(expand('%:p'))
   if l:current_file != '' && !filereadable(l:current_file)
     return
@@ -239,7 +239,7 @@ function! g:CargoLimitOpen(editor_data)
 endfunction
 
 " called when any affected lines were moved or edited
-function! g:CargoLimitUpdate(editor_data)
+fun! g:CargoLimitUpdate(editor_data)
   " i.bufnr
   " TODO: exit if current buffer something weird, save current buffer number, update cursor on other buffers, go back to current buffer
 endfunction
@@ -249,7 +249,7 @@ endfunction
 ```viml
 set errorformat =%f:%l:%c:%m
 
-function! s:populate_quickfix_list(editor_data)
+fun! s:populate_quickfix_list(editor_data)
   let l:winnr = winnr()
 
   cgetexpr []
@@ -268,11 +268,11 @@ function! s:populate_quickfix_list(editor_data)
   endif
 endfunction
 
-function! g:CargoLimitOpen(editor_data)
+fun! g:CargoLimitOpen(editor_data)
   call s:populate_quickfix_list(a:editor_data)
 endfunction
 
-function! g:CargoLimitUpdate(editor_data)
+fun! g:CargoLimitUpdate(editor_data)
   call s:populate_quickfix_list(a:editor_data)
 endfunction
 ```
