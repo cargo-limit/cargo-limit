@@ -29,8 +29,6 @@ fun! s:on_cargo_metadata(_job_id, data, event) abort
     call add(s:data_chunks, join(a:data, ''))
   elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
     let l:stderr = trim(join(a:data, "\n"))
-    "call s:log_info(a:event . ' ' . !empty(l:stderr) . ' ' . (l:stderr !~# 'could not find `Cargo.toml`') . ' ' . (!s:contains_str(l:stderr, 'could not find `Cargo.toml`')))
-    "if !empty(l:stderr) && l:stderr !~# 'could not find `Cargo.toml`' " TODO
     if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
       call s:log_error('cargo metadata failed', l:stderr, !empty(l:stderr), !s:contains_str(l:stderr, 'could not find `Cargo.toml`'), len(l:stderr), l:stderr !~# 'could not find `Cargo.toml`')
     endif
@@ -308,7 +306,6 @@ fun! s:compute_shifts_and_edits(path) abort
     \ . fnameescape(l:temp_source_path)
     \ . ' '
     \ . a:path
-  "call s:log_info(DIFF_COMMAND)
 
   let l:line_to_shift = [] " TODO: naming
   let l:edited_line_numbers = {}
@@ -316,7 +313,7 @@ fun! s:compute_shifts_and_edits(path) abort
     return [l:line_to_shift, l:edited_line_numbers]
   endif
 
-  let l:diff_stdout_lines = split(system(DIFF_COMMAND), "\n") " TODO: jobstart?
+  let l:diff_stdout_lines = split(system(DIFF_COMMAND), "\n")
   let l:diff_stdout_line_number = 0 " TODO: rename to index?
   while l:diff_stdout_line_number <# len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
@@ -333,7 +330,6 @@ fun! s:compute_shifts_and_edits(path) abort
     let l:diff_stdout_line_number += 1
   endwhile
 
-  "call s:log_info(l:line_to_shift)
   return [l:line_to_shift, l:edited_line_numbers]
 endf
 
