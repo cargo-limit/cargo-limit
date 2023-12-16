@@ -1,14 +1,5 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
-" TODO: check if diff is somehow broken?
 " FIXME: regression? jump should not happen while I'm editing a file
-" TODO: should we have CargoLimitOpenInternal (ccff595)?
-"       that makes precise jumps possible for custom functions
-"         also plugin version validation can be forced for everyone
-"           instead we could check plugin version from rust code
-"       or just call another function with corrected EDITOR_DATA?
-"       or the same g:CargoLimitOpen with corrected flag argument/field?
-"         or even location index? this one is probably unusable for custom functions
-" TODO: retest precise jumping on >3k lines of code files
 
 fun! s:main() abort
   const MIN_NVIM_VERSION = '0.7.0'
