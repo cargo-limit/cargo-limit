@@ -174,7 +174,7 @@ fun! SaveAllFilesOrOpenNextLocation()
   else
     execute 'wa'
   endif
-endfunction
+endfun
 
 nmap <F2> :call SaveAllFilesOrOpenNextLocation()<cr>
 vmap <F2> <esc>:call SaveAllFilesOrOpenNextLocation()<cr>v
@@ -238,13 +238,13 @@ fun! g:CargoLimitOpen(editor_data)
       break
     endif
   endfor
-endfunction
+endfun
 
 " called when any affected lines were moved or edited
 fun! g:CargoLimitUpdate(editor_data)
   " i.bufnr
   " TODO: exit if current buffer something weird, save current buffer number, update cursor on other buffers, go back to current buffer
-endfunction
+endfun
 ```
 
 ### Populate a QuickFix List
@@ -268,15 +268,15 @@ fun! s:populate_quickfix_list(editor_data)
   if l:winnr !=# winnr()
     wincmd p
   endif
-endfunction
+endfun
 
 fun! g:CargoLimitOpen(editor_data)
   call s:populate_quickfix_list(a:editor_data)
-endfunction
+endfun
 
 fun! g:CargoLimitUpdate(editor_data)
   call s:populate_quickfix_list(a:editor_data)
-endfunction
+endfun
 ```
 
 </p>
