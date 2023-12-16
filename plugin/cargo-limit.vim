@@ -91,7 +91,7 @@ function s:validate_plugin_version(editor_data)
   endif
 
   if !l:version_matched
-    call s:log_error('version mismatch, plugin ' . PLUGIN_VERSION . l:crate_message_postfix)
+    call s:log_info('version mismatch, plugin ' . PLUGIN_VERSION . l:crate_message_postfix)
   endif
 endf
 
@@ -104,7 +104,7 @@ fun! s:maybe_setup_handlers() abort
 
   if exists('*CargoLimitOpen')
     let s:deprecated_cargo_limit_open = funcref('g:CargoLimitOpen')
-    call s:log_info('g:CargoLimitOpen is deprecated, please migrate to g:CargoLimitUpdate')
+    call s:log_warn('g:CargoLimitOpen is deprecated, please migrate to g:CargoLimitUpdate: https://github.com/alopatindev/cargo-limit#text-editoride-integrations')
   endif
 
   fun! g:CargoLimitOpen(editor_data) abort
@@ -125,9 +125,7 @@ fun! s:maybe_setup_handlers() abort
       return
     endif
 
-    " TODO: just copy files instead, split the function
-    let l:jump_to_locations = v:false
-    call s:open_all_locations_in_reverse_deduplicated_by_paths(l:jump_to_locations)
+    call s:copy_affected_files_to_temp()
 
     if !exists('*CargoLimitUpdate')
       fun! g:CargoLimitUpdate(editor_data, corrected_positions) abort
@@ -137,8 +135,7 @@ fun! s:maybe_setup_handlers() abort
         endif
 
         if !a:corrected_positions
-          let l:jump_to_locations = v:true
-          call s:open_all_locations_in_reverse_deduplicated_by_paths(l:jump_to_locations)
+          call s:open_all_locations_in_reverse_deduplicated_by_paths()
           call s:update_next_unique_location_index()
         end
       endf
@@ -175,10 +172,21 @@ fun! s:upgrade_editor_data_format() abort
   endif
 endf
 
-" TODO: rename
-fun! s:open_all_locations_in_reverse_deduplicated_by_paths(jump_to_locations) abort
+fun! s:copy_affected_files_to_temp() abort
   call s:recreate_temp_sources_dir()
 
+  let l:paths = {}
+  for i in range(0, len(s:editor_data.locations) - 1)
+    let l:paths[s:editor_data.locations[i].path] = v:true
+  endfor
+
+  for i in keys(l:paths)
+    call s:maybe_copy_to_temp(fnameescape(i))
+  endfor
+endf
+
+" TODO: rename
+fun! s:open_all_locations_in_reverse_deduplicated_by_paths() abort
   let l:path_to_location_index = {}
   for i in range(len(s:editor_data.locations) - 1, 0, -1)
     let l:path_to_location_index[s:editor_data.locations[i].path] = i
@@ -191,13 +199,7 @@ fun! s:open_all_locations_in_reverse_deduplicated_by_paths(jump_to_locations) ab
     elseif mode() ==# 'n' && &l:modified ==# 0
       let l:location_index = l:path_to_location_index[l:path]
       call remove(l:path_to_location_index, l:path)
-
-      " FIXME: shadow
-      let l:path = fnameescape(s:editor_data.locations[i].path)
-      if a:jump_to_locations
-        call s:jump_to_location(l:location_index)
-      endif
-      call s:maybe_copy_to_temp_sources(l:path)
+      call s:jump_to_location(l:location_index)
     else
       break
     endif
@@ -281,7 +283,7 @@ fun! s:on_buffer_write() abort
   if l:current_file !=# '' && filereadable(l:current_file)
     let l:changes = s:update_locations(l:current_file)
     if l:changes ># 0
-      call s:maybe_copy_to_temp_sources(l:current_file)
+      call s:maybe_copy_to_temp(l:current_file)
       let l:corrected_positions = v:true
       call g:CargoLimitUpdate(s:editor_data, l:corrected_positions)
     endif
@@ -451,7 +453,7 @@ fun! s:temp_source_path(path) abort
   return s:temp_sources_dir . '/' . s:escape_path(a:path)
 endf
 
-fun! s:maybe_copy_to_temp_sources(path) abort
+fun! s:maybe_copy_to_temp(path) abort
   call s:maybe_copy(a:path, s:temp_source_path(a:path))
 endf
 
@@ -501,14 +503,17 @@ endf
 fun! s:log_error(...) abort
   echohl Error
   redraw
-  "echom s:log_str(a:000)
   echon s:log_str(a:000)
   echohl None
 endf
 
+fun! s:log_warn(...) abort
+  echohl WarningMsg
+  echon s:log_str(a:000) . "\n"
+endf
+
 fun! s:log_info(...) abort
   echohl None
-  redraw
   echon s:log_str(a:000)
 endf
 

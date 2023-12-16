@@ -223,7 +223,7 @@ Also auto-jump may not happen to affected line that supposed to be **already mod
 Add **custom open/update handlers** to your `init.vim` if you want other Neovim behavior.
 
 <details>
-<summary><b>💡 See examples! 👁️</b></summary>
+<summary><b>💡 See examples for Neovim! 👁️</b></summary>
 <p>
 
 ### Open Files in Buffers Instead of Tabs
@@ -250,15 +250,17 @@ endf
 set errorformat =%f:%l:%c:%m
 
 fun! g:CargoLimitUpdate(editor_data, corrected_lines)
-  let l:quickfix_list_is_open = v:false
-  for win in getwininfo()
-    if win.quickfix
-      let l:quickfix_list_is_open = v:true
-    endif
-  endfor
+  if a:corrected_lines
+    let l:quickfix_list_is_open = v:false
+    for win in getwininfo()
+      if win.quickfix
+        let l:quickfix_list_is_open = v:true
+      endif
+    endfor
 
-  if a:corrected_lines && !l:quickfix_list_is_open
-    return
+    if !l:quickfix_list_is_open
+      return
+    endif
   endif
 
   let l:winnr = winnr()
