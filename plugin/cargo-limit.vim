@@ -10,6 +10,11 @@
 "         or even location index? this one is probably unusable for custom functions
 " TODO: retest precise jumping on >3k lines of code files
 
+function! s:jq(json)
+    let encoded = system('echo '.shellescape(json_encode(a:json)).' | jq .')
+    return split(encoded, "\n")
+endfunction
+
 fun! s:main() abort
   const MIN_NVIM_VERSION = '0.7.0'
 
@@ -265,6 +270,10 @@ fun! s:update_locations(path) abort
   endfor
 
   call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
+
+  let l:temp_source_path = s:temp_source_path(a:path) " TODO
+  call writefile(["edited lines: "] + s:jq(l:edited_line_numbers) + ["edited_locations:" ] + s:jq(s:edited_locations)  + ["editor_data:"] + s:jq(s:editor_data), s:temp_source_path(a:path . '.meta.2')) " TODO
+
   return len(l:line_to_shift) + len(l:edited_line_numbers)
 endfunction
 
@@ -273,7 +282,7 @@ fun! s:compute_shifts_and_edits(path) abort
 
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
-    \ 'w !git diff --unified=0 --ignore-blank-lines --ignore-all-space --ignore-cr-at-eol --no-index --no-color --no-ext-diff -- '
+    \ 'git diff --unified=0 --ignore-cr-at-eol --no-index --no-color --no-ext-diff -- '
     \ . fnameescape(l:temp_source_path)
     \ . ' '
     \ . a:path
@@ -285,7 +294,14 @@ fun! s:compute_shifts_and_edits(path) abort
     return [l:line_to_shift, l:edited_line_numbers]
   endif
 
-  let l:diff_stdout_lines = split(execute(DIFF_COMMAND), "\n")
+  call writefile(readblob(l:temp_source_path), s:temp_source_path(a:path . '.source'), 'b') " TODO
+  call writefile(readblob(a:path), s:temp_source_path(a:path . '.dest'), 'b') " TODO
+
+  let l:diff_stdout = system(DIFF_COMMAND)
+
+  call writefile([l:diff_stdout], s:temp_source_path(a:path . '.patch'), 'b') " TODO
+
+  let l:diff_stdout_lines = split(l:diff_stdout, "\n")
   let l:diff_stdout_line_number = 0 " TODO: rename to index?
   while l:diff_stdout_line_number <# len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
@@ -301,6 +317,9 @@ fun! s:compute_shifts_and_edits(path) abort
     endif
     let l:diff_stdout_line_number += 1
   endwhile
+
+
+  call writefile(['lines to shift: '] + [join(l:line_to_shift, ' ')] + ["\nedited lines: "] + s:jq(l:edited_line_numbers) + ["editor_data:"] + s:jq(s:editor_data), s:temp_source_path(a:path . '.meta.1')) " TODO
 
   "call s:log_info(l:line_to_shift)
   return [l:line_to_shift, l:edited_line_numbers]
