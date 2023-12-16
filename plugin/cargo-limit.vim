@@ -87,7 +87,7 @@ endf
 fun! s:maybe_setup_handlers() abort
   augroup CargoLimitAutocommands
     autocmd!
-    autocmd VimLeavePre * call s:recreate_temp_sources_dir() " TODO: or just remove it?
+    autocmd VimLeavePre * call s:recreate_temp_sources_dir() " TODO: or just remove the dir?
     autocmd BufWritePost *.rs call s:on_buffer_write()
   augroup END
 
@@ -170,7 +170,7 @@ fun! s:copy_affected_files_to_temp() abort
   endfor
 
   for i in keys(l:paths)
-    call s:maybe_copy_to_temp(fnameescape(i))
+    call s:maybe_copy_to_temp(i)
   endfor
 endf
 
@@ -436,7 +436,6 @@ fun! s:recreate_temp_sources_dir() abort
 endf
 
 fun! s:temp_source_path(path) abort
-  "return s:temp_sources_dir . '/' . fnamemodify(a:path, ':t') " TODO
   return s:temp_sources_dir . '/' . s:escape_path(a:path)
 endf
 
@@ -470,7 +469,6 @@ endf
 
 fun! s:jump_to_location(location_index) abort
   let l:location = s:editor_data.locations[a:location_index]
-  " TODO: is fnameescape required here?
   execute 'tab drop ' . fnameescape(l:location.path)
   call cursor((l:location.line), (l:location.column))
 endf
