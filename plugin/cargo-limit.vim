@@ -98,7 +98,7 @@ endf
 fun! s:maybe_setup_handlers() abort
   augroup CargoLimitAutocommands
     autocmd!
-    autocmd VimLeavePre * call s:recreate_temp_sources_dir()
+    autocmd VimLeavePre * call s:recreate_temp_sources_dir() " TODO: or just remove it?
     autocmd BufWritePost *.rs call s:on_buffer_write()
   augroup END
 
@@ -115,14 +115,19 @@ fun! s:maybe_setup_handlers() abort
     let s:edited_locations = {}
 
     if s:deprecated_cargo_limit_open !=# v:null
+      call s:downgrade_editor_data_format()
       call s:deprecated_cargo_limit_open(s:editor_data)
+    endif
+
+    call s:upgrade_editor_data_format()
+
+    if s:deprecated_cargo_limit_open !=# v:null
       return
     endif
 
-    if exists('s:editor_data.files')
-      let s:editor_data.locations = s:editor_data.files
-      call remove(s:editor_data, 'files')
-    endif
+    " TODO: just copy files instead, split the function
+    let l:jump_to_locations = v:false
+    call s:open_all_locations_in_reverse_deduplicated_by_paths(l:jump_to_locations)
 
     if !exists('*CargoLimitUpdate')
       fun! g:CargoLimitUpdate(editor_data, corrected_positions) abort
@@ -132,7 +137,8 @@ fun! s:maybe_setup_handlers() abort
         endif
 
         if !a:corrected_positions
-          call s:open_all_locations_in_reverse_deduplicated_by_paths()
+          let l:jump_to_locations = v:true
+          call s:open_all_locations_in_reverse_deduplicated_by_paths(l:jump_to_locations)
           call s:update_next_unique_location_index()
         end
       endf
@@ -155,7 +161,22 @@ fun! s:maybe_setup_handlers() abort
   endf
 endf
 
-fun! s:open_all_locations_in_reverse_deduplicated_by_paths() abort
+fun! s:downgrade_editor_data_format() abort
+  if exists('s:editor_data.locations')
+    let s:editor_data.files = s:editor_data.locations
+    call remove(s:editor_data, 'locations')
+  endif
+endf
+
+fun! s:upgrade_editor_data_format() abort
+  if exists('s:editor_data.files')
+    let s:editor_data.locations = s:editor_data.files
+    call remove(s:editor_data, 'files')
+  endif
+endf
+
+" TODO: rename
+fun! s:open_all_locations_in_reverse_deduplicated_by_paths(jump_to_locations) abort
   call s:recreate_temp_sources_dir()
 
   let l:path_to_location_index = {}
@@ -173,7 +194,9 @@ fun! s:open_all_locations_in_reverse_deduplicated_by_paths() abort
 
       " FIXME: shadow
       let l:path = fnameescape(s:editor_data.locations[i].path)
-      call s:jump_to_location(l:location_index)
+      if a:jump_to_locations
+        call s:jump_to_location(l:location_index)
+      endif
       call s:maybe_copy_to_temp_sources(l:path)
     else
       break

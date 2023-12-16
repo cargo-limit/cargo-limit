@@ -250,6 +250,17 @@ endf
 set errorformat =%f:%l:%c:%m
 
 fun! g:CargoLimitUpdate(editor_data, corrected_lines)
+  let l:quickfix_list_is_open = v:false
+  for win in getwininfo()
+    if win.quickfix
+      let l:quickfix_list_is_open = v:true
+    endif
+  endfor
+
+  if a:corrected_lines && !l:quickfix_list_is_open
+    return
+  endif
+
   let l:winnr = winnr()
 
   cgetexpr []
