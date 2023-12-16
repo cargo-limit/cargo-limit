@@ -174,7 +174,7 @@ fun! SaveAllFilesOrOpenNextLocation()
   else
     execute 'wa!'
   endif
-endfunction
+endf
 
 nmap <F2> :call SaveAllFilesOrOpenNextLocation()<cr>
 vmap <F2> <esc>:call SaveAllFilesOrOpenNextLocation()<cr>v
@@ -242,7 +242,7 @@ function! g:CargoLimitOpen(editor_data)
       break
     endif
   endfor
-endfunction
+endf
 ```
 
 ### Populate a QuickFix List
@@ -266,7 +266,7 @@ function! g:CargoLimitOpen(editor_data)
   if l:winnr !=# winnr()
     wincmd p
   endif
-endfunction
+endf
 ```
 
 </p>
