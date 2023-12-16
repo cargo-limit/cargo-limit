@@ -158,19 +158,21 @@ nvim --cmd '!call dein#install()'
 
 ### Optionally: F2 to save, F2 again to jump to next affected line
 ```viml
-function! SaveAllFilesOrOpenNextLocation()
-  let l:all_files_are_saved = 1
+fun! SaveAllFilesOrOpenNextLocation()
+  let l:all_files_are_saved = v:true
   for i in getbufinfo({'bufmodified': 1})
-    if i.name != ''
-      let l:all_files_are_saved = 0
+    if i.name !=# ''
+      let l:all_files_are_saved = v:false
       break
     endif
   endfor
 
   if l:all_files_are_saved
-    call g:CargoLimitOpenNextLocation()
+    if exists('*CargoLimitOpenNextLocation')
+      call g:CargoLimitOpenNextLocation()
+    endif
   else
-    execute 'wa'
+    execute 'wa!'
   endif
 endfunction
 
