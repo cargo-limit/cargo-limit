@@ -176,6 +176,10 @@ fun! SaveAllFilesOrOpenNextLocation()
   endif
 endf
 
+nmap <F1> :call g:CargoLimitOpenPrevLocation()<Enter>
+vmap <F1> <Esc>:call g:CargoLimitOpenPrevLocation()<Enter>v
+imap <F1> <Esc>:call g:CargoLimitOpenPrevLocation()<Enter>i
+
 nmap <F2> :call SaveAllFilesOrOpenNextLocation()<cr>
 vmap <F2> <esc>:call SaveAllFilesOrOpenNextLocation()<cr>v
 imap <F2> <esc>:call SaveAllFilesOrOpenNextLocation()<cr>i
@@ -224,7 +228,7 @@ Add **custom open/update handlers** to your `init.vim` if you want other Neovim 
 
 ### Open Files in Buffers Instead of Tabs
 ```viml
-fun! g:CargoLimitOpen(editor_data)
+fun! g:CargoLimitUpdate(editor_data, corrected_lines)
   let l:current_file = resolve(expand('%:p'))
   if l:current_file != '' && !filereadable(l:current_file)
     return
@@ -239,19 +243,13 @@ fun! g:CargoLimitOpen(editor_data)
     endif
   endfor
 endf
-
-" called when any affected lines were moved or edited
-fun! g:CargoLimitUpdate(editor_data)
-  " i.bufnr
-  " TODO: exit if current buffer something weird, save current buffer number, update cursor on other buffers, go back to current buffer
-endf
 ```
 
 ### Populate a QuickFix List
 ```viml
 set errorformat =%f:%l:%c:%m
 
-fun! s:populate_quickfix_list(editor_data)
+fun! g:CargoLimitUpdate(editor_data, corrected_lines)
   let l:winnr = winnr()
 
   cgetexpr []
@@ -268,14 +266,6 @@ fun! s:populate_quickfix_list(editor_data)
   if l:winnr !=# winnr()
     wincmd p
   endif
-endf
-
-fun! g:CargoLimitOpen(editor_data)
-  call s:populate_quickfix_list(a:editor_data)
-endf
-
-fun! g:CargoLimitUpdate(editor_data)
-  call s:populate_quickfix_list(a:editor_data)
 endf
 ```
 

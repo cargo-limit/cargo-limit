@@ -22,6 +22,7 @@ fun! s:main() abort
     let s:editor_data = {'locations': []}
     let s:location_index = v:null
     let s:edited_locations = {}
+    let s:deprecated_cargo_limit_open = v:null
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
     \ 'on_stderr': function('s:on_cargo_metadata'),
@@ -102,7 +103,8 @@ fun! s:maybe_setup_handlers() abort
   augroup END
 
   if exists('*CargoLimitOpen')
-    return
+    let s:deprecated_cargo_limit_open = funcref('g:CargoLimitOpen')
+    call s:log_info('g:CargoLimitOpen is deprecated, please migrate to g:CargoLimitUpdate')
   endif
 
   fun! g:CargoLimitOpen(editor_data) abort
@@ -112,18 +114,32 @@ fun! s:maybe_setup_handlers() abort
     let s:location_index = -1
     let s:edited_locations = {}
 
+    if s:deprecated_cargo_limit_open !=# v:null
+      call s:deprecated_cargo_limit_open(s:editor_data)
+      return
+    endif
+
     if exists('s:editor_data.files')
       let s:editor_data.locations = s:editor_data.files
       call remove(s:editor_data, 'files')
     endif
 
-    let l:current_file = s:current_file()
-    if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:editor_data.locations)
-      return
+    if !exists('*CargoLimitUpdate')
+      fun! g:CargoLimitUpdate(editor_data, corrected_positions) abort
+        let l:current_file = s:current_file()
+        if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:editor_data.locations)
+          return
+        endif
+
+        if !a:corrected_positions
+          call s:open_all_locations_in_reverse_deduplicated_by_paths()
+          call s:update_next_unique_location_index()
+        end
+      endf
     endif
 
-    call s:open_all_locations_in_reverse_deduplicated_by_paths()
-    call s:update_next_unique_location_index()
+    let l:corrected_positions = v:false
+    call g:CargoLimitUpdate(s:editor_data, l:corrected_positions)
   endf
 
   " TODO: is it useful to define global function like that?
@@ -243,9 +259,8 @@ fun! s:on_buffer_write() abort
     let l:changes = s:update_locations(l:current_file)
     if l:changes ># 0
       call s:maybe_copy_to_temp_sources(l:current_file)
-      if exists('*CargoLimitUpdate')
-        call g:CargoLimitUpdate(s:editor_data)
-      endif
+      let l:corrected_positions = v:true
+      call g:CargoLimitUpdate(s:editor_data, l:corrected_positions)
     endif
   endif
 endf
