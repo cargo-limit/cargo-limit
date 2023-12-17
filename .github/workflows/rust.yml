@@ -150,7 +150,7 @@ jobs:
         run: cargo test --no-run --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Zigbuild Tests
         if: ${{ !matrix.no_build_tests && matrix.zigbuild }}
-        run: cargo run zigbuild --tests --locked --verbose --all-features --target=${{ matrix.target }}
+        run: cargo zigbuild --tests --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Run Tests
         if: ${{ !matrix.no_build_tests && !matrix.no_run_tests && !matrix.zigbuild }}
         run: cargo test --locked --verbose --all-features --target=${{ matrix.target }}
@@ -159,4 +159,4 @@ jobs:
         run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
       - name: Zigbuild Release
         if: ${{ !matrix.no_release_build && matrix.zigbuild }}
-        run: cargo run zigbuild --locked --verbose --all-features --release --target=${{ matrix.target }}
+        run: cargo zigbuild --locked --verbose --all-features --release --target=${{ matrix.target }}
