@@ -14,6 +14,7 @@ fun! s:main() abort
     let s:editor_data = {'locations': []}
     let s:location_index = v:null
     let s:edited_locations = {}
+    let s:temp_sources_dir = v:null
     let s:deprecated_cargo_limit_open = v:null
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
@@ -430,8 +431,7 @@ fun! s:maybe_delete_dead_unix_socket(server_address) abort
 endf
 
 fun! s:recreate_temp_sources_dir() abort
-  "if isdirectory(s:temp_sources_dir) " TODO
-  if exists('s:temp_sources_dir')
+  if s:temp_sources_dir !=# v:null
     call delete(s:temp_sources_dir, 'rf')
     call mkdir(s:temp_sources_dir, 'p', 0700)
   endif
