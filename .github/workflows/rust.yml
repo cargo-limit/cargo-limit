@@ -28,8 +28,6 @@ jobs:
             target: x86_64-unknown-linux-musl
           - os: ubuntu-latest
             target: i686-unknown-linux-gnu
-            #no_build_tests: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
-            #no_release_build: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
             zigbuild: true
           - os: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
@@ -63,8 +61,6 @@ jobs:
             target: i686-pc-windows-msvc
           - os: windows-latest
             target: i686-pc-windows-gnu
-            #no_build_tests: true # NOTE: linker `i686-w64-mingw32-gcc` not found
-            #no_release_build: true # NOTE: linker `i686-w64-mingw32-gcc` not found
             zigbuild: true
           - os: windows-latest
             target: aarch64-pc-windows-msvc
@@ -131,6 +127,7 @@ jobs:
         with:
           zig-version: "0.11.0" # TODO
       - run: zig version
+        if: ${{ matrix.zigbuild }}
       - name: Install Zigbuild
         if: ${{ matrix.zigbuild }}
         run: cargo install --locked cargo-zigbuild
