@@ -1,5 +1,3 @@
-# TODO: https://github.com/rust-cross/cargo-zigbuild
-
 on: [push, pull_request]
 
 name: Continuous integration
@@ -11,6 +9,7 @@ env:
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: "-D warnings -W bare-trait-objects"
   NIGHTLY_VERSION: "nightly-2023-02-09"
+  ZIG_VERSION: "0.11.0"
 
 jobs:
   all:
@@ -29,19 +28,22 @@ jobs:
             target: x86_64-unknown-linux-musl
           - os: ubuntu-latest
             target: i686-unknown-linux-gnu
-            no_build_tests: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
-            no_release_build: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
+            #no_build_tests: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
+            #no_release_build: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
+            zigbuild: true
           - os: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
-            no_build_tests: true # NOTE: Relocations in generic ELF (EM: 243)
-            no_release_build: true # NOTE: Relocations in generic ELF (EM: 243)
+            #no_build_tests: true # NOTE: Relocations in generic ELF (EM: 243)
+            #no_release_build: true # NOTE: Relocations in generic ELF (EM: 243)
+            zigbuild: true
           # - os: ubuntu-latest
           #   target: i686-unknown-linux-musl # NOTE: target 'i686-unknown-linux-musl' not found in channel
-          # - os: ubuntu-latest
-          #   target: aarch64-unknown-linux-gnu # NOTE: Relocations in generic ELF (EM: 183)
-          #   no_build_tests: true
-          # - os: ubuntu-latest
-          #   target: aarch64-unknown-linux-musl # NOTE: Relocations in generic ELF (EM: 183)
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu # NOTE: Relocations in generic ELF (EM: 183)
+            zigbuild: true
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl # NOTE: Relocations in generic ELF (EM: 183)
+            zigbuild: true
           # - os: ubuntu-latest
           #   target: riscv64gc-unknown-linux-musl # NOTE: toolchain ... does not contain component 'rust-std' for target
 
@@ -61,19 +63,22 @@ jobs:
             target: i686-pc-windows-msvc
           - os: windows-latest
             target: i686-pc-windows-gnu
-            no_build_tests: true # NOTE: linker `i686-w64-mingw32-gcc` not found
-            no_release_build: true # NOTE: linker `i686-w64-mingw32-gcc` not found
+            #no_build_tests: true # NOTE: linker `i686-w64-mingw32-gcc` not found
+            #no_release_build: true # NOTE: linker `i686-w64-mingw32-gcc` not found
+            zigbuild: true
           - os: windows-latest
             target: aarch64-pc-windows-msvc
-            no_build_tests: true # NOTE: could not execute process
+            #no_build_tests: true # NOTE: could not execute process
+            zigbuild: true
           # - os: windows-latest
           #   target: aarch64-pc-windows-gnullvm # NOTE: can't find crate for `core`
 
           # FreeBSD
           - os: ubuntu-latest
             target: x86_64-unknown-freebsd
-            no_build_tests: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
-            no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+            #no_build_tests: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+            #no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+            zigbuild: true
           # - os: ubuntu-latest
           #   target: i686-unknown-freebsd # NOTE: target 'i686-unknown-freebsd' not found in channel
           # - os: ubuntu-latest
@@ -84,8 +89,9 @@ jobs:
           # NetBSD
           - os: ubuntu-latest
             target: x86_64-unknown-netbsd
-            no_build_tests: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
-            no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+            #no_build_tests: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+            #no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+            zigbuild: true
           # - os: ubuntu-latest
           #   target: i686-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
           # - os: ubuntu-latest
@@ -119,6 +125,11 @@ jobs:
         run: |
           rustup install "${NIGHTLY_VERSION}"
           rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
+      - name: Install zig
+        uses: korandoru/setup-zig@v1
+        with:
+          zig-version: "${ZIG_VERSION}"
+      - run: zig version
       - name: Check vulnerabilities with existing patches
         if: ${{ matrix.audit }}
         run: |
@@ -132,11 +143,17 @@ jobs:
       - name: Clippy
         run: cargo clippy -- -D warnings -D clippy::dbg_macro -D clippy::print_stderr -D clippy::print_stdout
       - name: Build Tests
-        if: ${{ !matrix.no_build_tests }}
+        if: ${{ !matrix.no_build_tests && !matrix.zigbuild }}
         run: cargo test --no-run --locked --verbose --all-features --target=${{ matrix.target }}
+      - name: Zigbuild Tests
+        if: ${{ !matrix.no_build_tests && matrix.zigbuild }}
+        run: cargo run zigbuild --tests --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Run Tests
-        if: ${{ !matrix.no_build_tests && !matrix.no_run_tests }}
+        if: ${{ !matrix.no_build_tests && !matrix.no_run_tests && !matrix.zigbuild }}
         run: cargo test --locked --verbose --all-features --target=${{ matrix.target }}
-      - name: Release Build
-        if: ${{ !matrix.no_release_build }}
+      - name: Build Release
+        if: ${{ !matrix.no_release_build && !matrix.zigbuild }}
         run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
+      - name: Zigbuild Release
+        if: ${{ !matrix.no_release_build && matrix.zigbuild }}
+        run: cargo zigbuild --locked --verbose --all-features --release --target=${{ matrix.target }}
