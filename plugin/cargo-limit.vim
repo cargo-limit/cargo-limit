@@ -1,6 +1,5 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
 " FIXME: regression? jump should not happen while I'm editing a file
-" FIXME: F1 still might go to non-unique element of the same line
 
 fun! s:main() abort
   const MIN_NVIM_VERSION = '0.7.0'
@@ -265,6 +264,19 @@ endf
 fun! s:update_prev_unique_location_index() abort
   let l:location = s:current_location()
   while s:location_index >=# 1 && (s:is_same_location(s:current_location(), l:location) || s:is_edited_location(s:current_location()))
+    let s:location_index -= 1
+  endwhile
+
+  " go to first unedited location on the same line
+  while s:location_index >=# 1 && s:is_same_location(s:current_location(), s:prev_location())
+    let s:location_index -= 1
+  endwhile
+
+  while s:location_index >=# 1 && s:is_edited_location(s:current_location())
+    let s:location_index -= 1
+  endwhile
+
+  while s:location_index >=# 1 && s:is_same_location(s:current_location(), s:prev_location())
     let s:location_index -= 1
   endwhile
 endf
