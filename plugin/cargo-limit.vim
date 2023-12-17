@@ -1,5 +1,6 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
 " FIXME: regression? jump should not happen while I'm editing a file
+" FIXME: F1 still might go to non-unique element of the same line
 
 fun! s:main() abort
   const MIN_NVIM_VERSION = '0.7.0'
@@ -165,24 +166,24 @@ fun! s:copy_affected_files_to_temp() abort
   call s:recreate_temp_sources_dir()
 
   let l:paths = {}
-  for i in range(0, len(s:editor_data.locations) - 1)
-    let l:paths[s:editor_data.locations[i].path] = v:true
+  for l:index in range(0, len(s:editor_data.locations) - 1)
+    let l:paths[s:editor_data.locations[l:index].path] = v:true
   endfor
 
-  for i in keys(l:paths)
-    call s:maybe_copy_to_temp(i)
+  for l:path in keys(l:paths)
+    call s:maybe_copy_to_temp(l:path)
   endfor
 endf
 
 " TODO: rename
 fun! s:open_all_locations_in_reverse_deduplicated_by_paths() abort
   let l:path_to_location_index = {}
-  for i in range(len(s:editor_data.locations) - 1, 0, -1)
-    let l:path_to_location_index[s:editor_data.locations[i].path] = i
+  for l:index in range(len(s:editor_data.locations) - 1, 0, -1)
+    let l:path_to_location_index[s:editor_data.locations[l:index].path] = l:index
   endfor
 
-  for i in range(len(s:editor_data.locations) - 1, 0, -1)
-    let l:path = s:editor_data.locations[i].path
+  for l:index in range(len(s:editor_data.locations) - 1, 0, -1)
+    let l:path = s:editor_data.locations[l:index].path
     if !has_key(l:path_to_location_index, l:path)
       continue
     elseif mode() ==# 'n' && &l:modified ==# 0
@@ -285,10 +286,10 @@ fun! s:update_locations(path) abort
   let [l:line_to_shift, l:edited_line_numbers] = s:compute_shifts_and_edits(a:path)
 
   let l:shift_accumulator = 0
-  for i in range(0, len(l:line_to_shift) - 1)
-    let l:shifted_lines = l:line_to_shift[i][1]
-    let l:start = l:line_to_shift[i][0]
-    let l:end = i + 1 <# len(l:line_to_shift) ? l:line_to_shift[i + 1][0] : v:null
+  for l:index in range(0, len(l:line_to_shift) - 1)
+    let l:shifted_lines = l:line_to_shift[l:index][1]
+    let l:start = l:line_to_shift[l:index][0]
+    let l:end = l:index + 1 <# len(l:line_to_shift) ? l:line_to_shift[l:index + 1][0] : v:null
     let l:shift_accumulator += l:shifted_lines
     let l:edited_line_numbers = s:shift_locations(a:path, l:edited_line_numbers, l:start, l:end, l:shift_accumulator)
   endfor
@@ -340,12 +341,12 @@ fun! s:shift_locations(path, edited_line_numbers, start, end, shift_accumulator)
 "  endfor
 "  call s:log_info('BEG lines', l:wat_lines)
 
-  for i in range(0, len(s:editor_data.locations) - 1)
-    let l:current_location = s:editor_data.locations[i] " TODO: why current? naming
+  for l:index in range(0, len(s:editor_data.locations) - 1)
+    let l:current_location = s:editor_data.locations[l:index] " TODO: why current? naming
     if l:current_location.path ==# a:path
       let l:current_line = l:current_location.line
       if l:current_line ># a:start && (a:end ==# v:null || l:current_line <# a:end)
-        let s:editor_data.locations[i].line += a:shift_accumulator
+        let s:editor_data.locations[l:index].line += a:shift_accumulator
       endif
     endif
   endfor
@@ -358,10 +359,10 @@ fun! s:shift_locations(path, edited_line_numbers, start, end, shift_accumulator)
 "  call s:log_info('END lines', l:wat_lines)
 
   " TODO
-  for line in keys(a:edited_line_numbers)
-    if line ># a:start && (a:end ==# v:null || line <# a:end)
-      call remove(a:edited_line_numbers, line)
-      let a:edited_line_numbers[line + a:shift_accumulator] = v:true
+  for l:line in keys(a:edited_line_numbers)
+    if l:line ># a:start && (a:end ==# v:null || l:line <# a:end)
+      call remove(a:edited_line_numbers, l:line)
+      let a:edited_line_numbers[l:line + a:shift_accumulator] = v:true
     endif
   endfor
 
@@ -376,20 +377,20 @@ fun! s:parse_diff_stats(text, delimiter) abort
 endf
 
 fun! s:update_edited_line_numbers(edited_line_numbers, removal_offset, removals, diff_stdout_lines, diff_stdout_line_number) abort
-  for i in range(0, a:removals - 1)
-    let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + i]
-    let a:edited_line_numbers[a:removal_offset + i] = v:true
+  for l:index in range(0, a:removals - 1)
+    let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + l:index]
+    let a:edited_line_numbers[a:removal_offset + l:index] = v:true
   endfor
   return a:edited_line_numbers
 endf
 
 " TODO: naming
 fun! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file) abort
-  for line in keys(a:edited_line_numbers)
+  for l:line in keys(a:edited_line_numbers)
     if !has_key(s:edited_locations, a:current_file)
       let s:edited_locations[a:current_file] = {}
     endif
-    let s:edited_locations[a:current_file][line] = v:true
+    let s:edited_locations[a:current_file][l:line] = v:true
   endfor
 endf
 
