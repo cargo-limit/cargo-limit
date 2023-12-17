@@ -220,7 +220,7 @@ Also auto-jump may not happen to affected line that supposed to be **already mod
 </details>
 
 ## Customizations
-Add **custom open/update handlers** to your `init.vim` if you want other Neovim behavior.
+Add **custom update handlers** to your `init.vim` if you want other Neovim behavior.
 
 <details>
 <summary><b>💡 See examples for Neovim! 👁️</b></summary>
@@ -255,6 +255,7 @@ fun! g:CargoLimitUpdate(editor_data, corrected_lines)
     for win in getwininfo()
       if win.quickfix
         let l:quickfix_list_is_open = v:true
+        break
       endif
     endfor
 
