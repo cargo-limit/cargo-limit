@@ -9,7 +9,7 @@ env:
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: "-D warnings -W bare-trait-objects"
   NIGHTLY_VERSION: "nightly-2023-02-09"
-  ZIG_VERSION: "0.11.0" # TODO
+  ZIG_VERSION: "0.11.0"
 
 jobs:
   all:
@@ -125,7 +125,7 @@ jobs:
         if: ${{ matrix.zigbuild }}
         uses: korandoru/setup-zig@v1
         with:
-          zig-version: "0.11.0" # TODO
+          zig-version: ${{ env.ZIG_VERSION }}
       - run: zig version
         if: ${{ matrix.zigbuild }}
       - name: Install Zigbuild
