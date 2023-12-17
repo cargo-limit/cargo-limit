@@ -1,5 +1,3 @@
-# TODO: https://github.com/rust-cross/cargo-zigbuild
-
 on: [push, pull_request]
 
 name: Continuous integration
