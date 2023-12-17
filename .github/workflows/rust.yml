@@ -33,9 +33,9 @@ jobs:
             zigbuild: true
           - os: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
-            #no_build_tests: true # NOTE: Relocations in generic ELF (EM: 243)
+            no_build_tests: true # NOTE: Relocations in generic ELF (EM: 243)
             #no_release_build: true # NOTE: Relocations in generic ELF (EM: 243)
-            zigbuild: true
+            zigbuild: true # NOTE: tests linking fail with "error: unknown directive .cfi_label .Ldummy"
           # - os: ubuntu-latest
           #   target: i686-unknown-linux-musl # NOTE: target 'i686-unknown-linux-musl' not found in channel
           - os: ubuntu-latest
@@ -68,17 +68,17 @@ jobs:
             zigbuild: true
           - os: windows-latest
             target: aarch64-pc-windows-msvc
-            #no_build_tests: true # NOTE: could not execute process
-            zigbuild: true
+            no_build_tests: true # NOTE: could not execute process
+            zigbuild: true # NOTE: tests linking fails with "zig.exe: InvalidUtf8 error: UnableToSpawnSelf"
           # - os: windows-latest
           #   target: aarch64-pc-windows-gnullvm # NOTE: can't find crate for `core`
 
           # FreeBSD
           - os: ubuntu-latest
             target: x86_64-unknown-freebsd
-            #no_build_tests: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
-            #no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
-            zigbuild: true
+            no_build_tests: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+            no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
+            #zigbuild: true # NOTE: tests linking fails "unsupported target 'x86_64-unknown-freebsd'"
           # - os: ubuntu-latest
           #   target: i686-unknown-freebsd # NOTE: target 'i686-unknown-freebsd' not found in channel
           # - os: ubuntu-latest
@@ -91,7 +91,7 @@ jobs:
             target: x86_64-unknown-netbsd
             #no_build_tests: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
             #no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
-            zigbuild: true
+            #zigbuild: true # NOTE: tests linking fails "Error: unsupported target 'x86_64-unknown-netbsd'"
           # - os: ubuntu-latest
           #   target: i686-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
           # - os: ubuntu-latest
