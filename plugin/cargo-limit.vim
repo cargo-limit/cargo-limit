@@ -30,7 +30,7 @@ fun! s:on_cargo_metadata(_job_id, data, event) abort
   elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
     let l:stderr = trim(join(a:data, "\n"))
     if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
-      call s:log_error('cargo metadata failed', l:stderr, !empty(l:stderr), !s:contains_str(l:stderr, 'could not find `Cargo.toml`'), len(l:stderr), l:stderr !~# 'could not find `Cargo.toml`')
+      call s:log_error('cargo metadata failed', l:stderr, !empty(l:stderr), !s:contains_str(l:stderr, 'could not find `Cargo.toml`'), len(l:stderr), l:stderr !~# 'could not find `Cargo.toml`') " TODO
     endif
   elseif a:event ==# 'exit'
     let l:stdout = trim(join(s:data_chunks, ''))
@@ -429,6 +429,7 @@ fun! s:maybe_delete_dead_unix_socket(server_address) abort
 endf
 
 fun! s:recreate_temp_sources_dir() abort
+  "if isdirectory(s:temp_sources_dir) " TODO
   if exists('s:temp_sources_dir')
     call delete(s:temp_sources_dir, 'rf')
     call mkdir(s:temp_sources_dir, 'p', 0700)
