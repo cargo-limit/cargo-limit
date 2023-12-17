@@ -132,7 +132,7 @@ jobs:
       - run: zig version
       - name: Install Zigbuild
         if: ${{ matrix.zigbuild }}
-        run: cargo install --locked zigbuild
+        run: cargo install --locked cargo-zigbuild
       - name: Check vulnerabilities with existing patches
         if: ${{ matrix.audit }}
         run: |
