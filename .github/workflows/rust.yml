@@ -13,7 +13,7 @@ env:
 
 jobs:
   all:
-    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (audit=${{ matrix.audit || 'false' }}, rustfmt=${{ matrix.rustfmt || 'false' }}, no_build_tests=${{ matrix.no_build_tests || 'false' }}, no_run_tests=${{ matrix.no_run_tests || 'false' }}, no_release_build=${{ matrix.no_release_build || 'false' }})
+    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (audit=${{ matrix.audit || 'false' }}, rustfmt=${{ matrix.rustfmt || 'false' }}, no_build_tests=${{ matrix.no_build_tests || 'false' }}, no_run_tests=${{ matrix.no_run_tests || 'false' }}, no_release_build=${{ matrix.no_release_build || 'false' }}, zigbuild=${{ matrix.zigbuild || 'false' }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -128,7 +128,7 @@ jobs:
       - name: Install zig
         uses: korandoru/setup-zig@v1
         with:
-          zig-version: "${ZIG_VERSION}"
+          zig-version: "0.11.0" # TODO
       - run: zig version
       - name: Check vulnerabilities with existing patches
         if: ${{ matrix.audit }}
