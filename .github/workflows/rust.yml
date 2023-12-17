@@ -9,7 +9,7 @@ env:
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: "-D warnings -W bare-trait-objects"
   NIGHTLY_VERSION: "nightly-2023-02-09"
-  ZIG_VERSION: "0.11.0"
+  ZIG_VERSION: "0.11.0" # TODO
 
 jobs:
   all:
@@ -125,11 +125,14 @@ jobs:
         run: |
           rustup install "${NIGHTLY_VERSION}"
           rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
-      - name: Install zig
+      - name: Install Zig
         uses: korandoru/setup-zig@v1
         with:
           zig-version: "0.11.0" # TODO
       - run: zig version
+      - name: Install Zigbuild
+        if: ${{ matrix.zigbuild }}
+        run: cargo install --locked zigbuild
       - name: Check vulnerabilities with existing patches
         if: ${{ matrix.audit }}
         run: |
@@ -156,4 +159,4 @@ jobs:
         run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
       - name: Zigbuild Release
         if: ${{ !matrix.no_release_build && matrix.zigbuild }}
-        run: cargo zigbuild --locked --verbose --all-features --release --target=${{ matrix.target }}
+        run: cargo run zigbuild --locked --verbose --all-features --release --target=${{ matrix.target }}
