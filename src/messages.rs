@@ -169,7 +169,6 @@ impl FilteredAndOrderedMessages {
             .map(|i| {
                 let spans_from_leaf_to_root = i.message.spans.iter().rev();
                 let key = spans_from_leaf_to_root
-                    .filter(|span| Path::new(&span.file_name).is_relative())
                     .map(|span| (span.file_name.clone(), span.line_start))
                     .collect::<Vec<_>>();
                 (key, i)
@@ -294,6 +293,7 @@ impl TransformedMessages {
                     .map(move |span| (span, message))
             })
             .map(|(span, message)| (Self::find_leaf_project_expansion(span), &message.message))
+            .filter(|(span, _)| Path::new(&span.file_name).is_relative())
             .map(|(span, message)| Location::new(span, message, workspace_root))
             .collect()
     }
