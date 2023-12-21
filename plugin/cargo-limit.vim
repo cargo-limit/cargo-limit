@@ -95,6 +95,8 @@ fun! s:maybe_setup_handlers() abort
   if exists('*CargoLimitOpen')
     let s:deprecated_cargo_limit_open = funcref('g:CargoLimitOpen')
     call s:log_warn('g:CargoLimitOpen is deprecated, please migrate to g:CargoLimitUpdate: https://github.com/alopatindev/cargo-limit#text-editoride-integrations')
+    " TODO: open new g:CargoLimitOpen(editor_data, corrected_positions) and fallback to old one if we caught 'not enough args' exception?
+    " TODO: put corrected_positions to editor_data?
   endif
 
   fun! g:CargoLimitOpen(editor_data) abort
@@ -182,6 +184,8 @@ fun! s:open_all_locations_in_reverse_deduplicated_by_paths() abort
     let l:path_to_location_index[s:editor_data.locations[l:index].path] = l:index
   endfor
 
+  redraw!
+
   for l:index in range(len(s:editor_data.locations) - 1, 0, -1)
     let l:path = s:editor_data.locations[l:index].path
     if !has_key(l:path_to_location_index, l:path)
@@ -194,6 +198,8 @@ fun! s:open_all_locations_in_reverse_deduplicated_by_paths() abort
       break
     endif
   endfor
+
+  redraw
 endf
 
 " TODO: don't extract?
@@ -519,6 +525,10 @@ endf
 fun! s:log_str(args) abort
   return '[cargo-limit] ' . join(a:args, ' ')
 endf
+
+fun! g:CargoLimitDebug()
+  call s:log_info('editor_data ' . json_encode(s:editor_data) . "\nedited_locations=" . json_encode(s:edited_locations) . "\nlen(locations)=" . len(s:editor_data.locations) . "\nlocation_index=" . s:location_index . "\n&l:modified=" . &l:modified)
+endfunction
 
 call s:main()
 
