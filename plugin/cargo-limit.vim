@@ -95,8 +95,6 @@ fun! s:maybe_setup_handlers() abort
   if exists('*CargoLimitOpen')
     let s:deprecated_cargo_limit_open = funcref('g:CargoLimitOpen')
     call s:log_warn('g:CargoLimitOpen is deprecated, please migrate to g:CargoLimitUpdate: https://github.com/alopatindev/cargo-limit#text-editoride-integrations')
-    " TODO: open new g:CargoLimitOpen(editor_data, corrected_positions) and fallback to old one if we caught 'not enough args' exception?
-    " TODO: put corrected_positions to editor_data?
   endif
 
   fun! g:CargoLimitOpen(editor_data) abort
@@ -120,21 +118,21 @@ fun! s:maybe_setup_handlers() abort
     call s:copy_affected_files_to_temp()
 
     if !exists('*CargoLimitUpdate')
-      fun! g:CargoLimitUpdate(editor_data, corrected_positions) abort
+      fun! g:CargoLimitUpdate(editor_data) abort
         let l:current_file = s:current_file()
         if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:editor_data.locations)
           return
         endif
 
-        if !a:corrected_positions
+        if !a:editor_data.corrected_locations
           call s:open_all_locations_in_reverse_deduplicated_by_paths()
           call s:update_next_unique_location_index()
         end
       endf
     endif
 
-    let l:corrected_positions = v:false
-    call g:CargoLimitUpdate(s:editor_data, l:corrected_positions)
+    let s:editor_data.corrected_locations = v:false
+    call g:CargoLimitUpdate(s:editor_data)
   endf
 
   " TODO: is it useful to define global function like that?
@@ -161,6 +159,9 @@ fun! s:upgrade_editor_data_format() abort
   if exists('s:editor_data.files')
     let s:editor_data.locations = s:editor_data.files
     call remove(s:editor_data, 'files')
+  endif
+  if !exists('s:editor_data.corrected_locations')
+    let s:editor_data.corrected_locations = v:false
   endif
 endf
 
@@ -293,8 +294,8 @@ fun! s:on_buffer_write() abort
     let l:changes = s:update_locations(l:current_file)
     if l:changes ># 0
       call s:maybe_copy_to_temp(l:current_file)
-      let l:corrected_positions = v:true
-      call g:CargoLimitUpdate(s:editor_data, l:corrected_positions)
+      let s:editor_data.corrected_locations = v:true
+      call g:CargoLimitUpdate(s:editor_data)
     endif
   endif
 endf

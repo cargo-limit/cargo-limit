@@ -229,7 +229,7 @@ Add **custom update handlers** to your `init.vim` if you want other Neovim behav
 
 ### Open Files in Buffers Instead of Tabs
 ```viml
-fun! g:CargoLimitUpdate(editor_data, corrected_lines)
+fun! g:CargoLimitUpdate(editor_data)
   let l:current_file = resolve(expand('%:p'))
   if l:current_file != '' && !filereadable(l:current_file)
     return
@@ -250,8 +250,8 @@ endf
 ```viml
 set errorformat =%f:%l:%c:%m
 
-fun! g:CargoLimitUpdate(editor_data, corrected_lines)
-  if a:corrected_lines
+fun! g:CargoLimitUpdate(editor_data)
+  if a:editor_data['corrected_locations']
     let l:quickfix_list_is_open = v:false
     for win in getwininfo()
       if win.quickfix
@@ -307,7 +307,8 @@ endf
       "message": "unused import: `diagnostic::DiagnosticSpan`",
       "level": "warning"
     }
-  ]
+  ],
+  "corrected_locations": false
 }
 ```
 
