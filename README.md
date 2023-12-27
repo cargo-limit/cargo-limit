@@ -163,7 +163,7 @@ fun! SaveAllFilesOrOpenNextLocation() abort
   let l:workspace_root = g:CargoLimitWorkspaceRoot()
   let l:all_files_are_saved = v:true
   for i in getbufinfo({'bufmodified': 1})
-    if i.name =~# l:workspace_root
+    if i.name =~# l:workspace_root && !(i.name =~# '/BqfPreviewScrollBar$')
       let l:all_files_are_saved = v:false
       break
     endif
