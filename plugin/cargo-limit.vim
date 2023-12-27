@@ -9,8 +9,10 @@ fun! s:main() abort
       throw 'unsupported nvim version, expected >=' . MIN_NVIM_VERSION
     endif
 
+    let s:debug_mode = v:false
     let s:data_chunks = []
     let s:editor_data = {'locations': []}
+    let s:workspace_root = v:null
     let s:location_index = v:null
     let s:edited_locations = {}
     let s:temp_sources_dir = v:null
@@ -37,8 +39,8 @@ fun! s:on_cargo_metadata(_job_id, data, event) abort
     let l:stdout = trim(join(s:data_chunks, ''))
     if !empty(l:stdout)
       let l:metadata = json_decode(l:stdout)
-      let l:workspace_root = get(l:metadata, 'workspace_root')
-      let l:escaped_workspace_root = s:escape_path(workspace_root)
+      let s:workspace_root = get(l:metadata, 'workspace_root')
+      let l:escaped_workspace_root = s:escape_path(s:workspace_root)
       call s:start_server(l:escaped_workspace_root)
     endif
   endif
@@ -91,6 +93,10 @@ fun! s:maybe_setup_handlers() abort
     autocmd VimLeavePre * call s:recreate_temp_sources_dir() " TODO: or just remove the dir?
     autocmd BufWritePost *.rs call s:on_buffer_write()
   augroup END
+
+  fun! g:CargoLimitWorkspaceRoot() abort
+    return s:workspace_root
+  endf
 
   if exists('*CargoLimitOpen')
     let s:deprecated_cargo_limit_open = funcref('g:CargoLimitOpen')
@@ -205,27 +211,35 @@ endf
 
 " TODO: don't extract?
 fun! s:open_next_location_in_new_or_existing_tab() abort
+  call s:log_debug('open_next_location_in_new_or_existing_tab 1')
   if empty(s:editor_data.locations)
     return
   endif
+  call s:log_debug('open_next_location_in_new_or_existing_tab 2')
 
   let l:current_file = s:current_file()
+  call s:log_debug('open_next_location_in_new_or_existing_tab 3')
   " TODO: &l:modified !=# 0 - is it correct here?
   if s:location_index >=# len(s:editor_data.locations) || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
     return
   endif
+  call s:log_debug('open_next_location_in_new_or_existing_tab 4')
 
   let l:initial_location_index = s:location_index
 
   call s:update_next_unique_location_index()
+  call s:log_debug('open_next_location_in_new_or_existing_tab 5')
 
   if l:initial_location_index !=# s:location_index
+    call s:log_debug('open_next_location_in_new_or_existing_tab 6')
     call s:jump_to_location(s:location_index)
   endif
+  call s:log_debug('open_next_location_in_new_or_existing_tab 7')
 endf
 
 " TODO: don't extract?
 fun! s:open_prev_location_in_new_or_existing_tab() abort
+  call s:log_debug('open_prev_location_in_new_or_existing_tab 1')
   if empty(s:editor_data.locations)
     return
   endif
@@ -241,30 +255,37 @@ fun! s:open_prev_location_in_new_or_existing_tab() abort
   call s:update_prev_unique_location_index()
 
   if l:initial_location_index !=# s:location_index
+    call s:log_debug('open_prev_location_in_new_or_existing_tab 2')
     call s:jump_to_location(s:location_index)
   endif
+  call s:log_debug('open_prev_location_in_new_or_existing_tab 3')
 endf
 
 " TODO: naming? refactoring?
 fun! s:update_next_unique_location_index() abort
+  call s:log_debug('update_next_unique_location_index 1 localtion_index=' . s:location_index)
   " go to next unedited location with different path or line
   let l:location = s:current_location()
   while s:location_index <# len(s:editor_data.locations) - 1 && (s:is_same_location(l:location, s:current_location()) || s:is_edited_location(s:current_location()))
     let s:location_index += 1
   endwhile
+  call s:log_debug('update_next_unique_location_index 2 localtion_index=' . s:location_index)
 
   " go to last unedited location on the same line
   while s:location_index <# len(s:editor_data.locations) - 1 && s:is_same_location(s:current_location(), s:next_location())
     let s:location_index += 1
   endwhile
 
+  call s:log_debug('update_next_unique_location_index 3 localtion_index=' . s:location_index)
   while s:location_index <# len(s:editor_data.locations) - 1 && s:is_edited_location(s:current_location())
     let s:location_index += 1
   endwhile
 
+  call s:log_debug('update_next_unique_location_index 4 localtion_index=' . s:location_index)
   while s:location_index <# len(s:editor_data.locations) - 1 && s:is_same_location(s:current_location(), s:next_location())
     let s:location_index += 1
   endwhile
+  call s:log_debug('update_next_unique_location_index 5 localtion_index=' . s:location_index)
 endf
 
 " TODO: naming? remove? refactoring?
@@ -523,12 +544,20 @@ fun! s:log_info(...) abort
   echon s:log_str(a:000)
 endf
 
-fun! s:log_str(args) abort
+fun! s:log_debug(...) abort
+  if s:debug_mode
+    echohl None
+    echon s:log_str(a:000)
+  endif
+endf
+
+fun! s:log_str(args)
   return '[cargo-limit] ' . join(a:args, ' ')
 endf
 
 fun! g:CargoLimitDebug()
   call s:log_info('editor_data ' . json_encode(s:editor_data) . "\nedited_locations=" . json_encode(s:edited_locations) . "\nlen(locations)=" . len(s:editor_data.locations) . "\nlocation_index=" . s:location_index . "\n&l:modified=" . &l:modified)
+  let s:debug_mode = !s:debug_mode
 endfunction
 
 call s:main()
