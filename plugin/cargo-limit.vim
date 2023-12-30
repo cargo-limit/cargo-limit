@@ -95,10 +95,6 @@ fun! s:maybe_setup_handlers() abort
     autocmd BufWritePost *.rs call s:on_buffer_write()
   augroup END
 
-  fun! g:CargoLimitWorkspaceRoot() abort
-    return s:workspace_root
-  endf
-
   if exists('*CargoLimitOpen')
     let s:deprecated_cargo_limit_open = funcref('g:CargoLimitOpen')
     call s:log_warn('g:CargoLimitOpen is deprecated, please migrate to g:CargoLimitUpdate: https://github.com/alopatindev/cargo-limit#text-editoride-integrations')
@@ -560,6 +556,10 @@ fun! g:CargoLimitDebug()
   call s:log_info('editor_data ' . json_encode(s:editor_data) . "\nedited_locations=" . json_encode(s:edited_locations) . "\nlen(locations)=" . len(s:editor_data.locations) . "\nlocation_index=" . s:location_index . "\n&l:modified=" . &l:modified)
   let s:debug_mode = !s:debug_mode
 endfunction
+
+fun! g:CargoLimitWorkspaceRoot() abort
+  return s:workspace_root
+endf
 
 call s:main()
 
