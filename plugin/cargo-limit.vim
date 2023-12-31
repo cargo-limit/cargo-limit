@@ -558,7 +558,7 @@ fun! g:CargoLimitDebug()
 endfunction
 
 fun! g:CargoLimitWorkspaceRoot() abort
-  return s:workspace_root
+  return fnameescape(s:workspace_root)
 endf
 
 call s:main()
