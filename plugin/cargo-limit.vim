@@ -10,7 +10,9 @@ fun! s:main() abort
       throw 'unsupported nvim version, expected >=' . MIN_NVIM_VERSION
     endif
 
-    let s:debug_mode = v:false
+    if !exists('g:CargoLimitVerbosity')
+      let g:CargoLimitVerbosity = 3 " info level
+    endif
     let s:data_chunks = []
     let s:editor_data = {'locations': []}
     let s:workspace_root = v:null
@@ -33,8 +35,8 @@ fun! s:on_cargo_metadata(_job_id, data, event) abort
     call add(s:data_chunks, join(a:data, ''))
   elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
     let l:stderr = trim(join(a:data, "\n"))
-    if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
-      call s:log_error('cargo metadata failed', l:stderr, !empty(l:stderr), !s:contains_str(l:stderr, 'could not find `Cargo.toml`'), len(l:stderr), l:stderr !~# 'could not find `Cargo.toml`') " TODO
+    if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`') && l:stderr !=# '1' && l:stderr !=# ':'
+      call s:log_error('cargo metadata failed', l:stderr, !empty(l:stderr), !s:contains_str(l:stderr, 'could not find `Cargo.toml`'), len(l:stderr), l:stderr !~# 'could not find `Cargo.toml`', 'stderr="' . l:stderr . '"') " TODO
     endif
   elseif a:event ==# 'exit'
     let l:stdout = trim(join(s:data_chunks, ''))
@@ -525,24 +527,30 @@ fun! s:prev_location() abort
 endf
 
 fun! s:log_error(...) abort
-  echohl Error
-  redraw
-  echon s:log_str(a:000)
-  echohl None
+  if g:CargoLimitVerbosity >=# 1
+    echohl Error
+    redraw
+    echon s:log_str(a:000)
+    echohl None
+  endif
 endf
 
 fun! s:log_warn(...) abort
-  echohl WarningMsg
-  echon s:log_str(a:000) . "\n"
+  if g:CargoLimitVerbosity >=# 2
+    echohl WarningMsg
+    echon s:log_str(a:000) . "\n"
+  endif
 endf
 
 fun! s:log_info(...) abort
-  echohl None
-  echon s:log_str(a:000)
+  if g:CargoLimitVerbosity >=# 3
+    echohl None
+    echon s:log_str(a:000)
+  endif
 endf
 
 fun! s:log_debug(...) abort
-  if s:debug_mode
+  if g:CargoLimitVerbosity >=# 4
     echohl None
     echon s:log_str(a:000)
   endif
@@ -554,7 +562,6 @@ endf
 
 fun! g:CargoLimitDebug()
   call s:log_info('editor_data ' . json_encode(s:editor_data) . "\nedited_locations=" . json_encode(s:edited_locations) . "\nlen(locations)=" . len(s:editor_data.locations) . "\nlocation_index=" . s:location_index . "\n&l:modified=" . &l:modified)
-  let s:debug_mode = !s:debug_mode
 endfunction
 
 fun! g:CargoLimitWorkspaceRoot() abort
