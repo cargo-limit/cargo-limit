@@ -167,15 +167,23 @@ function! s:starts_with(longer, shorter)
 endfunction
 
 function! s:log_error(message)
-  echohl Error
-  echon a:message
-  echohl None
+  if g:CargoLimitVerbosity >=# 1
+    echohl Error
+    echon a:message
+    echohl None
+endif
 endfunction
 
 function! s:log_info(message)
-  echohl None
-  echomsg a:message
+  if g:CargoLimitVerbosity >=# 3
+    echohl None
+    echomsg a:message
+  endif
 endfunction
+
+if !exists('g:CargoLimitVerbosity')
+  let g:CargoLimitVerbosity = 3 " info level
+endif
 
 if !exists('*CargoLimitOpen')
   function! g:CargoLimitOpen(editor_data)

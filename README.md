@@ -182,6 +182,11 @@ vmap <F2> <esc>:call SaveAllFilesOrOpenNextLocation()<cr>v
 imap <F2> <esc>:call SaveAllFilesOrOpenNextLocation()<cr>i
 ```
 
+### Optionally: less verbose messages
+```viml
+let g:CargoLimitVerbosity = 2 " warnings level
+```
+
 <details>
 <summary><b>💡 Test the plugin! 👁️</b></summary>
 <p>
