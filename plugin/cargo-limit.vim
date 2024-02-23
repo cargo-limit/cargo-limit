@@ -35,7 +35,7 @@ fun! s:on_cargo_metadata(_job_id, data, event) abort
     call add(s:data_chunks, join(a:data, ''))
   elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
     let l:stderr = trim(join(a:data, "\n"))
-    if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`') && l:stderr !=# '1' && l:stderr !=# ':'
+    if len(l:stderr) > 1 && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
       call s:log_error('cargo metadata failed', l:stderr, !empty(l:stderr), !s:contains_str(l:stderr, 'could not find `Cargo.toml`'), len(l:stderr), l:stderr !~# 'could not find `Cargo.toml`', 'stderr="' . l:stderr . '"') " TODO
     endif
   elseif a:event ==# 'exit'
