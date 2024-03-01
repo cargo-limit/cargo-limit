@@ -35,7 +35,7 @@ cargo install --locked cargo-limit
 
 ### From git
 ```
-cargo install --locked --force --git https://github.com/alopatindev/cargo-limit
+cargo install --locked --force --git https://github.com/cargo-limit/cargo-limit
 ```
 
 ## Usage
@@ -220,7 +220,7 @@ This is by design, in order to **not disrupt** from active text editing or file 
 Also auto-jump may not happen to affected line that supposed to be **already modified/fixed** (until you rerun `cargo ll{check,run,etc.}`).
 
 ### 2. Before running `nvim`: Current Directory should be Project (sub)directory
-- that's required so **cargo-limit** could [figure out](https://github.com/alopatindev/cargo-limit/issues/30#issuecomment-1219793195) which exact `nvim` instance should be controlled
+- that's required so **cargo-limit** could [figure out](https://github.com/cargo-limit/cargo-limit/issues/30#issuecomment-1219793195) which exact `nvim` instance should be controlled
 - only **first `nvim` instance** with current project (sub)directory will be **controlled by cargo-limit**.
 
 </p>
@@ -361,7 +361,7 @@ If this project improved your workflow — please consider:
 
 ---
 
-Your donations will help me allocate more time to resolve [issues](https://github.com/alopatindev/cargo-limit/issues) and to **finish all the [planned features](https://github.com/alopatindev/cargo-limit/projects/1?fullscreen=true)**! ❤️
+Your donations will help me allocate more time to resolve [issues](https://github.com/cargo-limit/cargo-limit/issues) and to **finish all the [planned features](https://github.com/cargo-limit/cargo-limit/projects/1?fullscreen=true)**! ❤️
 
 - **Bitcoin** (BTC) `1Afgvdz1oPaugFcLgDaAzCYYdHexV6tTvH`
 
