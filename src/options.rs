@@ -263,7 +263,7 @@ impl Options {
             if all_items_have_harness {
                 // Workaround for apps that can't understand that terminal supports colors.
                 // To fix that properly we need to run apps in pty.
-                // https://github.com/alopatindev/cargo-limit/issues/4#issuecomment-833692334
+                // https://github.com/cargo-limit/cargo-limit/issues/4#issuecomment-833692334
                 self.add_color_arg(COLOR_ALWAYS);
             }
         }

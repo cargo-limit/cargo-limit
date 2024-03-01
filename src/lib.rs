@@ -1,4 +1,4 @@
-//! **Documentation is [here](https://github.com/alopatindev/cargo-limit#readme).**
+//! **Documentation is [here](https://github.com/cargo-limit/cargo-limit#readme).**
 
 #[doc(hidden)]
 pub mod models;

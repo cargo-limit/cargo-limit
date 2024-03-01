@@ -5,10 +5,10 @@ authors = ["Alexander Lopatin <github.com/alopatindev>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Cargo with less noise: warnings are skipped until errors are fixed, Neovim integration, etc."
-repository = "https://github.com/alopatindev/cargo-limit"
+repository = "https://github.com/cargo-limit/cargo-limit"
 keywords = ["cargo", "neovim", "filter", "wrapper", "dedup"]
 readme = "README.md"
-documentation = "https://github.com/alopatindev/cargo-limit#readme"
+documentation = "https://github.com/cargo-limit/cargo-limit#readme"
 
 [dependencies]
 anyhow = "1"

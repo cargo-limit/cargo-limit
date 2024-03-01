@@ -18,7 +18,7 @@
 
 Initially this project was a workaround for **[this issue](https://github.com/rust-lang/rust/issues/27189), which was closed with no adequate solution**.
 
-Check out [🎙️  Rustacean Station podcast episode](https://rustacean-station.org/episode/alexander-lopatin/) for more.
+Check out [roadmap](https://github.com/cargo-limit/cargo-limit/projects/1?fullscreen=true), [issues](https://github.com/cargo-limit/cargo-limit/issues) and [🎙️ Rustacean Station podcast episode](https://rustacean-station.org/episode/alexander-lopatin/) for more.
 
 [![asciicast](https://gist.githubusercontent.com/alopatindev/2376b843dffef8d1a3af7ef44aef67be/raw/bfa15c2221cb5be128857068dd786374f9f6f186/cargo-limit-demo.svg)](https://asciinema.org/a/441673)
 
@@ -33,7 +33,7 @@ cargo install --locked cargo-limit
 
 ### From git
 ```
-cargo install --locked --force --git https://github.com/alopatindev/cargo-limit
+cargo install --locked --force --git https://github.com/cargo-limit/cargo-limit
 ```
 
 ## Usage
@@ -217,7 +217,7 @@ This is by design, in order to **not disrupt** from active text editing or file 
 For precise jump please rerun `cargo ll{check,run,etc.}`.
 
 ### 3. Before running `nvim`: Current Directory should be Project (sub)directory
-- that's required so **cargo-limit** could [figure out](https://github.com/alopatindev/cargo-limit/issues/30#issuecomment-1219793195) which exact `nvim` instance should be controlled
+- that's required so **cargo-limit** could [figure out](https://github.com/cargo-limit/cargo-limit/issues/30#issuecomment-1219793195) which exact `nvim` instance should be controlled
 - only **first `nvim` instance** with current project (sub)directory will be **controlled by cargo-limit**.
 
 </p>
@@ -343,7 +343,7 @@ If this project improved your workflow — please consider:
 
 ---
 
-Your donations will help me allocate more time to resolve [issues](https://github.com/alopatindev/cargo-limit/issues) and to **finish all the [planned features](https://github.com/alopatindev/cargo-limit/projects/1?fullscreen=true)**! ❤️
+Your donations will help me allocate more time to resolve [issues](https://github.com/cargo-limit/cargo-limit/issues) and to **finish all the [planned features](https://github.com/cargo-limit/cargo-limit/projects/1?fullscreen=true)**! ❤️
 
 - **Bitcoin** (BTC) `1Afgvdz1oPaugFcLgDaAzCYYdHexV6tTvH`
 
