@@ -2,7 +2,15 @@
   <img src="logo.svg" width="25%" height="25%" alt=""/>
 </div>
 
-# cargo-limit [![Crates.io](https://img.shields.io/crates/v/cargo-limit)](https://crates.io/crates/cargo-limit) [![Crates.io](https://img.shields.io/crates/d/cargo-limit)](https://crates.io/crates/cargo-limit) [![Awesome](https://gist.githubusercontent.com/alopatindev/56009d77564991c5474197f3aba85670/raw/cc4370f645d7ad40defcf8d1d14025dfa8726fd2/awesome.svg)](https://github.com/rust-unofficial/awesome-rust#build-system) [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23db61a2.svg?&logo=github&logoColor=white&labelColor=181717&style=flat-square)](#Support)
+# cargo-limit [![Crates.io](https://img.shields.io/crates/v/cargo-limit)](https://crates.io/crates/cargo-limit) [![Crates.io](https://img.shields.io/crates/d/cargo-limit)](https://crates.io/crates/cargo-limit) [![Awesome](https://gist.githubusercontent.com/alopatindev/56009d77564991c5474197f3aba85670/raw/cc4370f645d7ad40defcf8d1d14025dfa8726fd2/awesome.svg)](https://github.com/rust-unofficial/awesome-rust#build-system)
+
+[![Liberapay](https://img.shields.io/badge/donate-Liberapay-F6C915)](https://liberapay.com/cargo-limit/donate)
+[![Ko-fi](https://img.shields.io/badge/donate-ko--fi-29abe0.svg?logo=ko-fi)](https://ko-fi.com/summary/8c07db6b-1b19-4af7-bc6d-c321db86ade0)
+[![Patreon](https://img.shields.io/badge/donate-patreon-F87668.svg?logo=patreon)](https://www.patreon.com/checkout/alopatindev/9785189)
+[![Open Collective](https://img.shields.io/badge/donate-Open_Collective-3385FF)](https://opencollective.com/cargo-limit)
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23db61a2.svg?&logo=github&logoColor=white&labelColor=181717&style=flat-square)](#Support)
+
+## Description
 
 🚀 Cargo with less noise:
 - errors have highest priority
@@ -96,7 +104,7 @@ This tool is especially useful in combination with [cargo-watch](https://crates.
 
 Requires `nvim >= 0.7.0` and `git` to be installed.
 
-This plugin is [LSP](https://microsoft.github.io/language-server-protocol/)-independent, **it will keep working even when [rust-analyzer](https://rust-analyzer.github.io/) fails**!
+This plugin is [LSP](https://microsoft.github.io/language-server-protocol/)-independent, **it will keep working even when [rust-analyzer](https://rust-analyzer.github.io/) fails** to produce diagnostics!
 
 ### Using **[vim-plug](https://github.com/junegunn/vim-plug#neovim):**
 ```viml
@@ -351,11 +359,25 @@ Your donations will help me allocate more time to resolve [issues](https://githu
 
 - **Ethereum** (ETH, DAI, etc.) `0xa879cdb1d7d859e6e425f8e50c4ee49f4b3a7b06`
 
+- **TON**: `EQApceYoD6FDKn4azXrUxOIyT8VF4NIV_PRE7x9KsTJC9h0q`
+
+- **Zcash** (ZEC): `t1NiwnuUQC1tENTY2aPDDhKEA3pykF582TP`
+
+- **Litecoin** (LTC): `Le3yFbk854T1nrRUjWHkqTNrwz1zgDFqVX`
+
+- **Monero** (XMR): `46pRHmFpqzUBA8SLrdjW73H6ainCqRGpe8shjqQJ4UoBFAbegkAwqvjTSCBvBL71NZXYhriSuKPBkGxc1FjCeiut2EvFvxk`
+
+- **[Liberapay](https://liberapay.com/cargo-limit)**
+
 - **[Patreon](https://www.patreon.com/checkout/alopatindev/9785189)**
 
-- **[Liberapay](https://liberapay.com/alopatindev)**
+- **[Ko-fi](https://ko-fi.com/summary/8c07db6b-1b19-4af7-bc6d-c321db86ade0)**
 
-- **[Ko-fi](https://ko-fi.com/alopatindev)**
+- **[Open Collective](https://opencollective.com/cargo-limit)**
+
+For **general donations** dedicated to all my projects please check out ⚡ [here](https://codonaft.com/sponsor).
+
+Thank you for your support! 🙏🏼
 
 ---
 
