@@ -369,6 +369,10 @@ Your donations will help me allocate more time to resolve [issues](https://githu
 
 - **Ethereum** (ETH, DAI, etc.) `0xa879cdb1d7d859e6e425f8e50c4ee49f4b3a7b06`
 
+- **[PayPal](https://paypal.me/alopatindev)**
+
+- **[Open Collective](https://opencollective.com/cargo-limit)**
+
 - **[Patreon](https://www.patreon.com/checkout/alopatindev/9785189)**
 
 - **[Liberapay](https://liberapay.com/alopatindev)**
