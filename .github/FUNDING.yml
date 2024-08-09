@@ -6,8 +6,8 @@ open_collective: cargo-limit
 ko_fi: alopatindev
 tidelift: # Replace with a single Tidelift platform-name/package-name e.g., npm/babel
 community_bridge: # Replace with a single Community Bridge project-name e.g., cloud-foundry
-liberapay: alopatindev
+liberapay: cargo-limit
 issuehunt: # Replace with a single IssueHunt username
 otechie: # Replace with a single Otechie username
 lfx_crowdfunding: # Replace with a single LFX Crowdfunding project-name e.g., cloud-foundry
-custom: ['https://paypal.me/alopatindev', 'https://github.com/cargo-limit/cargo-limit#support']
+custom: ['https://github.com/cargo-limit/cargo-limit#support', 'https://codonaft.com/support']

@@ -369,15 +369,25 @@ Your donations will help me allocate more time to resolve [issues](https://githu
 
 - **Ethereum** (ETH, DAI, etc.) `0xa879cdb1d7d859e6e425f8e50c4ee49f4b3a7b06`
 
-- **[PayPal](https://paypal.me/alopatindev)**
+- **TON**: `EQApceYoD6FDKn4azXrUxOIyT8VF4NIV_PRE7x9KsTJC9h0q`
 
-- **[Open Collective](https://opencollective.com/cargo-limit)**
+- **Zcash** (ZEC): `t1NiwnuUQC1tENTY2aPDDhKEA3pykF582TP`
+
+- **Litecoin** (LTC): `Le3yFbk854T1nrRUjWHkqTNrwz1zgDFqVX`
+
+- **Monero** (XMR): `46pRHmFpqzUBA8SLrdjW73H6ainCqRGpe8shjqQJ4UoBFAbegkAwqvjTSCBvBL71NZXYhriSuKPBkGxc1FjCeiut2EvFvxk`
+
+- **[Liberapay](https://liberapay.com/cargo-limit)**
 
 - **[Patreon](https://www.patreon.com/checkout/alopatindev/9785189)**
 
-- **[Liberapay](https://liberapay.com/alopatindev)**
+- **[Ko-fi](https://ko-fi.com/summary/8c07db6b-1b19-4af7-bc6d-c321db86ade0)**
 
-- **[Ko-fi](https://ko-fi.com/alopatindev)**
+- **[Open Collective](https://opencollective.com/cargo-limit)**
+
+For **general donations** dedicated to all my projects please check out ⚡ [here](https://codonaft.com/sponsor).
+
+Thank you for your support! 🙏🏼
 
 ---
 
