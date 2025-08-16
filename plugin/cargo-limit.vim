@@ -262,29 +262,29 @@ endf
 
 " TODO: naming? refactoring?
 fun! s:update_next_unique_location_index() abort
-  call s:log_debug('update_next_unique_location_index 1 localtion_index=' . s:location_index)
+  call s:log_debug('update_next_unique_location_index 1 location_index=' . s:location_index)
   " go to next unedited location with different path or line
   let l:location = s:current_location()
   while s:location_index <# len(s:editor_data.locations) - 1 && (s:is_same_location(l:location, s:current_location()) || s:is_edited_location(s:current_location()))
     let s:location_index += 1
   endwhile
-  call s:log_debug('update_next_unique_location_index 2 localtion_index=' . s:location_index)
+  call s:log_debug('update_next_unique_location_index 2 location_index=' . s:location_index)
 
   " go to last unedited location on the same line
   while s:location_index <# len(s:editor_data.locations) - 1 && s:is_same_location(s:current_location(), s:next_location())
     let s:location_index += 1
   endwhile
 
-  call s:log_debug('update_next_unique_location_index 3 localtion_index=' . s:location_index)
+  call s:log_debug('update_next_unique_location_index 3 location_index=' . s:location_index)
   while s:location_index <# len(s:editor_data.locations) - 1 && s:is_edited_location(s:current_location())
     let s:location_index += 1
   endwhile
 
-  call s:log_debug('update_next_unique_location_index 4 localtion_index=' . s:location_index)
+  call s:log_debug('update_next_unique_location_index 4 location_index=' . s:location_index)
   while s:location_index <# len(s:editor_data.locations) - 1 && s:is_same_location(s:current_location(), s:next_location())
     let s:location_index += 1
   endwhile
-  call s:log_debug('update_next_unique_location_index 5 localtion_index=' . s:location_index)
+  call s:log_debug('update_next_unique_location_index 5 location_index=' . s:location_index)
 endf
 
 " TODO: naming? remove? refactoring?
