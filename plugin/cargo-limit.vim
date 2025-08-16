@@ -343,7 +343,7 @@ fun! s:compute_shifts_and_edits(path) abort
 
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
-    \ 'git diff --unified=0 --ignore-cr-at-eol --no-index --no-color --no-ext-diff -- '
+    \ 'git diff --unified=0 --ignore-cr-at-eol --ignore-space-at-eol --no-index --no-color --no-ext-diff -- '
     \ . fnameescape(l:temp_source_path)
     \ . ' '
     \ . a:path
@@ -363,10 +363,12 @@ fun! s:compute_shifts_and_edits(path) abort
 
       let [l:removal_offset, l:removals] = s:parse_diff_stats(l:raw_diff_stats[0], '-')
       let [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_diff_stats[1], '+')
-      let l:shifted_lines = l:additions - l:removals
-
-      call add(l:line_to_shift, [l:removal_offset, l:shifted_lines])
-      let l:edited_line_numbers = s:update_edited_line_numbers(l:edited_line_numbers, l:removal_offset, l:removals, l:diff_stdout_lines, l:diff_stdout_line_number)
+      if l:additions ==# 0 || l:removals ==# 0
+        let l:shifted_lines = l:additions - l:removals
+        call add(l:line_to_shift, [l:removal_offset, l:shifted_lines])
+      else
+        let l:edited_line_numbers = s:update_edited_line_numbers(l:edited_line_numbers, l:removal_offset, l:removals, l:diff_stdout_lines, l:diff_stdout_line_number)
+      endif
     endif
     let l:diff_stdout_line_number += 1
   endwhile
@@ -419,7 +421,7 @@ endf
 fun! s:update_edited_line_numbers(edited_line_numbers, removal_offset, removals, diff_stdout_lines, diff_stdout_line_number) abort
   for l:index in range(0, a:removals - 1)
     "let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + l:index] " TODO: what's this?
-    "let a:edited_line_numbers[a:removal_offset + l:index] = v:true " FIXME: causes incorrect line skip?
+    let a:edited_line_numbers[a:removal_offset + l:index] = v:true " FIXME: causes incorrect line skip?
     " FIXME: yeah, but we still want to skip actually edited lines, because they might were fixed already.
     " FIXME: shifted lines shouldn't intersect with edited lines in order to fix this.
     " FIXME: first addition is edit, not the first removal?
