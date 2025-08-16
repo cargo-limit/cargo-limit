@@ -419,7 +419,7 @@ endf
 fun! s:update_edited_line_numbers(edited_line_numbers, removal_offset, removals, diff_stdout_lines, diff_stdout_line_number) abort
   for l:index in range(0, a:removals - 1)
     let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + l:index]
-    let a:edited_line_numbers[a:removal_offset + l:index] = v:true
+    "let a:edited_line_numbers[a:removal_offset + l:index] = v:true " FIXME: causes incorrect line skip?
   endfor
   return a:edited_line_numbers
 endf
