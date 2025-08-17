@@ -231,10 +231,6 @@ fun! s:open_all_locations_in_reverse() abort
   redraw
 endf
 
-fun! s:should_change_location(initial_location, target_location) abort
-  return s:is_same_location(s:current_location(), a:initial_location) || s:is_same_location(s:current_location(), a:target_location) || s:is_current_location_edited()
-endfun
-
 fun! s:increment_location_index() abort
   let l:initial_location = s:current_location()
   let l:initial_location_index = s:location_index
@@ -263,17 +259,9 @@ fun! s:decrement_location_index() abort
   end
 endf
 
-fun! s:on_buffer_write() abort
-  let l:current_file = s:current_file()
-  if l:current_file !=# '' && filereadable(l:current_file)
-    let l:has_changes = s:update_locations(l:current_file)
-    if l:has_changes
-      call s:maybe_copy_to_temp(l:current_file)
-      let s:editor_data.corrected_locations = v:true
-      call g:CargoLimitUpdate(s:editor_data)
-    endif
-  endif
-endf
+fun! s:should_change_location(initial_location, target_location) abort
+  return s:is_same_location(s:current_location(), a:initial_location) || s:is_same_location(s:current_location(), a:target_location) || s:is_current_location_edited()
+endfun
 
 fun! s:update_locations(path) abort
   "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:editor_data.locations))
@@ -420,22 +408,6 @@ fun! s:maybe_copy(source, destination) abort
   endif
 endf
 
-fun! s:current_file() abort
-  return resolve(expand('%:p'))
-endf
-
-fun! s:escape_path(path) abort
-  return substitute(a:path, '[/\\:]', '%', 'g')
-endf
-
-fun! s:starts_with(longer, shorter) abort
-  return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
-endf
-
-fun! s:contains_str(text, pattern) abort
-  return stridx(a:text, a:pattern) !=# -1
-endf
-
 fun! s:jump_to_location(location_index) abort
   let l:location = s:editor_data.locations[a:location_index]
   execute 'tab drop ' . fnameescape(l:location.path)
@@ -452,6 +424,34 @@ endf
 
 fun! s:prev_location() abort
   return s:editor_data.locations[s:location_index - 1]
+endf
+
+fun! s:on_buffer_write() abort
+  let l:current_file = s:current_file()
+  if l:current_file !=# '' && filereadable(l:current_file)
+    let l:has_changes = s:update_locations(l:current_file)
+    if l:has_changes
+      call s:maybe_copy_to_temp(l:current_file)
+      let s:editor_data.corrected_locations = v:true
+      call g:CargoLimitUpdate(s:editor_data)
+    endif
+  endif
+endf
+
+fun! s:current_file() abort
+  return resolve(expand('%:p'))
+endf
+
+fun! s:escape_path(path) abort
+  return substitute(a:path, '[/\\:]', '%', 'g')
+endf
+
+fun! s:starts_with(longer, shorter) abort
+  return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
+endf
+
+fun! s:contains_str(text, pattern) abort
+  return stridx(a:text, a:pattern) !=# -1
 endf
 
 fun! s:log_error(...) abort
