@@ -129,7 +129,7 @@ fun! s:maybe_setup_handlers() abort
         if !a:editor_data.corrected_locations
           call s:open_all_locations_in_reverse()
           call s:increment_location_index()
-        end
+        endif
       endf
     endif
 
@@ -241,7 +241,7 @@ fun! s:increment_location_index() abort
 
   if s:is_current_location_edited()
     let s:location_index = l:initial_location_index
-  end
+  endif
 endf
 
 fun! s:decrement_location_index() abort
@@ -255,7 +255,7 @@ fun! s:decrement_location_index() abort
 
   if s:is_current_location_edited()
     let s:location_index = l:initial_location_index
-  end
+  endif
 endf
 
 fun! s:should_change_location(initial_location, target_location) abort
