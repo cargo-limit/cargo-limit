@@ -17,7 +17,6 @@ fun! s:main() abort
     let s:editor_data = {'locations': []}
     let s:workspace_root = v:null
     let s:location_index = v:null
-    let s:edited_locations = {}
     let s:temp_sources_dir = v:null
     let s:deprecated_cargo_limit_open = v:null
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
@@ -107,7 +106,6 @@ fun! s:maybe_setup_handlers() abort
 
     let s:editor_data = a:editor_data
     let s:location_index = -1
-    let s:edited_locations = {}
 
     if s:deprecated_cargo_limit_open !=# v:null
       call s:downgrade_editor_data_format()
@@ -210,35 +208,27 @@ endf
 
 " TODO: don't extract?
 fun! s:open_next_location_in_new_or_existing_tab() abort
-  call s:log_debug('open_next_location_in_new_or_existing_tab 1')
   if empty(s:editor_data.locations)
     return
   endif
-  call s:log_debug('open_next_location_in_new_or_existing_tab 2')
 
   let l:current_file = s:current_file()
-  call s:log_debug('open_next_location_in_new_or_existing_tab 3')
   " TODO: &l:modified !=# 0 - is it correct here?
   if s:location_index >=# len(s:editor_data.locations) || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
     return
   endif
-  call s:log_debug('open_next_location_in_new_or_existing_tab 4')
 
   let l:initial_location_index = s:location_index
 
   call s:update_next_unique_location_index()
-  call s:log_debug('open_next_location_in_new_or_existing_tab 5')
 
   if l:initial_location_index !=# s:location_index
-    call s:log_debug('open_next_location_in_new_or_existing_tab 6')
     call s:jump_to_location(s:location_index)
   endif
-  call s:log_debug('open_next_location_in_new_or_existing_tab 7')
 endf
 
 " TODO: don't extract?
 fun! s:open_prev_location_in_new_or_existing_tab() abort
-  call s:log_debug('open_prev_location_in_new_or_existing_tab 1')
   if empty(s:editor_data.locations)
     return
   endif
@@ -254,65 +244,35 @@ fun! s:open_prev_location_in_new_or_existing_tab() abort
   call s:update_prev_unique_location_index()
 
   if l:initial_location_index !=# s:location_index
-    call s:log_debug('open_prev_location_in_new_or_existing_tab 2')
     call s:jump_to_location(s:location_index)
   endif
-  call s:log_debug('open_prev_location_in_new_or_existing_tab 3')
 endf
 
-" TODO: naming? refactoring?
+" TODO: naming?
 fun! s:update_next_unique_location_index() abort
-  call s:log_debug('update_next_unique_location_index 1 location_index=' . s:location_index)
-  " go to next unedited location with different path or line
   let l:location = s:current_location()
-  while s:location_index <# len(s:editor_data.locations) - 1 && (s:is_same_location(l:location, s:current_location()) || s:is_edited_location(s:current_location()))
-    let s:location_index += 1
-  endwhile
-  call s:log_debug('update_next_unique_location_index 2 location_index=' . s:location_index)
-
-  " go to last unedited location on the same line
-  while s:location_index <# len(s:editor_data.locations) - 1 && s:is_same_location(s:current_location(), s:next_location())
-    let s:location_index += 1
-  endwhile
-
-  call s:log_debug('update_next_unique_location_index 3 location_index=' . s:location_index)
-  while s:location_index <# len(s:editor_data.locations) - 1 && s:is_edited_location(s:current_location())
-    let s:location_index += 1
-  endwhile
-
-  call s:log_debug('update_next_unique_location_index 4 location_index=' . s:location_index)
-  while s:location_index <# len(s:editor_data.locations) - 1 && s:is_same_location(s:current_location(), s:next_location())
-    let s:location_index += 1
-  endwhile
-  call s:log_debug('update_next_unique_location_index 5 location_index=' . s:location_index)
+  for i in range(0, 3)
+    while s:location_index <# len(s:editor_data.locations) - 1 && (s:is_same_location(l:location, s:current_location()) || s:is_edited_location(s:current_location()) || s:is_same_location(s:current_location(), s:next_location()))
+      let s:location_index += 1
+    endwhile
+  endfor
 endf
 
-" TODO: naming? remove? refactoring?
+" TODO: naming?
 fun! s:update_prev_unique_location_index() abort
   let l:location = s:current_location()
-  while s:location_index >=# 1 && (s:is_same_location(s:current_location(), l:location) || s:is_edited_location(s:current_location()))
-    let s:location_index -= 1
-  endwhile
-
-  " go to first unedited location on the same line
-  while s:location_index >=# 1 && s:is_same_location(s:current_location(), s:prev_location())
-    let s:location_index -= 1
-  endwhile
-
-  while s:location_index >=# 1 && s:is_edited_location(s:current_location())
-    let s:location_index -= 1
-  endwhile
-
-  while s:location_index >=# 1 && s:is_same_location(s:current_location(), s:prev_location())
-    let s:location_index -= 1
-  endwhile
+  for i in range(0, 3)
+    while s:location_index >=# 1 && (s:is_same_location(s:current_location(), l:location) || s:is_edited_location(s:current_location()) || s:is_same_location(s:current_location(), s:prev_location()))
+      let s:location_index -= 1
+    endwhile
+  endfor
 endf
 
 fun! s:on_buffer_write() abort
   let l:current_file = s:current_file()
   if l:current_file !=# '' && filereadable(l:current_file)
-    let l:changes = s:update_locations(l:current_file)
-    if l:changes ># 0
+    let l:has_changes = s:update_locations(l:current_file)
+    if l:has_changes
       call s:maybe_copy_to_temp(l:current_file)
       let s:editor_data.corrected_locations = v:true
       call g:CargoLimitUpdate(s:editor_data)
@@ -323,7 +283,7 @@ endf
 fun! s:update_locations(path) abort
   "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:editor_data.locations))
 
-  let [l:line_to_shift, l:edited_line_numbers] = s:compute_shifts_and_edits(a:path)
+  let [l:line_to_shift, l:maybe_edited_line_numbers] = s:compute_shifts(a:path)
 
   let l:shift_accumulator = 0
   for l:index in range(0, len(l:line_to_shift) - 1)
@@ -331,14 +291,13 @@ fun! s:update_locations(path) abort
     let l:start = l:line_to_shift[l:index][0]
     let l:end = l:index + 1 <# len(l:line_to_shift) ? l:line_to_shift[l:index + 1][0] : v:null
     let l:shift_accumulator += l:shifted_lines
-    let l:edited_line_numbers = s:shift_locations(a:path, l:edited_line_numbers, l:start, l:end, l:shift_accumulator)
+    let l:maybe_edited_line_numbers = s:shift_locations(a:path, l:maybe_edited_line_numbers, l:start, l:end, l:shift_accumulator)
   endfor
 
-  call s:ignore_edited_lines_of_current_file(l:edited_line_numbers, a:path)
-  return len(l:line_to_shift) + len(l:edited_line_numbers)
+  return len(l:line_to_shift) + len(l:maybe_edited_line_numbers)
 endf
 
-fun! s:compute_shifts_and_edits(path) abort
+fun! s:compute_shifts(path) abort
   let l:temp_source_path = s:temp_source_path(a:path)
 
   const DIFF_STATS_PATTERN = '@@ '
@@ -349,9 +308,9 @@ fun! s:compute_shifts_and_edits(path) abort
     \ . a:path
 
   let l:line_to_shift = [] " TODO: naming
-  let l:edited_line_numbers = {}
+  let l:maybe_edited_line_numbers = {}
   if !filereadable(l:temp_source_path)
-    return [l:line_to_shift, l:edited_line_numbers]
+    return [l:line_to_shift, l:maybe_edited_line_numbers]
   endif
 
   let l:diff_stdout_lines = split(system(DIFF_COMMAND), "\n")
@@ -367,22 +326,18 @@ fun! s:compute_shifts_and_edits(path) abort
         let l:shifted_lines = l:additions - l:removals
         call add(l:line_to_shift, [l:removal_offset, l:shifted_lines])
       else
-        let l:edited_line_numbers = s:update_edited_line_numbers(l:edited_line_numbers, l:removal_offset, l:removals, l:diff_stdout_lines, l:diff_stdout_line_number)
+        for l:index in range(0, l:removals - 1)
+          let l:maybe_edited_line_numbers[l:removal_offset + l:index] = v:true
+        endfor
       endif
     endif
     let l:diff_stdout_line_number += 1
   endwhile
 
-  return [l:line_to_shift, l:edited_line_numbers]
+  return [l:line_to_shift, l:maybe_edited_line_numbers]
 endf
 
-fun! s:shift_locations(path, edited_line_numbers, start, end, shift_accumulator) abort
-"  let l:wat_lines = []
-"  for i in s:editor_data.locations
-"    call add(l:wat_lines, i.line)
-"  endfor
-"  call s:log_info('BEG lines', l:wat_lines)
-
+fun! s:shift_locations(path, maybe_edited_line_numbers, start, end, shift_accumulator) abort
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:current_location = s:editor_data.locations[l:index] " TODO: why current? naming
     if l:current_location.path ==# a:path
@@ -393,22 +348,14 @@ fun! s:shift_locations(path, edited_line_numbers, start, end, shift_accumulator)
     endif
   endfor
 
-
-"  let l:wat_lines = []
-"  for i in s:editor_data.locations
-"    call add(l:wat_lines, i.line)
-"  endfor
-"  call s:log_info('END lines', l:wat_lines)
-
-  " TODO
-  for l:line in keys(a:edited_line_numbers)
+  for l:line in keys(a:maybe_edited_line_numbers)
     if l:line ># a:start && (a:end ==# v:null || l:line <# a:end)
       call remove(a:edited_line_numbers, l:line)
-      let a:edited_line_numbers[l:line + a:shift_accumulator] = v:true
+      let a:maybe_edited_line_numbers[l:line + a:shift_accumulator] = v:true
     endif
   endfor
 
-  return a:edited_line_numbers
+  return a:maybe_edited_line_numbers
 endf
 
 fun! s:parse_diff_stats(text, delimiter) abort
@@ -418,29 +365,9 @@ fun! s:parse_diff_stats(text, delimiter) abort
   return [l:offset, l:lines]
 endf
 
-fun! s:update_edited_line_numbers(edited_line_numbers, removal_offset, removals, diff_stdout_lines, diff_stdout_line_number) abort
-  for l:index in range(0, a:removals - 1)
-    "let l:next_diff_line = a:diff_stdout_lines[a:diff_stdout_line_number + l:index] " TODO: what's this?
-    let a:edited_line_numbers[a:removal_offset + l:index] = v:true " FIXME: causes incorrect line skip?
-    " FIXME: yeah, but we still want to skip actually edited lines, because they might were fixed already.
-    " FIXME: shifted lines shouldn't intersect with edited lines in order to fix this.
-    " FIXME: first addition is edit, not the first removal?
-  endfor
-  return a:edited_line_numbers
-endf
-
-" TODO: naming
-fun! s:ignore_edited_lines_of_current_file(edited_line_numbers, current_file) abort
-  for l:line in keys(a:edited_line_numbers)
-    if !has_key(s:edited_locations, a:current_file)
-      let s:edited_locations[a:current_file] = {}
-    endif
-    let s:edited_locations[a:current_file][l:line] = v:true
-  endfor
-endf
-
 fun! s:is_edited_location(location) abort
-  return has_key(s:edited_locations, a:location.path) && has_key(s:edited_locations[a:location.path], a:location.line)
+  let l:texts = getbufline(bufnr(a:location.path), a:location.line)
+  return !empty(texts) && trim(a:location.text) !=# trim(l:texts[0])
 endf
 
 fun! s:is_same_location(first, second) abort
@@ -549,13 +476,6 @@ endf
 
 fun! s:log_info(...) abort
   if g:CargoLimitVerbosity >=# 3
-    echohl None
-    echon s:log_str(a:000)
-  endif
-endf
-
-fun! s:log_debug(...) abort
-  if g:CargoLimitVerbosity >=# 4
     echohl None
     echon s:log_str(a:000)
   endif

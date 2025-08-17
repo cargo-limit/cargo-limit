@@ -14,6 +14,7 @@ pub struct Location {
     path: PathBuf,
     line: usize,
     column: usize,
+    text: String,
     message: String,
     level: DiagnosticLevel,
 }
@@ -49,6 +50,11 @@ impl Location {
             path,
             line: span.line_start,
             column: span.column_start,
+            text: span
+                .text
+                .first()
+                .map(|line| line.text.clone())
+                .unwrap_or_default(),
             message: diagnostic.message.clone(),
             level: diagnostic.level,
         }
