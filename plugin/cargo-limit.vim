@@ -250,22 +250,33 @@ endf
 
 " TODO: naming?
 fun! s:update_next_unique_location_index() abort
-  let l:location = s:current_location()
+  let l:initial_location = s:current_location()
+  let l:initial_location_index = s:location_index
   for i in range(0, 3)
-    while s:location_index <# len(s:editor_data.locations) - 1 && (s:is_same_location(l:location, s:current_location()) || s:is_edited_location(s:current_location()) || s:is_same_location(s:current_location(), s:next_location()))
+    while s:location_index <# len(s:editor_data.locations) - 1 && (s:is_same_location(l:initial_location, s:current_location()) || s:is_edited_location(s:current_location()) || s:is_same_location(s:current_location(), s:next_location()))
       let s:location_index += 1
     endwhile
   endfor
+
+  " TODO: wat
+  if s:is_edited_location(s:current_location())
+    let s:location_index = l:initial_location_index
+  end
 endf
 
 " TODO: naming?
 fun! s:update_prev_unique_location_index() abort
-  let l:location = s:current_location()
+  let l:initial_location = s:current_location()
+  let l:initial_location_index = s:location_index
   for i in range(0, 3)
-    while s:location_index >=# 1 && (s:is_same_location(s:current_location(), l:location) || s:is_edited_location(s:current_location()) || s:is_same_location(s:current_location(), s:prev_location()))
+    while s:location_index >=# 1 && (s:is_same_location(s:current_location(), l:initial_location) || s:is_edited_location(s:current_location()) || s:is_same_location(s:current_location(), s:prev_location()))
       let s:location_index -= 1
     endwhile
   endfor
+
+  if s:is_edited_location(s:current_location())
+    let s:location_index = l:initial_location_index
+  end
 endf
 
 fun! s:on_buffer_write() abort
