@@ -1,5 +1,4 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
-" FIXME: regression? jump should not happen while I'm editing a file
 " TODO: open current location before jumping to prev location? in case of the only location that we moved away
 
 fun! s:main() abort
@@ -249,7 +248,7 @@ fun! s:decrement_location_index() abort
   let l:initial_location = s:current_location()
   let l:initial_location_index = s:location_index
   for i in range(0, 3)
-    while s:location_index >=# 1 &&  s:should_change_location(l:initial_location, s:prev_location())
+    while s:location_index >=# 1 && s:should_change_location(l:initial_location, s:prev_location())
       let s:location_index -= 1
     endwhile
   endfor
