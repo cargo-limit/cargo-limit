@@ -233,7 +233,7 @@ fun! s:open_all_locations_in_reverse_deduplicated_by_paths() abort
 endf
 
 fun! s:should_change_location(initial_location, target_location) abort
-  return s:is_same_location(s:current_location(), a:initial_location) || s:is_same_location(s:current_location(), a:target_location) || s:is_edited_location(s:current_location())
+  return s:is_same_location(s:current_location(), a:initial_location) || s:is_same_location(s:current_location(), a:target_location) || s:is_current_location_edited()
 endfun
 
 " TODO: naming?
@@ -246,7 +246,7 @@ fun! s:update_next_unique_location_index() abort
     endwhile
   endfor
 
-  if s:is_edited_location(s:current_location())
+  if s:is_current_location_edited()
     let s:location_index = l:initial_location_index
   end
 endf
@@ -261,7 +261,7 @@ fun! s:update_prev_unique_location_index() abort
     endwhile
   endfor
 
-  if s:is_edited_location(s:current_location())
+  if s:is_current_location_edited()
     let s:location_index = l:initial_location_index
   end
 endf
@@ -363,9 +363,10 @@ fun! s:parse_diff_stats(text, delimiter) abort
   return [l:offset, l:lines]
 endf
 
-fun! s:is_edited_location(location) abort
-  let l:texts = getbufline(bufnr(a:location.path), a:location.line)
-  return !empty(texts) && trim(a:location.text) !=# trim(l:texts[0])
+fun! s:is_current_location_edited() abort
+  let l:location = s:current_location()
+  let l:texts = getbufline(bufnr(l:location.path), l:location.line)
+  return !empty(texts) && trim(l:location.text) !=# trim(l:texts[0])
 endf
 
 fun! s:is_same_location(first, second) abort
