@@ -92,7 +92,7 @@ endf
 fun! s:maybe_setup_handlers() abort
   augroup CargoLimitAutocommands
     autocmd!
-    autocmd VimLeavePre * call s:recreate_temp_sources_dir() " TODO: or just remove the dir?
+    autocmd VimLeavePre * call s:recreate_temp_sources_dir()
     autocmd BufWritePost *.rs call s:on_buffer_write()
   augroup END
 
@@ -128,8 +128,8 @@ fun! s:maybe_setup_handlers() abort
         endif
 
         if !a:editor_data.corrected_locations
-          call s:open_all_locations_in_reverse_deduplicated_by_paths()
-          call s:update_next_unique_location_index()
+          call s:open_all_locations_in_reverse()
+          call s:increment_location_index()
         end
       endf
     endif
@@ -151,7 +151,7 @@ fun! s:maybe_setup_handlers() abort
     endif
 
     let l:initial_location_index = s:location_index
-    call s:update_next_unique_location_index()
+    call s:increment_location_index()
     if l:initial_location_index !=# s:location_index
       call s:jump_to_location(s:location_index)
     endif
@@ -170,7 +170,7 @@ fun! s:maybe_setup_handlers() abort
     endif
 
     let l:initial_location_index = s:location_index
-    call s:update_prev_unique_location_index()
+    call s:decrement_location_index()
     if l:initial_location_index !=# s:location_index
       call s:jump_to_location(s:location_index)
     endif
@@ -207,8 +207,7 @@ fun! s:copy_affected_files_to_temp() abort
   endfor
 endf
 
-" TODO: rename
-fun! s:open_all_locations_in_reverse_deduplicated_by_paths() abort
+fun! s:open_all_locations_in_reverse() abort
   let l:path_to_location_index = {}
   for l:index in range(len(s:editor_data.locations) - 1, 0, -1)
     let l:path_to_location_index[s:editor_data.locations[l:index].path] = l:index
@@ -236,8 +235,7 @@ fun! s:should_change_location(initial_location, target_location) abort
   return s:is_same_location(s:current_location(), a:initial_location) || s:is_same_location(s:current_location(), a:target_location) || s:is_current_location_edited()
 endfun
 
-" TODO: naming?
-fun! s:update_next_unique_location_index() abort
+fun! s:increment_location_index() abort
   let l:initial_location = s:current_location()
   let l:initial_location_index = s:location_index
   for i in range(0, 3)
@@ -251,8 +249,7 @@ fun! s:update_next_unique_location_index() abort
   end
 endf
 
-" TODO: naming?
-fun! s:update_prev_unique_location_index() abort
+fun! s:decrement_location_index() abort
   let l:initial_location = s:current_location()
   let l:initial_location_index = s:location_index
   for i in range(0, 3)
@@ -281,18 +278,18 @@ endf
 fun! s:update_locations(path) abort
   "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:editor_data.locations))
 
-  let [l:line_to_shift, l:maybe_edited_line_numbers] = s:compute_shifts(a:path)
+  let [l:offset_to_shift, l:maybe_edited_line_numbers] = s:compute_shifts(a:path)
 
   let l:shift_accumulator = 0
-  for l:index in range(0, len(l:line_to_shift) - 1)
-    let l:shifted_lines = l:line_to_shift[l:index][1]
-    let l:start = l:line_to_shift[l:index][0]
-    let l:end = l:index + 1 <# len(l:line_to_shift) ? l:line_to_shift[l:index + 1][0] : v:null
+  for l:index in range(0, len(l:offset_to_shift) - 1)
+    let l:shifted_lines = l:offset_to_shift[l:index][1]
+    let l:start = l:offset_to_shift[l:index][0]
+    let l:end = l:index + 1 <# len(l:offset_to_shift) ? l:offset_to_shift[l:index + 1][0] : v:null
     let l:shift_accumulator += l:shifted_lines
     let l:maybe_edited_line_numbers = s:shift_locations(a:path, l:maybe_edited_line_numbers, l:start, l:end, l:shift_accumulator)
   endfor
 
-  return len(l:line_to_shift) + len(l:maybe_edited_line_numbers)
+  return len(l:offset_to_shift) + len(l:maybe_edited_line_numbers)
 endf
 
 fun! s:compute_shifts(path) abort
@@ -305,16 +302,16 @@ fun! s:compute_shifts(path) abort
     \ . ' '
     \ . a:path
 
-  let l:line_to_shift = [] " TODO: naming
+  let l:offset_to_shift = []
   let l:maybe_edited_line_numbers = {}
   if !filereadable(l:temp_source_path)
-    return [l:line_to_shift, l:maybe_edited_line_numbers]
+    return [l:offset_to_shift, l:maybe_edited_line_numbers]
   endif
 
   let l:diff_stdout_lines = split(system(DIFF_COMMAND), "\n")
-  let l:diff_stdout_line_number = 0 " TODO: rename to index?
-  while l:diff_stdout_line_number <# len(l:diff_stdout_lines) - 1
-    let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
+  let l:diff_stdout_index = 0
+  while l:diff_stdout_index <# len(l:diff_stdout_lines) - 1
+    let l:diff_line = l:diff_stdout_lines[l:diff_stdout_index]
     if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
       let l:raw_diff_stats = split(split(l:diff_line, DIFF_STATS_PATTERN)[0], ' ')
 
@@ -322,24 +319,24 @@ fun! s:compute_shifts(path) abort
       let [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_diff_stats[1], '+')
       if l:additions ==# 0 || l:removals ==# 0
         let l:shifted_lines = l:additions - l:removals
-        call add(l:line_to_shift, [l:removal_offset, l:shifted_lines])
+        call add(l:offset_to_shift, [l:removal_offset, l:shifted_lines])
       else
         for l:index in range(0, l:removals - 1)
           let l:maybe_edited_line_numbers[l:removal_offset + l:index] = v:true
         endfor
       endif
     endif
-    let l:diff_stdout_line_number += 1
+    let l:diff_stdout_index += 1
   endwhile
 
-  return [l:line_to_shift, l:maybe_edited_line_numbers]
+  return [l:offset_to_shift, l:maybe_edited_line_numbers]
 endf
 
 fun! s:shift_locations(path, maybe_edited_line_numbers, start, end, shift_accumulator) abort
   for l:index in range(0, len(s:editor_data.locations) - 1)
-    let l:current_location = s:editor_data.locations[l:index] " TODO: why current? naming
-    if l:current_location.path ==# a:path
-      let l:current_line = l:current_location.line
+    let l:location = s:editor_data.locations[l:index]
+    if l:location.path ==# a:path
+      let l:current_line = l:location.line
       if l:current_line ># a:start && (a:end ==# v:null || l:current_line <# a:end)
         let s:editor_data.locations[l:index].line += a:shift_accumulator
       endif
