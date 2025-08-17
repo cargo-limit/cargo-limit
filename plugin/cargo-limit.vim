@@ -1,5 +1,6 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
 " TODO: open current location before jumping to prev location? in case of the only location that we moved away
+" TODO: remove edited locations?
 
 fun! s:main() abort
   const MIN_NVIM_VERSION = '0.7.0'
@@ -234,29 +235,17 @@ endf
 fun! s:increment_location_index() abort
   let l:initial_location = s:current_location()
   let l:initial_location_index = s:location_index
-  for i in range(0, 3)
-    while s:location_index <# len(s:editor_data.locations) - 1 && s:should_change_location(l:initial_location, s:next_location())
-      let s:location_index += 1
-    endwhile
-  endfor
-
-  if s:is_current_location_edited()
-    let s:location_index = l:initial_location_index
-  endif
+  while s:location_index <# len(s:editor_data.locations) - 1 && s:should_change_location(l:initial_location, s:next_location())
+    let s:location_index += 1
+  endwhile
 endf
 
 fun! s:decrement_location_index() abort
   let l:initial_location = s:current_location()
   let l:initial_location_index = s:location_index
-  for i in range(0, 3)
-    while s:location_index >=# 1 && s:should_change_location(l:initial_location, s:prev_location())
-      let s:location_index -= 1
-    endwhile
-  endfor
-
-  if s:is_current_location_edited()
-    let s:location_index = l:initial_location_index
-  endif
+  while s:location_index >=# 1 && s:should_change_location(l:initial_location, s:prev_location())
+    let s:location_index -= 1
+  endwhile
 endf
 
 fun! s:should_change_location(initial_location, target_location) abort
@@ -347,7 +336,7 @@ fun! s:shift_locations(path, maybe_edited_line_numbers, start, end, shift_accumu
 
   for l:line in keys(a:maybe_edited_line_numbers)
     if l:line ># a:start && (a:end ==# v:null || l:line <# a:end)
-      call remove(a:edited_line_numbers, l:line)
+      call remove(a:maybe_edited_line_numbers, l:line)
       let a:maybe_edited_line_numbers[l:line + a:shift_accumulator] = v:true
     endif
   endfor
@@ -496,7 +485,7 @@ fun! s:log_str(args)
 endf
 
 fun! g:CargoLimitDebug()
-  call s:log_info('editor_data ' . json_encode(s:editor_data) . "\nedited_locations=" . json_encode(s:edited_locations) . "\nlen(locations)=" . len(s:editor_data.locations) . "\nlocation_index=" . s:location_index . "\n&l:modified=" . &l:modified)
+  call s:log_info('editor_data ' . json_encode(s:editor_data) . "\nlen(locations)=" . len(s:editor_data.locations) . "\nlocation_index=" . s:location_index . "\n&l:modified=" . &l:modified)
 endf
 
 fun! g:CargoLimitWorkspaceRoot() abort
