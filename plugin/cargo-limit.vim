@@ -72,7 +72,7 @@ fun! s:start_server(escaped_workspace_root) abort
   endif
 endf
 
-function s:validate_plugin_version(editor_data)
+fun! s:validate_plugin_version(editor_data)
   const PLUGIN_VERSION = '0.0.11'
 
   let l:crate_version = v:null
@@ -138,16 +138,42 @@ fun! s:maybe_setup_handlers() abort
     call g:CargoLimitUpdate(s:editor_data)
   endf
 
-  " TODO: is it useful to define global function like that?
   fun! g:CargoLimitOpenNextLocation() abort
     echomsg ''
-    call s:open_next_location_in_new_or_existing_tab()
+    if empty(s:editor_data.locations)
+      return
+    endif
+
+    let l:current_file = s:current_file()
+    " TODO: &l:modified !=# 0 - is it correct here?
+    if s:location_index >=# len(s:editor_data.locations) || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
+      return
+    endif
+
+    let l:initial_location_index = s:location_index
+    call s:update_next_unique_location_index()
+    if l:initial_location_index !=# s:location_index
+      call s:jump_to_location(s:location_index)
+    endif
   endf
 
-  " TODO: is it useful to define global function like that?
   fun! g:CargoLimitOpenPrevLocation() abort
     echomsg ''
-    call s:open_prev_location_in_new_or_existing_tab()
+    if empty(s:editor_data.locations)
+      return
+    endif
+
+    let l:current_file = s:current_file()
+    " TODO: &l:modified !=# 0 - is it correct here?
+    if s:location_index <=# 0 || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
+      return
+    endif
+
+    let l:initial_location_index = s:location_index
+    call s:update_prev_unique_location_index()
+    if l:initial_location_index !=# s:location_index
+      call s:jump_to_location(s:location_index)
+    endif
   endf
 endf
 
@@ -206,59 +232,20 @@ fun! s:open_all_locations_in_reverse_deduplicated_by_paths() abort
   redraw
 endf
 
-" TODO: don't extract?
-fun! s:open_next_location_in_new_or_existing_tab() abort
-  if empty(s:editor_data.locations)
-    return
-  endif
-
-  let l:current_file = s:current_file()
-  " TODO: &l:modified !=# 0 - is it correct here?
-  if s:location_index >=# len(s:editor_data.locations) || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
-    return
-  endif
-
-  let l:initial_location_index = s:location_index
-
-  call s:update_next_unique_location_index()
-
-  if l:initial_location_index !=# s:location_index
-    call s:jump_to_location(s:location_index)
-  endif
-endf
-
-" TODO: don't extract?
-fun! s:open_prev_location_in_new_or_existing_tab() abort
-  if empty(s:editor_data.locations)
-    return
-  endif
-
-  let l:current_file = s:current_file()
-  " TODO: &l:modified !=# 0 - is it correct here?
-  if s:location_index <=# 0 || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
-    return
-  endif
-
-  let l:initial_location_index = s:location_index
-
-  call s:update_prev_unique_location_index()
-
-  if l:initial_location_index !=# s:location_index
-    call s:jump_to_location(s:location_index)
-  endif
-endf
+fun! s:should_change_location(initial_location, target_location) abort
+  return s:is_same_location(s:current_location(), a:initial_location) || s:is_same_location(s:current_location(), a:target_location) || s:is_edited_location(s:current_location())
+endfun
 
 " TODO: naming?
 fun! s:update_next_unique_location_index() abort
   let l:initial_location = s:current_location()
   let l:initial_location_index = s:location_index
   for i in range(0, 3)
-    while s:location_index <# len(s:editor_data.locations) - 1 && (s:is_same_location(l:initial_location, s:current_location()) || s:is_edited_location(s:current_location()) || s:is_same_location(s:current_location(), s:next_location()))
+    while s:location_index <# len(s:editor_data.locations) - 1 && s:should_change_location(l:initial_location, s:next_location())
       let s:location_index += 1
     endwhile
   endfor
 
-  " TODO: wat
   if s:is_edited_location(s:current_location())
     let s:location_index = l:initial_location_index
   end
@@ -269,7 +256,7 @@ fun! s:update_prev_unique_location_index() abort
   let l:initial_location = s:current_location()
   let l:initial_location_index = s:location_index
   for i in range(0, 3)
-    while s:location_index >=# 1 && (s:is_same_location(s:current_location(), l:initial_location) || s:is_edited_location(s:current_location()) || s:is_same_location(s:current_location(), s:prev_location()))
+    while s:location_index >=# 1 &&  s:should_change_location(l:initial_location, s:prev_location())
       let s:location_index -= 1
     endwhile
   endfor
@@ -498,7 +485,7 @@ endf
 
 fun! g:CargoLimitDebug()
   call s:log_info('editor_data ' . json_encode(s:editor_data) . "\nedited_locations=" . json_encode(s:edited_locations) . "\nlen(locations)=" . len(s:editor_data.locations) . "\nlocation_index=" . s:location_index . "\n&l:modified=" . &l:modified)
-endfunction
+endf
 
 fun! g:CargoLimitWorkspaceRoot() abort
   return fnameescape(s:workspace_root)
