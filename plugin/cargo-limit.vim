@@ -34,7 +34,7 @@ fun! s:on_cargo_metadata(_job_id, data, event) abort
   elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
     let l:stderr = trim(join(a:data, "\n"))
     if len(l:stderr) > 1 && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
-      call s:log_error('cargo metadata failed', l:stderr, !empty(l:stderr), !s:contains_str(l:stderr, 'could not find `Cargo.toml`'), len(l:stderr), l:stderr !~# 'could not find `Cargo.toml`', 'stderr="' . l:stderr . '"') " TODO
+      call s:log_error('cargo metadata failed', l:stderr, !empty(l:stderr), !s:contains_str(l:stderr, 'could not find `Cargo.toml`'), len(l:stderr), l:stderr !~# 'could not find `Cargo.toml`', 'stderr="' . l:stderr . '"') " TODO: debug
     endif
   elseif a:event ==# 'exit'
     let l:stdout = trim(join(s:data_chunks, ''))
@@ -127,6 +127,7 @@ fun! s:maybe_setup_handlers() abort
         endif
 
         if !a:editor_data.corrected_locations
+          call s:deduplicate_locations_by_paths_and_lines()
           call s:open_all_locations_in_reverse()
           call s:increment_location_index()
         endif
@@ -263,8 +264,6 @@ fun! s:should_change_location(initial_location, target_location) abort
 endfun
 
 fun! s:update_locations(path) abort
-  "call s:log_info('update_locations ' . a:path . ' BEG locations = ' . json_encode(s:editor_data.locations))
-
   let [l:offset_to_shift, l:maybe_edited_line_numbers] = s:compute_shifts(a:path)
 
   let l:shift_accumulator = 0
@@ -278,6 +277,22 @@ fun! s:update_locations(path) abort
 
   return len(l:offset_to_shift) + len(l:maybe_edited_line_numbers)
 endf
+
+fun! s:deduplicate_locations_by_paths_and_lines()
+  let l:new_locations = []
+  let l:added_lines = {}
+
+  for i in s:editor_data.locations
+    let l:added_line_key = string([i.path, i.line])
+    let l:is_added_line = get(l:added_lines, l:added_line_key)
+    if !l:is_added_line
+      call add(l:new_locations, i)
+      let l:added_lines[l:added_line_key] = 1
+    endif
+  endfor
+
+  let s:editor_data.locations = l:new_locations
+endfun
 
 fun! s:compute_shifts(path) abort
   let l:temp_source_path = s:temp_source_path(a:path)
