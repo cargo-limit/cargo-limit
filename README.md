@@ -159,23 +159,32 @@ nvim --cmd '!call dein#install()'
 
 ### Optionally: F2 to save, F2 again to jump to next affected line
 ```viml
-" TODO: naming
 fun! SaveAllFilesOrOpenNextLocation() abort
   " TODO: os-dependant? let l:workspace_root = g:CargoLimitWorkspaceRoot() . '/'
   let l:workspace_root = g:CargoLimitWorkspaceRoot()
   let l:all_rust_files_are_saved = v:true
+  let l:all_files_are_saved = v:true
 
-  for i in getbufinfo({'bufmodified': 1})
-    if i.name =~# l:workspace_root && !(i.name =~# '/BqfPreviewScrollBar$')
-      let l:all_rust_files_are_saved = v:false
-      break
+  for l:i in getbufinfo({'bufmodified': 1})
+    if !s:starts_with(l:i.name, 'BqfPreviewScrollBar')
+      let l:all_files_are_saved = v:false
+      if s:starts_with(l:i.name, l:workspace_root)
+        let l:all_rust_files_are_saved = v:false
+        break
+      endif
     endif
   endfor
 
   if l:all_rust_files_are_saved && exists('*CargoLimitOpenNextLocation')
     call g:CargoLimitOpenNextLocation()
   endif
-  execute 'wa!'
+  if !l:all_files_are_saved
+    execute 'wa!'
+  endif
+endf
+
+fun! s:starts_with(text, pattern) abort
+  return stridx(a:text, a:pattern) ==# 0
 endf
 
 nmap <F1> :call g:CargoLimitOpenPrevLocation()<Enter>
