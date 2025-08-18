@@ -95,11 +95,10 @@ impl Options {
     }
 
     pub fn from_os_env(current_exe: String, workspace_root: &Path) -> Result<Self> {
-        Self::from_vars_and_atty()?.process_args(current_exe, env::args(), workspace_root)
+        Self::from_environment()?.process_args(current_exe, env::args(), workspace_root)
     }
 
-    // TODO: rename
-    fn from_vars_and_atty() -> Result<Self> {
+    fn from_environment() -> Result<Self> {
         let mut result = Self {
             terminal_supports_colors: io::stderr().is_terminal(),
             ..Self::default()
