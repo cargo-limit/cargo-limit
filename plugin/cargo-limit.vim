@@ -1,5 +1,6 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
 " TODO: open current location before jumping to prev location? in case of the only location that we moved away
+" TODO: get source code lines from the plugin?
 
 fun! s:main() abort
   const MIN_NVIM_VERSION = '0.7.0'
@@ -360,8 +361,8 @@ endf
 
 fun! s:is_current_location_edited() abort
   let l:location = s:current_location()
-  let l:texts = getbufline(bufnr(l:location.path), l:location.line)
-  return !empty(texts) && trim(l:location.text) !=# trim(l:texts[0])
+  let l:text = getbufline(bufnr(l:location.path), l:location.line)[0]
+  return trim(l:location.text) !=# trim(l:text)
 endf
 
 fun! s:is_same_as_current_location(target) abort
