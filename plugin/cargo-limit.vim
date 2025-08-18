@@ -99,7 +99,7 @@ fun! s:maybe_setup_handlers() abort
   endif
 
   fun! g:CargoLimitOpen(editor_data) abort
-    call s:validate_plugin_version(a:editor_data)
+    "call s:validate_plugin_version(a:editor_data) " TODO: enable on breaking change
 
     let s:editor_data = a:editor_data
     let s:locations_texts = {}
