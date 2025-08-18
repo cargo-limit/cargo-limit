@@ -1,6 +1,5 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
 " TODO: open current location before jumping to prev location? in case of the only location that we moved away
-" TODO: get source code lines from the plugin?
 
 fun! s:main() abort
   const MIN_NVIM_VERSION = '0.7.0'
@@ -15,6 +14,7 @@ fun! s:main() abort
     endif
     let s:data_chunks = []
     let s:editor_data = {'locations': []}
+    let s:locations_texts = {}
     let s:workspace_root = v:null
     let s:location_index = v:null
     let s:temp_sources_dir = v:null
@@ -105,6 +105,7 @@ fun! s:maybe_setup_handlers() abort
     call s:validate_plugin_version(a:editor_data)
 
     let s:editor_data = a:editor_data
+    let s:locations_texts = {}
     let s:location_index = -1
 
     if s:deprecated_cargo_limit_open !=# v:null
@@ -130,6 +131,7 @@ fun! s:maybe_setup_handlers() abort
         if !a:editor_data.corrected_locations
           call s:deduplicate_locations_by_paths_and_lines()
           call s:open_all_locations_in_reverse()
+          call s:read_all_locations_texts()
           call s:increment_location_index()
         endif
       endf
@@ -232,6 +234,13 @@ fun! s:open_all_locations_in_reverse() abort
   endfor
 
   redraw
+endf
+
+fun! s:read_all_locations_texts() abort
+  for l:index in range(0, len(s:editor_data.locations) - 1)
+    let l:location = s:editor_data.locations[l:index]
+    let s:locations_texts[l:index] = s:read_text(l:location)
+  endfor
 endf
 
 fun! s:increment_location_index() abort
@@ -365,8 +374,7 @@ fun! s:is_same_as_current_location(target) abort
 endf
 
 fun! s:is_current_location_edited() abort
-  let l:location = s:current_location()
-  return trim(l:location.text) !=# s:read_text(l:location) " TODO: remove trim
+  return s:locations_texts[s:location_index] != s:read_text(s:current_location())
 endf
 
 fun! s:read_text(location)
