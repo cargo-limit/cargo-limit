@@ -108,7 +108,7 @@ jobs:
           #   target: riscv64gc-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Rust toolchain
         run: |
           rustup update --no-self-update
