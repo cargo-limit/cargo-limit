@@ -61,8 +61,7 @@ jobs:
             target: i686-pc-windows-msvc
           - os: windows-latest
             target: i686-pc-windows-gnu
-            zigbuild: true
-            no_build_tests: true # NOTE: lld-link: error: undefined symbol: ___register_frame_info
+            #zigbuild: true # NOTE: lld-link: error: undefined symbol: ___register_frame_info
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             no_build_tests: true # NOTE: could not execute process
