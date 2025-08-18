@@ -359,15 +359,18 @@ fun! s:parse_diff_stats(text, delimiter) abort
   return [l:offset, l:lines]
 endf
 
-fun! s:is_current_location_edited() abort
-  let l:location = s:current_location()
-  let l:text = getbufline(bufnr(l:location.path), l:location.line)[0]
-  return trim(l:location.text) !=# trim(l:text)
-endf
-
 fun! s:is_same_as_current_location(target) abort
   let l:location = s:current_location()
   return l:location.path ==# a:target.path && l:location.line ==# a:target.line
+endf
+
+fun! s:is_current_location_edited() abort
+  let l:location = s:current_location()
+  return trim(l:location.text) !=# s:read_text(l:location) " TODO: remove trim
+endf
+
+fun! s:read_text(location)
+  return trim(getbufline(bufnr(a:location.path), a:location.line)[0])
 endf
 
 fun! s:maybe_delete_dead_unix_socket(server_address) abort
