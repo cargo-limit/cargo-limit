@@ -7,7 +7,6 @@ pub struct EditorData {
     protocol_version: String,
     workspace_root: PathBuf,
     locations: Vec<Location>,
-    corrected_locations: bool,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -27,7 +26,6 @@ impl EditorData {
             protocol_version,
             workspace_root,
             locations: locations_in_consistent_order,
-            corrected_locations: false,
         }
     }
 
