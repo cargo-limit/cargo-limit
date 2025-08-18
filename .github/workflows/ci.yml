@@ -8,8 +8,8 @@ env:
   CARGO_NET_RETRY: 10
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: "-D warnings -W bare-trait-objects"
-  NIGHTLY_VERSION: "nightly-2023-02-09"
-  ZIG_VERSION: "0.11.0"
+  NIGHTLY_VERSION: "nightly-2025-08-18"
+  ZIG_VERSION: "0.14.1"
 
 jobs:
   all:
@@ -24,6 +24,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             audit: true
             rustfmt: true
+            #vint: true # TODO
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
           - os: ubuntu-latest
@@ -43,25 +44,29 @@ jobs:
             target: aarch64-unknown-linux-musl # NOTE: Relocations in generic ELF (EM: 183)
             zigbuild: true
           # - os: ubuntu-latest
-          #   target: riscv64gc-unknown-linux-musl # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: riscv64gc-unknown-linux-musl # NOTE: error: target 'riscv64gc-unknown-linux-musl' not found in channel.
 
           # macOS
           - os: macos-latest
             target: x86_64-apple-darwin
           - os: macos-latest
             target: aarch64-apple-darwin
-            no_run_tests: true # NOTE: Bad CPU type in executable (os error 86)
 
           # Windows
           - os: windows-latest
             target: x86_64-pc-windows-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+            zigbuild: true
           - os: windows-latest
             target: x86_64-pc-windows-msvc
           - os: windows-latest
             target: i686-pc-windows-msvc
           - os: windows-latest
             target: i686-pc-windows-gnu
-            zigbuild: true
+            no_build_tests: true # NOTE: error: linker `i686-w64-mingw32-gcc` not found
+            no_release_build: true # NOTE: error: linker `i686-w64-mingw32-gcc` not found
+            #zigbuild: true # NOTE: lld-link: error: undefined symbol: ___register_frame_info
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             no_build_tests: true # NOTE: could not execute process
@@ -78,9 +83,9 @@ jobs:
           # - os: ubuntu-latest
           #   target: i686-unknown-freebsd # NOTE: target 'i686-unknown-freebsd' not found in channel
           # - os: ubuntu-latest
-          #   target: aarch64-unknown-freebsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: aarch64-unknown-freebsd # NOTE: toolchain ... does not support target 'aarch64-unknown-freebsd'
           # - os: ubuntu-latest
-          #   target: riscv64gc-unknown-freebsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: riscv64gc-unknown-freebsd # NOTE: toolchain ... does not support target 'riscv64gc-unknown-freebsd'
 
           # NetBSD
           - os: ubuntu-latest
@@ -89,32 +94,32 @@ jobs:
             no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
             #zigbuild: true # NOTE: tests linking fails "Error: unsupported target 'x86_64-unknown-netbsd'"
           # - os: ubuntu-latest
-          #   target: i686-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: i686-unknown-netbsd # NOTE: toolchain ... does not support target 'i686-unknown-netbsd'
           # - os: ubuntu-latest
-          #   target: aarch64-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: aarch64-unknown-netbsd # NOTE: toolchain ... does not support target 'aarch64-unknown-netbsd'
           # - os: ubuntu-latest
-          #   target: aarch64_be-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: aarch64_be-unknown-netbsd # NOTE: toolchain ... does not support target 'aarch64_be-unknown-netbsd'
           # - os: ubuntu-latest
-          #   target: riscv64gc-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: riscv64gc-unknown-netbsd # NOTE: toolchain ... does not support target 'riscv64gc-unknown-netbsd'
 
           # OpenBSD
           # - os: ubuntu-latest
-          #   target: x86_64-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: x86_64-unknown-openbsd # NOTE: toolchain ... does not support target 'x86_64-unknown-openbsd'
           # - os: ubuntu-latest
-          #   target: i686-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: i686-unknown-openbsd # NOTE: toolchain ... does not support target 'i686-unknown-openbsd'
           # - os: ubuntu-latest
-          #   target: aarch64-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: aarch64-unknown-openbsd # NOTE: toolchain ... does not support target 'aarch64-unknown-openbsd'
           # - os: ubuntu-latest
-          #   target: riscv64gc-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: riscv64gc-unknown-openbsd # NOTE: toolchain ... does not support target 'riscv64gc-unknown-openbsd'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Rust toolchain
         run: |
           rustup update --no-self-update
           rustup target add ${{ matrix.target }}
           rustup install --force-non-host $(cat rust-toolchain)-${{ matrix.target }}
-          rustup default $(cat rust-toolchain)-${{ matrix.target }}
+          rustup default --force-non-host $(cat rust-toolchain)-${{ matrix.target }}
           rustup component add clippy rust-src
       - name: Install Nightly and Rustfmt
         if: ${{ matrix.rustfmt }}
@@ -123,7 +128,7 @@ jobs:
           rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
       - name: Install Zig
         if: ${{ matrix.zigbuild }}
-        uses: korandoru/setup-zig@v1
+        uses: mlugg/setup-zig@v2
         with:
           zig-version: ${{ env.ZIG_VERSION }}
       - run: zig version
@@ -131,12 +136,27 @@ jobs:
       - name: Install Zigbuild
         if: ${{ matrix.zigbuild }}
         run: cargo install --locked cargo-zigbuild
+      - name: Install Vint
+        if: ${{ matrix.vint }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - if: ${{ matrix.vint }}
+        run: |
+          pip install --user git+https://github.com/Vimjas/vint.git@94d2cb3fd9526a89911b7c1e083a1fd78bace729
+          patch -p1 ~/.local/lib/python3*/site-packages/vint/ast/plugin/scope_plugin/identifier_classifier.py vint-const.patch
+      - name: Run Vint
+        if: ${{ matrix.vint }}
+        run: vint plugin/cargo-limit.vim
+      - name: Install cargo-audit
+        if: ${{ matrix.audit }}
+        run: cargo install cargo-audit --locked
       - name: Check vulnerabilities with existing patches
         if: ${{ matrix.audit }}
         run: |
           ISSUES_WITHOUT_PATCHES=($(cargo audit --json | jq --raw-output '.vulnerabilities.list[] | select(.versions.patched | length == 0) | .advisory.id' | sed 's!^! --ignore !' | tr -d '\n'))
           cargo audit ${ISSUES_WITHOUT_PATCHES[@]}
-      - name: Rustfmt
+      - name: Run Rustfmt
         if: ${{ matrix.rustfmt }}
         run: cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
       - name: Check

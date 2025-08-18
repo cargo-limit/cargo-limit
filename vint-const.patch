@@ -1,0 +1,45 @@
+# https://github.com/Vimjas/vint/issues/367
+
+--- a/vint/ast/plugin/scope_plugin/identifier_classifier.py
++++ b/vint/ast/plugin/scope_plugin/identifier_classifier.py
+@@ -26,6 +26,7 @@ DECLARING_IDENTIFIERS = 'VINT:declaring_identifiers'
+ 
+ DeclarativeNodeTypes = {
+     NodeType.LET: True,
++    NodeType.CONST: True,
+     NodeType.FUNCTION: True,
+     NodeType.FOR: True,
+     NodeType.EXCMD: True,
+@@ -463,6 +464,18 @@ class IdentifierClassifier(object):
+         )
+ 
+ 
++    def _enter_const_node(self, const_node, is_on_lambda_body, is_on_lambda_str):
++        # Only "=" operator can be used as declaration.
++        if const_node['op'] != '=':
++            return
++
++        self._enter_assignment_node(
++            const_node,
++            is_on_lambda_str=is_on_lambda_str,
++            is_on_lambda_body=is_on_lambda_body,
++        )
++
++
+     def _enter_for_node(self, for_node, is_on_lambda_body, is_on_lambda_str):
+         self._enter_assignment_node(
+             for_node,
+@@ -526,6 +539,13 @@ class IdentifierClassifier(object):
+                 is_on_lambda_body=is_on_lambda_body,
+             )
+ 
++        elif node_type is NodeType.CONST:
++            self._enter_const_node(
++                node,
++                is_on_lambda_str=is_on_lambda_str,
++                is_on_lambda_body=is_on_lambda_body,
++            )
++
+         elif node_type is NodeType.FOR:
+             self._enter_for_node(
+                 node,

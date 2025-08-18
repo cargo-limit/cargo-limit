@@ -389,7 +389,9 @@ For **general donations** dedicated to all my projects please check out ⚡ [her
 
 Thank you for your support! 🙏🏼
 
----
+## Thanks
+
+**❤️ Special thanks to [Danil Suetin](https://www.patreon.com/profile/creators?u=28969670) for sponsoring this project! ❤️**
 
 Also thanks everyone for code contributions and bug reporting. Special thanks to [Casey Rodarmor](https://github.com/casey) for providing VimL code for quickfix populator and [Otavio Salvador](https://github.com/otavio) for [NixOS package](https://search.nixos.org/packages?show=cargo-limit)!
 
