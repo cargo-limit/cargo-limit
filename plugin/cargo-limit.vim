@@ -235,22 +235,30 @@ endf
 fun! s:increment_location_index() abort
   let l:initial_location = s:current_location()
   let l:initial_location_index = s:location_index
-  while s:location_index <# len(s:editor_data.locations) - 1 && s:should_change_location(l:initial_location, s:next_location())
+  while s:location_index <# len(s:editor_data.locations) - 1
     let s:location_index += 1
+    if !s:is_location_edited(s:current_location())
+      break
+    endif
   endwhile
+  if s:is_location_edited(s:current_location())
+    let s:location_index = l:initial_location_index
+  endif
 endf
 
 fun! s:decrement_location_index() abort
   let l:initial_location = s:current_location()
   let l:initial_location_index = s:location_index
-  while s:location_index >=# 1 && s:should_change_location(l:initial_location, s:prev_location())
+  while s:location_index >=# 1
     let s:location_index -= 1
+    if !s:is_location_edited(s:current_location())
+      break
+    endif
   endwhile
+  if s:is_location_edited(s:current_location())
+    let s:location_index = l:initial_location_index
+  endif
 endf
-
-fun! s:should_change_location(initial_location, target_location) abort
-  return s:is_same_location(s:current_location(), a:initial_location) || s:is_same_location(s:current_location(), a:target_location) || s:is_current_location_edited()
-endfun
 
 fun! s:update_locations(path) abort
   let [l:offset_to_shift, l:maybe_edited_line_numbers] = s:compute_shifts(a:path)
@@ -351,12 +359,12 @@ fun! s:parse_diff_stats(text, delimiter) abort
   return [l:offset, l:lines]
 endf
 
-fun! s:is_current_location_edited() abort
-  let l:location = s:current_location()
-  let l:texts = getbufline(bufnr(l:location.path), l:location.line)
-  return !empty(texts) && trim(l:location.text) !=# trim(l:texts[0])
+fun! s:is_location_edited(location) abort
+  let l:texts = getbufline(bufnr(a:location.path), a:location.line)
+  return !empty(texts) && trim(a:location.text) !=# trim(l:texts[0])
 endf
 
+" TODO: remove?
 fun! s:is_same_location(first, second) abort
   return a:first.path ==# a:second.path && a:first.line ==# a:second.line
 endf
