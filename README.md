@@ -310,7 +310,6 @@ endf
       "path": "/full/path/to/project/file.rs",
       "line": 4,
       "column": 1,
-      "text": "use diagnostic::DiagnosticSpan;",
       "message": "unused import: `diagnostic::DiagnosticSpan`",
       "level": "warning"
     }
