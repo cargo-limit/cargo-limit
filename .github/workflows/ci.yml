@@ -24,7 +24,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             audit: true
             rustfmt: true
-            #vint: true # TODO
+            vint: true
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
           - os: ubuntu-latest
