@@ -115,7 +115,7 @@ jobs:
           rustup update --no-self-update
           rustup target add ${{ matrix.target }}
           rustup install --force-non-host $(cat rust-toolchain)-${{ matrix.target }}
-          rustup default $(cat rust-toolchain)-${{ matrix.target }}
+          rustup default --force-non-host $(cat rust-toolchain)-${{ matrix.target }}
           rustup component add clippy rust-src
       - name: Install Nightly and Rustfmt
         if: ${{ matrix.rustfmt }}
