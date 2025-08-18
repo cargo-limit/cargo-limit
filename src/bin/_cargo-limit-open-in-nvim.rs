@@ -1,9 +1,9 @@
 use anyhow::{Error, Result};
-use cargo_limit::{NO_EXIT_CODE, models::EditorData};
+use cargo_limit::{models::EditorData, NO_EXIT_CODE};
 use std::{
     env, io,
     io::{Read, Write},
-    process::{Command, ExitStatus, Output, exit},
+    process::{exit, Command, ExitStatus, Output},
 };
 
 struct NeovimCommand {
@@ -12,18 +12,17 @@ struct NeovimCommand {
 }
 
 impl NeovimCommand {
-    // TODO: builder?
-    fn new(command: &str, raw_editor_data: &str) -> Result<Option<Self>> {
+    fn new(command: &str, raw_editor_data: &str) -> Result<Self> {
         let escaped_editor_data = raw_editor_data.replace('"', r#"\""#);
         let command = format!(r#"{command}(json_decode("{escaped_editor_data}"))"#);
 
         let editor_data: EditorData = serde_json::from_str(raw_editor_data)?;
         let escaped_workspace_root = editor_data.escaped_workspace_root();
 
-        Ok(Some(Self {
+        Ok(Self {
             escaped_workspace_root,
             command,
-        }))
+        })
     }
 
     fn run(self) -> Result<ExitStatus> {
@@ -94,8 +93,6 @@ fn main() -> Result<()> {
     let mut raw_editor_data = String::new();
     io::stdin().read_to_string(&mut raw_editor_data)?;
 
-    if let Some(neovim_command) = NeovimCommand::new("g:CargoLimitOpen", &raw_editor_data)? {
-        exit(neovim_command.run()?.code().unwrap_or(NO_EXIT_CODE))
-    }
-    Ok(())
+    let command = NeovimCommand::new("g:CargoLimitOpen", &raw_editor_data)?;
+    exit(command.run()?.code().unwrap_or(NO_EXIT_CODE));
 }
