@@ -145,14 +145,15 @@ fun! s:maybe_setup_handlers() abort
     endif
 
     let l:current_file = s:current_file()
-    " TODO: &l:modified !=# 0 - is it correct here?
-    if s:location_index >=# len(s:editor_data.locations) || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
+    if &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
       return
     endif
 
     let l:initial_location_index = s:location_index
     call s:increment_location_index()
-    if l:initial_location_index !=# s:location_index
+    if s:is_current_location_edited()
+      let s:location_index = l:initial_location_index
+    else
       call s:jump_to_location(s:location_index)
     endif
   endf
@@ -164,14 +165,15 @@ fun! s:maybe_setup_handlers() abort
     endif
 
     let l:current_file = s:current_file()
-    " TODO: &l:modified !=# 0 - is it correct here?
-    if s:location_index <=# 0 || &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
+    if &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
       return
     endif
 
     let l:initial_location_index = s:location_index
     call s:decrement_location_index()
-    if l:initial_location_index !=# s:location_index
+    if s:is_current_location_edited()
+      let s:location_index = l:initial_location_index
+    else
       call s:jump_to_location(s:location_index)
     endif
   endf
@@ -233,7 +235,6 @@ endf
 
 fun! s:increment_location_index() abort
   let l:initial_location = s:current_location()
-  let l:initial_location_index = s:location_index
   while s:location_index <# len(s:editor_data.locations) - 1
     let s:location_index += 1
     if s:is_same_as_current_location(l:initial_location)
@@ -243,14 +244,10 @@ fun! s:increment_location_index() abort
       break
     endif
   endwhile
-  if s:is_current_location_edited()
-    let s:location_index = l:initial_location_index
-  endif
 endf
 
 fun! s:decrement_location_index() abort
   let l:initial_location = s:current_location()
-  let l:initial_location_index = s:location_index
   while s:location_index >=# 1
     let s:location_index -= 1
     if s:is_same_as_current_location(l:initial_location)
@@ -260,9 +257,6 @@ fun! s:decrement_location_index() abort
       break
     endif
   endwhile
-  if s:is_current_location_edited()
-    let s:location_index = l:initial_location_index
-  endif
 endf
 
 fun! s:update_locations(path) abort
