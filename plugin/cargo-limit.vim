@@ -464,8 +464,8 @@ fun! s:escape_path(path) abort
   return substitute(a:path, '[/\\:]', '%', 'g')
 endf
 
-fun! s:starts_with(longer, shorter) abort
-  return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
+fun! s:starts_with(text, pattern) abort
+  return stridx(a:text, a:pattern) ==# 0
 endf
 
 fun! s:contains_str(text, pattern) abort
