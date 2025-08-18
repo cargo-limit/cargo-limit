@@ -7,7 +7,11 @@ pub struct EditorData {
     protocol_version: String,
     workspace_root: PathBuf,
     locations: Vec<Location>,
-    corrected_locations: bool,
+    corrected_locations: u8, // It's actually a boolean,
+                             // but VimScript {expr} is only partially compatible with JSON,
+                             // (there's no false but v:false there).
+                             // Also using json_decode would require confusing string escaping
+                             // in the nvim --headless shell command.
 }
 
 #[derive(Deserialize, Serialize)]
@@ -27,7 +31,7 @@ impl EditorData {
             protocol_version,
             workspace_root,
             locations: locations_in_consistent_order,
-            corrected_locations: false,
+            corrected_locations: 0,
         }
     }
 

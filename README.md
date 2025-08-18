@@ -329,7 +329,7 @@ endf
       "level": "warning"
     }
   ],
-  "corrected_locations": false
+  "corrected_locations": 0
 }
 ```
 
