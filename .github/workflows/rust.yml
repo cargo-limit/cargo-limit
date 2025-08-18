@@ -111,7 +111,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Rust toolchain
         run: |
-          set -x
           rustup update --no-self-update
           rustup target add ${{ matrix.target }}
           rustup install --force-non-host $(cat rust-toolchain)-${{ matrix.target }}
