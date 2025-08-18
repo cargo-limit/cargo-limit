@@ -1,6 +1,5 @@
 " TODO: enable linter: https://github.com/Vimjas/vint + https://github.com/Vimjas/vint/issues/367
 " TODO: open current location before jumping to prev location? in case of the only location that we moved away
-" TODO: remove edited locations?
 
 fun! s:main() abort
   const MIN_NVIM_VERSION = '0.7.0'
@@ -237,14 +236,14 @@ fun! s:increment_location_index() abort
   let l:initial_location_index = s:location_index
   while s:location_index <# len(s:editor_data.locations) - 1
     let s:location_index += 1
-    if s:is_same_location(s:current_location(), l:initial_location)
+    if s:is_same_as_current_location(l:initial_location)
       continue
     endif
-    if !s:is_location_edited(s:current_location())
+    if !s:is_current_location_edited()
       break
     endif
   endwhile
-  if s:is_location_edited(s:current_location())
+  if s:is_current_location_edited()
     let s:location_index = l:initial_location_index
   endif
 endf
@@ -254,14 +253,14 @@ fun! s:decrement_location_index() abort
   let l:initial_location_index = s:location_index
   while s:location_index >=# 1
     let s:location_index -= 1
-    if s:is_same_location(s:current_location(), l:initial_location)
+    if s:is_same_as_current_location(l:initial_location)
       continue
     endif
-    if !s:is_location_edited(s:current_location())
+    if !s:is_current_location_edited()
       break
     endif
   endwhile
-  if s:is_location_edited(s:current_location())
+  if s:is_current_location_edited()
     let s:location_index = l:initial_location_index
   endif
 endf
@@ -365,15 +364,15 @@ fun! s:parse_diff_stats(text, delimiter) abort
   return [l:offset, l:lines]
 endf
 
-" TODO: remove arg?
-fun! s:is_location_edited(location) abort
-  let l:texts = getbufline(bufnr(a:location.path), a:location.line)
-  return !empty(texts) && trim(a:location.text) !=# trim(l:texts[0])
+fun! s:is_current_location_edited() abort
+  let l:location = s:current_location()
+  let l:texts = getbufline(bufnr(l:location.path), l:location.line)
+  return !empty(texts) && trim(l:location.text) !=# trim(l:texts[0])
 endf
 
-" TODO: remove arg?
-fun! s:is_same_location(first, second) abort
-  return a:first.path ==# a:second.path && a:first.line ==# a:second.line
+fun! s:is_same_as_current_location(target) abort
+  let l:location = s:current_location()
+  return l:location.path ==# a:target.path && l:location.line ==# a:target.line
 endf
 
 fun! s:maybe_delete_dead_unix_socket(server_address) abort
