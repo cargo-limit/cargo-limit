@@ -65,6 +65,7 @@ jobs:
           - os: windows-latest
             target: i686-pc-windows-gnu
             no_build_tests: true # NOTE: error: linker `i686-w64-mingw32-gcc` not found
+            no_release_build: true # NOTE: error: linker `i686-w64-mingw32-gcc` not found
             #zigbuild: true # NOTE: lld-link: error: undefined symbol: ___register_frame_info
           - os: windows-latest
             target: aarch64-pc-windows-msvc
