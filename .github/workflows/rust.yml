@@ -8,8 +8,8 @@ env:
   CARGO_NET_RETRY: 10
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: "-D warnings -W bare-trait-objects"
-  NIGHTLY_VERSION: "nightly-2023-02-09" # TODO: update?
-  ZIG_VERSION: "0.11.0" # TODO: update?
+  NIGHTLY_VERSION: "nightly-2025-08-18"
+  ZIG_VERSION: "0.14.1"
 
 jobs:
   all:
