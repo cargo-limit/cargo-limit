@@ -236,13 +236,6 @@ fun! s:open_all_locations_in_reverse() abort
   redraw
 endf
 
-fun! s:read_all_locations_texts() abort
-  for l:index in range(0, len(s:editor_data.locations) - 1)
-    let l:location = s:editor_data.locations[l:index]
-    let s:locations_texts[l:index] = s:read_text(l:location)
-  endfor
-endf
-
 fun! s:increment_location_index() abort
   let l:initial_location = s:current_location()
   while s:location_index <# len(s:editor_data.locations) - 1
@@ -283,22 +276,6 @@ fun! s:update_locations(path) abort
 
   return len(l:offset_to_shift) + len(l:maybe_edited_line_numbers)
 endf
-
-fun! s:deduplicate_locations_by_paths_and_lines()
-  let l:new_locations = []
-  let l:added_lines = {}
-
-  for i in s:editor_data.locations
-    let l:added_line_key = string([i.path, i.line])
-    let l:is_added_line = get(l:added_lines, l:added_line_key)
-    if !l:is_added_line
-      call add(l:new_locations, i)
-      let l:added_lines[l:added_line_key] = 1
-    endif
-  endfor
-
-  let s:editor_data.locations = l:new_locations
-endfun
 
 fun! s:compute_shifts(path) abort
   let l:temp_source_path = s:temp_source_path(a:path)
@@ -366,6 +343,29 @@ fun! s:parse_diff_stats(text, delimiter) abort
   let l:offset = str2nr(l:offset_and_lines[0])
   let l:lines = len(l:offset_and_lines) ># 1 ? str2nr(l:offset_and_lines[1]) : 1
   return [l:offset, l:lines]
+endf
+
+fun! s:deduplicate_locations_by_paths_and_lines()
+  let l:new_locations = []
+  let l:added_lines = {}
+
+  for i in s:editor_data.locations
+    let l:added_line_key = string([i.path, i.line])
+    let l:is_added_line = get(l:added_lines, l:added_line_key)
+    if !l:is_added_line
+      call add(l:new_locations, i)
+      let l:added_lines[l:added_line_key] = 1
+    endif
+  endfor
+
+  let s:editor_data.locations = l:new_locations
+endfun
+
+fun! s:read_all_locations_texts() abort
+  for l:index in range(0, len(s:editor_data.locations) - 1)
+    let l:location = s:editor_data.locations[l:index]
+    let s:locations_texts[l:index] = s:read_text(l:location)
+  endfor
 endf
 
 fun! s:is_same_as_current_location(target) abort
