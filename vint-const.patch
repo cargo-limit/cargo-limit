@@ -1,3 +1,5 @@
+# https://github.com/Vimjas/vint/issues/367
+
 --- a/vint/ast/plugin/scope_plugin/identifier_classifier.py
 +++ b/vint/ast/plugin/scope_plugin/identifier_classifier.py
 @@ -26,6 +26,7 @@ DECLARING_IDENTIFIERS = 'VINT:declaring_identifiers'
