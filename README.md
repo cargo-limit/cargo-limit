@@ -1,7 +1,13 @@
-# cargo-limit
-[![Crates.io](https://img.shields.io/crates/v/cargo-limit)](https://crates.io/crates/cargo-limit)
-[![Crates.io](https://img.shields.io/crates/d/cargo-limit)](https://crates.io/crates/cargo-limit)
-[![Awesome](https://gist.githubusercontent.com/alopatindev/56009d77564991c5474197f3aba85670/raw/cc4370f645d7ad40defcf8d1d14025dfa8726fd2/awesome.svg)](https://github.com/rust-unofficial/awesome-rust#build-system)
+<div align="center">
+  <img src="logo.svg" width="25%" height="25%" alt=""/>
+</div>
+
+# cargo-limit [![Crates.io](https://img.shields.io/crates/v/cargo-limit)](https://crates.io/crates/cargo-limit) [![Crates.io](https://img.shields.io/crates/d/cargo-limit)](https://crates.io/crates/cargo-limit) [![Awesome](https://gist.githubusercontent.com/alopatindev/56009d77564991c5474197f3aba85670/raw/cc4370f645d7ad40defcf8d1d14025dfa8726fd2/awesome.svg)](https://github.com/rust-unofficial/awesome-rust#build-system)
+
+[![Liberapay](https://img.shields.io/badge/donate-Liberapay-F6C915)](https://liberapay.com/cargo-limit/donate)
+[![Ko-fi](https://img.shields.io/badge/donate-ko--fi-29abe0.svg?logo=ko-fi)](https://ko-fi.com/summary/8c07db6b-1b19-4af7-bc6d-c321db86ade0)
+[![Patreon](https://img.shields.io/badge/donate-patreon-F87668.svg?logo=patreon)](https://www.patreon.com/checkout/alopatindev/9785189)
+[![Open Collective](https://img.shields.io/badge/donate-Open_Collective-3385FF)](https://opencollective.com/cargo-limit)
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23db61a2.svg?&logo=github&logoColor=white&labelColor=181717&style=flat-square)](#Support)
 
 ## Description
@@ -20,7 +26,7 @@
 
 Initially this project was a workaround for **[this issue](https://github.com/rust-lang/rust/issues/27189), which was closed with no adequate solution**.
 
-Check out [🎙️  Rustacean Station podcast episode](https://rustacean-station.org/episode/alexander-lopatin/) for more.
+Check out [roadmap](https://github.com/cargo-limit/cargo-limit/projects/1?fullscreen=true), [issues](https://github.com/cargo-limit/cargo-limit/issues) and [🎙️ Rustacean Station podcast episode](https://rustacean-station.org/episode/alexander-lopatin/) for more.
 
 [![asciicast](https://gist.githubusercontent.com/alopatindev/2376b843dffef8d1a3af7ef44aef67be/raw/bfa15c2221cb5be128857068dd786374f9f6f186/cargo-limit-demo.svg)](https://asciinema.org/a/441673)
 
@@ -226,7 +232,7 @@ let g:CargoLimitVerbosity = 2 " warnings level
 
 This is by design, in order to **not disrupt** from active text editing or file navigation process.
 
-Also auto-jump may not happen to affected line that supposed to be **already modified/fixed** (until you rerun `cargo ll{check,run,etc.}`).
+Also, by default, auto-jump won't happen to the affected line if it's **already modified/fixed** (until you rerun `cargo ll{check,run,etc.}`).
 
 ### 2. Before running `nvim`: Current Directory should be Project (sub)directory
 - that's required so **cargo-limit** could [figure out](https://github.com/cargo-limit/cargo-limit/issues/30#issuecomment-1219793195) which exact `nvim` instance should be controlled
@@ -266,7 +272,7 @@ endf
 set errorformat =%f:%l:%c:%m
 
 fun! g:CargoLimitUpdate(editor_data)
-  if a:editor_data['corrected_locations']
+  if a:editor_data.corrected_locations
     let l:quickfix_list_is_open = v:false
     for win in getwininfo()
       if win.quickfix
@@ -283,11 +289,11 @@ fun! g:CargoLimitUpdate(editor_data)
   let l:winnr = winnr()
 
   cgetexpr []
-  for location in a:editor_data['locations']
-    caddexpr location['path'] . ':' . location['line'] . ':' . location['column'] . ':' . location['message']
+  for location in a:editor_data.locations
+    caddexpr location.path . ':' . location.line . ':' . location.column . ':' . location.message
   endfor
 
-  if empty(a:editor_data['locations'])
+  if empty(a:editor_data.locations)
     cclose
   else
     copen
