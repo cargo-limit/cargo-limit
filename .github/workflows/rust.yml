@@ -24,6 +24,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             audit: true
             rustfmt: true
+            vint: true
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
           - os: ubuntu-latest
@@ -136,13 +137,27 @@ jobs:
       - name: Install Zigbuild
         if: ${{ matrix.zigbuild }}
         run: cargo install --locked cargo-zigbuild
+      - name: Install Vint
+        if: ${{ matrix.vint }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          # cache: 'pip' # TODO
+        run: |
+          pip install --user git+https://github.com/Vimjas/vint.git@94d2cb3fd9526a89911b7c1e083a1fd78bace729
+          patch -p1 ~/.local/lib/python3*/site-packages/vint/ast/plugin/scope_plugin/identifier_classifier.py vint-const.patch
+      - name: Run Vint
+        if: ${{ matrix.vint }}
+        run: vint --color plugin/cargo-limit.vim
+      - name: Install cargo-audit
+        if: ${{ matrix.audit }}
+        run: cargo install cargo-audit --locked
       - name: Check vulnerabilities with existing patches
         if: ${{ matrix.audit }}
         run: |
-          cargo install cargo-audit --locked
           ISSUES_WITHOUT_PATCHES=($(cargo audit --json | jq --raw-output '.vulnerabilities.list[] | select(.versions.patched | length == 0) | .advisory.id' | sed 's!^! --ignore !' | tr -d '\n'))
           cargo audit ${ISSUES_WITHOUT_PATCHES[@]}
-      - name: Rustfmt
+      - name: Run Rustfmt
         if: ${{ matrix.rustfmt }}
         run: cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
       - name: Check
