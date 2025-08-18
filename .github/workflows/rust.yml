@@ -9,7 +9,7 @@ env:
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: "-D warnings -W bare-trait-objects"
   NIGHTLY_VERSION: "nightly-2025-08-18"
-  ZIG_VERSION: "0.12.0"
+  ZIG_VERSION: "0.14.1"
 
 jobs:
   all:
@@ -62,6 +62,7 @@ jobs:
           - os: windows-latest
             target: i686-pc-windows-gnu
             zigbuild: true
+            no_build_tests: true # NOTE: lld-link: error: undefined symbol: ___register_frame_info
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             no_build_tests: true # NOTE: could not execute process
