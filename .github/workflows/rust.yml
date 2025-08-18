@@ -143,7 +143,7 @@ jobs:
         with:
           python-version: '3.13'
           # cache: 'pip' # TODO
-        run: |
+      - run: |
           pip install --user git+https://github.com/Vimjas/vint.git@94d2cb3fd9526a89911b7c1e083a1fd78bace729
           patch -p1 ~/.local/lib/python3*/site-packages/vint/ast/plugin/scope_plugin/identifier_classifier.py vint-const.patch
       - name: Run Vint
