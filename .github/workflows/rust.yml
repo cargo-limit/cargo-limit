@@ -9,7 +9,7 @@ env:
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: "-D warnings -W bare-trait-objects"
   NIGHTLY_VERSION: "nightly-2025-08-18"
-  ZIG_VERSION: "0.14.1"
+  ZIG_VERSION: "0.13.0"
 
 jobs:
   all:
