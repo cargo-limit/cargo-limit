@@ -439,14 +439,6 @@ fun! s:current_location() abort
   return s:editor_data.locations[s:location_index]
 endf
 
-fun! s:next_location() abort
-  return s:editor_data.locations[s:location_index + 1]
-endf
-
-fun! s:prev_location() abort
-  return s:editor_data.locations[s:location_index - 1]
-endf
-
 fun! s:on_buffer_write() abort
   let l:current_file = s:current_file()
   if l:current_file !=# '' && filereadable(l:current_file)
@@ -500,10 +492,6 @@ endf
 
 fun! s:log_str(args)
   return '[cargo-limit] ' . join(a:args, ' ')
-endf
-
-fun! g:CargoLimitDebug()
-  call s:log_info('editor_data ' . json_encode(s:editor_data) . "\nlen(locations)=" . len(s:editor_data.locations) . "\nlocation_index=" . s:location_index . "\n&l:modified=" . &l:modified)
 endf
 
 fun! g:CargoLimitWorkspaceRoot() abort
