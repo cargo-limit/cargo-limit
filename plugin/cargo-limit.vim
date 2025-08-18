@@ -183,6 +183,7 @@ fun! s:downgrade_editor_data_format() abort
   if exists('s:editor_data.locations')
     let s:editor_data.files = s:editor_data.locations
     call remove(s:editor_data, 'locations')
+    call remove(s:editor_data, 'corrected_locations')
   endif
 endf
 
@@ -191,7 +192,9 @@ fun! s:upgrade_editor_data_format() abort
     let s:editor_data.locations = s:editor_data.files
     call remove(s:editor_data, 'files')
   endif
-  if !exists('s:editor_data.corrected_locations')
+  if exists('s:editor_data.corrected_locations')
+    let s:editor_data.corrected_locations = s:editor_data.corrected_locations == 0 ? v:false : v:true
+  else
     let s:editor_data.corrected_locations = v:false
   endif
 endf

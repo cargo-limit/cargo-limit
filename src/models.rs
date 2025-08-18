@@ -7,10 +7,9 @@ pub struct EditorData {
     protocol_version: String,
     workspace_root: PathBuf,
     locations: Vec<Location>,
-    corrected_locations: u8, // It's actually a boolean,
-                             // but VimScript {expr} is only partially compatible with JSON,
-                             // (there's no false but v:false there).
-                             // Also using json_decode would require confusing string escaping
+    corrected_locations: u8, // VimScript's {expr} is only partially compatible with JSON
+                             // (booleans are different there);
+                             // also using json_decode would require confusing string escaping
                              // in the nvim --headless shell command.
 }
 
