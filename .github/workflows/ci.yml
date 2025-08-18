@@ -44,14 +44,13 @@ jobs:
             target: aarch64-unknown-linux-musl # NOTE: Relocations in generic ELF (EM: 183)
             zigbuild: true
           # - os: ubuntu-latest
-          #   target: riscv64gc-unknown-linux-musl # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: riscv64gc-unknown-linux-musl # NOTE: error: target 'riscv64gc-unknown-linux-musl' not found in channel.
 
           # macOS
           - os: macos-latest
             target: x86_64-apple-darwin
           - os: macos-latest
             target: aarch64-apple-darwin
-            no_run_tests: true # NOTE: Bad CPU type in executable (os error 86)
 
           # Windows
           - os: windows-latest
@@ -84,9 +83,9 @@ jobs:
           # - os: ubuntu-latest
           #   target: i686-unknown-freebsd # NOTE: target 'i686-unknown-freebsd' not found in channel
           # - os: ubuntu-latest
-          #   target: aarch64-unknown-freebsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: aarch64-unknown-freebsd # NOTE: toolchain ... does not support target 'aarch64-unknown-freebsd'
           # - os: ubuntu-latest
-          #   target: riscv64gc-unknown-freebsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: riscv64gc-unknown-freebsd # NOTE: toolchain ... does not support target 'riscv64gc-unknown-freebsd'
 
           # NetBSD
           - os: ubuntu-latest
@@ -95,23 +94,23 @@ jobs:
             no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
             #zigbuild: true # NOTE: tests linking fails "Error: unsupported target 'x86_64-unknown-netbsd'"
           # - os: ubuntu-latest
-          #   target: i686-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: i686-unknown-netbsd # NOTE: toolchain ... does not support target 'i686-unknown-netbsd'
           # - os: ubuntu-latest
-          #   target: aarch64-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: aarch64-unknown-netbsd # NOTE: toolchain ... does not support target 'aarch64-unknown-netbsd'
           # - os: ubuntu-latest
-          #   target: aarch64_be-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: aarch64_be-unknown-netbsd # NOTE: toolchain ... does not support target 'aarch64_be-unknown-netbsd'
           # - os: ubuntu-latest
-          #   target: riscv64gc-unknown-netbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: riscv64gc-unknown-netbsd # NOTE: toolchain ... does not support target 'riscv64gc-unknown-netbsd'
 
           # OpenBSD
           # - os: ubuntu-latest
-          #   target: x86_64-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: x86_64-unknown-openbsd # NOTE: toolchain ... does not support target 'x86_64-unknown-openbsd'
           # - os: ubuntu-latest
-          #   target: i686-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: i686-unknown-openbsd # NOTE: toolchain ... does not support target 'i686-unknown-openbsd'
           # - os: ubuntu-latest
-          #   target: aarch64-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: aarch64-unknown-openbsd # NOTE: toolchain ... does not support target 'aarch64-unknown-openbsd'
           # - os: ubuntu-latest
-          #   target: riscv64gc-unknown-openbsd # NOTE: toolchain ... does not contain component 'rust-std' for target
+          #   target: riscv64gc-unknown-openbsd # NOTE: toolchain ... does not support target 'riscv64gc-unknown-openbsd'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
