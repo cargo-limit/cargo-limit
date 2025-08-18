@@ -1,9 +1,9 @@
 use anyhow::{Error, Result};
-use cargo_limit::{models::EditorData, NO_EXIT_CODE};
+use cargo_limit::{NO_EXIT_CODE, models::EditorData};
 use std::{
     env, io,
     io::{Read, Write},
-    process::{exit, Command, ExitStatus, Output},
+    process::{Command, ExitStatus, Output, exit},
 };
 
 struct NeovimCommand {
@@ -14,7 +14,8 @@ struct NeovimCommand {
 impl NeovimCommand {
     // TODO: builder?
     fn new(command: &str, raw_editor_data: &str) -> Result<Option<Self>> {
-        let command = format!("{command}({raw_editor_data})");
+        let escaped_editor_data = raw_editor_data.replace('"', r#"\""#);
+        let command = format!(r#"{command}(json_decode("{escaped_editor_data}"))"#);
 
         let editor_data: EditorData = serde_json::from_str(raw_editor_data)?;
         let escaped_workspace_root = editor_data.escaped_workspace_root();
