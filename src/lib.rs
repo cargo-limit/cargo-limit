@@ -16,9 +16,9 @@ use crate::models::{EditorData, Location};
 use anyhow::{Context, Result};
 use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
-use messages::{transform_and_process_messages, Messages};
+use messages::{Messages, transform_and_process_messages};
 use options::Options;
-use process::{failed_to_execute_error_text, CargoProcess};
+use process::{CargoProcess, failed_to_execute_error_text};
 use std::{
     io::Write,
     path::Path,

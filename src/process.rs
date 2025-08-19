@@ -5,7 +5,7 @@ use std::{
     env, fmt,
     path::PathBuf,
     process::{Child, Command, Stdio},
-    sync::{atomic::Ordering, Arc},
+    sync::{Arc, atomic::Ordering},
     thread,
     time::Duration,
 };
