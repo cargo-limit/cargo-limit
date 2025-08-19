@@ -1,8 +1,8 @@
 use crate::{io::Buffers, models::Location, options::Options, process};
 use anyhow::Result;
 use cargo_metadata::{
-    diagnostic::{DiagnosticLevel, DiagnosticSpan},
     CompilerMessage, Message,
+    diagnostic::{DiagnosticLevel, DiagnosticSpan},
 };
 use itertools::{Either, Itertools};
 use process::CargoProcess;
@@ -152,11 +152,7 @@ impl FilteredAndOrderedMessages {
         let good = filter(good);
         let bad = filter(bad);
 
-        if good.is_empty() {
-            bad
-        } else {
-            good
-        }
+        if good.is_empty() { bad } else { good }
     }
 
     fn filter_and_order_messages(

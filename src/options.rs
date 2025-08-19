@@ -1,5 +1,5 @@
 use crate::{cargo_toml::CargoToml, process::CARGO_EXECUTABLE};
-use anyhow::{format_err, Context, Result};
+use anyhow::{Context, Result, format_err};
 use const_format::concatcp;
 use itertools::Either;
 use std::{env, io, io::IsTerminal, iter, path::Path, str::FromStr, time::Duration};

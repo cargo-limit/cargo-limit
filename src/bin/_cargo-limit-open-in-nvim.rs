@@ -1,9 +1,9 @@
 use anyhow::{Error, Result};
-use cargo_limit::{models::EditorData, NO_EXIT_CODE};
+use cargo_limit::{NO_EXIT_CODE, models::EditorData};
 use std::{
     env, io,
     io::{Read, Write},
-    process::{exit, Command, ExitStatus, Output},
+    process::{Command, ExitStatus, Output, exit},
 };
 
 struct NeovimCommand {
