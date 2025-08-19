@@ -68,12 +68,11 @@ impl Messages {
                 _ => (),
             }
 
-            if let Some(cargo_process) = cargo_process {
-                if result.has_errors() {
-                    if let Some(time_limit) = options.time_limit_after_error {
-                        cargo_process.kill_after_timeout(time_limit);
-                    }
-                }
+            if let Some(cargo_process) = cargo_process
+                && result.has_errors()
+                && let Some(time_limit) = options.time_limit_after_error
+            {
+                cargo_process.kill_after_timeout(time_limit);
             }
         }
 
