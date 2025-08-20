@@ -162,14 +162,14 @@ impl FilteredAndOrderedMessages {
             .into_iter()
             .filter(|i| !i.message.spans.is_empty())
             .flat_map(|i| {
-                let key = i
+                let locations = i
                     .message
                     .spans
                     .iter()
                     .map(|span| (span.file_name.clone(), span.line_start))
                     .collect_vec();
-                let first_file_name = key.first().map(|(file_name, _)| file_name)?.clone();
-                let key = key
+                let first_file_name = locations.first().map(|(file_name, _)| file_name)?.clone();
+                let key = locations
                     .into_iter()
                     .filter(|(file_name, _)| *file_name == first_file_name)
                     .min_by_key(|(_, line_start)| *line_start)?;
