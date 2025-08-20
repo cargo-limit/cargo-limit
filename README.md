@@ -163,7 +163,7 @@ nvim --cmd '!call dein#install()'
 </p>
 </details>
 
-### Optionally: F2 to save, F2 again to jump to next affected line
+### Optionally: first F2 to save, next F1/F2 to navigate affected lines
 ```viml
 fun! SaveAllFilesOrOpenNextLocation() abort
   " TODO: os-dependant? let l:workspace_root = g:CargoLimitWorkspaceRoot() . '/'
@@ -172,7 +172,7 @@ fun! SaveAllFilesOrOpenNextLocation() abort
   let l:all_files_are_saved = v:true
 
   for l:i in getbufinfo({'bufmodified': 1})
-    if !s:ends_with(l:i.name, '/BqfPreviewScrollBar')
+    if exists('l:i.name') && !s:ends_with(l:i.name, '/BqfPreviewScrollBar')
       let l:all_files_are_saved = v:false
       if s:starts_with(l:i.name, l:workspace_root)
         let l:all_rust_files_are_saved = v:false
