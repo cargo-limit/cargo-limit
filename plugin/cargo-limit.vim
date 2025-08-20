@@ -431,8 +431,16 @@ endf
 
 fun! s:jump_to_location(location_index) abort
   let l:location = s:editor_data.locations[a:location_index]
-  execute 'tab drop ' . fnameescape(l:location.path)
-  call cursor((l:location.line), (l:location.column))
+
+  let l:current_file = s:current_file()
+  if l:current_file !=# l:location.path
+    execute 'tab drop ' . fnameescape(l:location.path)
+  end
+
+  let l:current_position = getpos('.')
+  if l:current_position[1] !=# l:location.line || current_position[2] !=# l:location.column
+    call cursor((l:location.line), (l:location.column))
+  endif
 endf
 
 fun! s:current_location() abort

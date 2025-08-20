@@ -172,7 +172,7 @@ fun! SaveAllFilesOrOpenNextLocation() abort
   let l:all_files_are_saved = v:true
 
   for l:i in getbufinfo({'bufmodified': 1})
-    if !s:starts_with(l:i.name, 'BqfPreviewScrollBar')
+    if !s:ends_with(l:i.name, '/BqfPreviewScrollBar')
       let l:all_files_are_saved = v:false
       if s:starts_with(l:i.name, l:workspace_root)
         let l:all_rust_files_are_saved = v:false
@@ -191,6 +191,10 @@ endf
 
 fun! s:starts_with(text, pattern) abort
   return stridx(a:text, a:pattern) ==# 0
+endf
+
+fun! s:ends_with(text, pattern) abort
+  return stridx(a:text, a:pattern) ==# len(a:text) - len(a:pattern)
 endf
 
 nmap <F1> :call g:CargoLimitOpenPrevLocation()<Enter>
