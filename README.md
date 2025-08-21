@@ -140,6 +140,19 @@ and run
 nvim --headless "+Lazy! sync" +qa
 ```
 
+### [mini.deps](https://github.com/echasnovski/mini.deps):
+```lua
+add({
+  source = 'cargo-limit/cargo-limit',
+  hooks = { post_checkout = function() vim.cmd(':!cargo install --locked cargo-limit') end },
+})
+```
+
+and run
+```bash
+nvim +DepsUpdate +qa
+```
+
 ### [paq-nvim](https://github.com/savq/paq-nvim):
 ```lua
 { 'cargo-limit/cargo-limit', build = ':!cargo install --locked cargo-limit' },
@@ -148,6 +161,16 @@ nvim --headless "+Lazy! sync" +qa
 and run
 ```bash
 nvim +PaqSync +qa
+```
+
+### [pckr.nvim](https://github.com/lewis6991/pckr.nvim):
+```lua
+{ 'cargo-limit/cargo-limit', run = ':!cargo install --locked cargo-limit' };
+```
+
+and run
+```bash
+nvim '+Pckr install [plugin]+' +qa
 ```
 
 ### [packer.nvim](https://github.com/wbthomason/packer.nvim):
