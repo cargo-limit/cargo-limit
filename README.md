@@ -120,7 +120,7 @@ nvim +PlugInstall +UpdateRemotePlugins +qa
 <summary><b>💡 Using other Neovim Plugin Managers 👁️</b></summary>
 <p>
 
-### [vim.pack](https://neovim.io/doc/user/pack.html#vim.pack) (Neovim 0.12+)
+### [vim.pack](https://neovim.io/doc/user/pack.html#vim.pack) (Neovim 0.12+):
 ```lua
 vim.pack.add({ 'https://github.com/cargo-limit/cargo-limit' })
 ```
@@ -130,7 +130,7 @@ and run
 nvim '+lua vim.pack.update()' +qa && cargo install --locked cargo-limit nvim-send
 ```
 
-### [lazy.nvim](https://github.com/folke/lazy.nvim)
+### [lazy.nvim](https://github.com/folke/lazy.nvim):
 ```lua
 { 'cargo-limit/cargo-limit', build = 'cargo install --locked cargo-limit nvim-send' },
 ```
@@ -140,7 +140,7 @@ and run
 nvim --headless "+Lazy! sync" +qa
 ```
 
-### [mini.deps](https://github.com/echasnovski/mini.deps)
+### [mini.deps](https://github.com/echasnovski/mini.deps):
 ```lua
 local add = MiniDeps.add
 
