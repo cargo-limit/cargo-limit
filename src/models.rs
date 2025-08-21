@@ -7,7 +7,10 @@ pub struct EditorData {
     protocol_version: String,
     workspace_root: PathBuf,
     locations: Vec<Location>,
-    corrected_locations: bool,
+    corrected_locations: u8, // It's actually a bool; however it's hard to properly serialize it
+                             // as a VimScript {expr} (where bools are non-JSON v:true/v:false)
+                             // without breaking something else
+                             // (specifically workspace_root string escaping before json_decode)
 }
 
 #[derive(Deserialize, Serialize)]
@@ -27,7 +30,7 @@ impl EditorData {
             protocol_version,
             workspace_root,
             locations: locations_in_consistent_order,
-            corrected_locations: false,
+            corrected_locations: 0,
         }
     }
 

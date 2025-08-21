@@ -13,8 +13,7 @@ struct NeovimCommand {
 
 impl NeovimCommand {
     fn new(command: &str, raw_editor_data: &str) -> Result<Self> {
-        let escaped_editor_data = raw_editor_data.escape_default();
-        let command = format!(r#"{command}(json_decode("{escaped_editor_data}"))"#);
+        let command = format!(r#"{command}({raw_editor_data})"#);
 
         let editor_data: EditorData = serde_json::from_str(raw_editor_data)?;
         let escaped_workspace_root = editor_data.escaped_workspace_root();
