@@ -504,10 +504,6 @@ fun! s:log_str(args)
   return '[cargo-limit] ' . join(a:args, ' ')
 endf
 
-fun! g:CargoLimitWorkspaceRoot() abort
-  return fnameescape(s:workspace_root)
-endf
-
 call s:main()
 
 " vim:shiftwidth=2 softtabstop=2 tabstop=2
