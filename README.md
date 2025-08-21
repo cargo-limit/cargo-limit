@@ -108,7 +108,7 @@ This plugin is [LSP](https://microsoft.github.io/language-server-protocol/)-inde
 
 ### Using **[vim-plug](https://github.com/junegunn/vim-plug#neovim):**
 ```viml
-Plug 'alopatindev/cargo-limit', { 'do': 'cargo install --locked cargo-limit' }
+Plug 'cargo-limit/cargo-limit', { 'do': 'cargo install --locked cargo-limit' }
 ```
 
 and run
@@ -120,9 +120,19 @@ nvim +PlugInstall +UpdateRemotePlugins +qa
 <summary><b>💡 Using other Neovim Plugin Managers 👁️</b></summary>
 <p>
 
+### [vim.pack](https://neovim.io/doc/user/pack.html#vim.pack) (Neovim 0.12+)
+```lua
+vim.pack.add({ 'https://github.com/cargo-limit/cargo-limit' })
+```
+
+and run
+```bash
+nvim '+lua vim.pack.update()' +qa && cargo install --locked cargo-limit
+```
+
 ### [lazy.nvim](https://github.com/folke/lazy.nvim)
 ```lua
-{ 'alopatindev/cargo-limit', build = 'cargo install --locked cargo-limit' },
+{ 'cargo-limit/cargo-limit', build = 'cargo install --locked cargo-limit' },
 ```
 
 and run
@@ -132,7 +142,7 @@ nvim --headless "+Lazy! sync" +qa
 
 ### [paq-nvim](https://github.com/savq/paq-nvim):
 ```lua
-{ 'alopatindev/cargo-limit', build = ':!cargo install --locked cargo-limit' },
+{ 'cargo-limit/cargo-limit', build = ':!cargo install --locked cargo-limit' },
 ```
 
 and run
@@ -142,7 +152,7 @@ nvim +PaqSync +qa
 
 ### [packer.nvim](https://github.com/wbthomason/packer.nvim):
 ```lua
-{ use 'alopatindev/cargo-limit', run = ':!cargo install --locked cargo-limit' }
+{ use 'cargo-limit/cargo-limit', run = ':!cargo install --locked cargo-limit' }
 ```
 
 and run
@@ -152,7 +162,7 @@ nvim +PackerUpdate +qa
 
 ### [dein](https://github.com/Shougo/dein.vim):
 ```viml
-call dein#add('alopatindev/cargo-limit', { 'rev': 'master', 'hook_post_update': '!cargo install --locked cargo-limit' })
+call dein#add('cargo-limit/cargo-limit', { 'rev': 'master', 'hook_post_update': '!cargo install --locked cargo-limit' })
 ```
 
 and run
