@@ -30,8 +30,12 @@ const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
 
 #[doc(hidden)]
 pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
-    let workspace_root = MetadataCommand::new().no_deps().exec()?.workspace_root;
-    let workspace_root = workspace_root.as_ref();
+    let workspace_root = MetadataCommand::new()
+        .no_deps()
+        .exec()
+        .ok()
+        .map(|m| m.workspace_root);
+    let workspace_root = workspace_root.as_ref().map(|w| w.as_ref());
     let options = Options::from_os_env(current_exe, workspace_root)?;
 
     let mut cargo_process = CargoProcess::run(&options)?;
@@ -39,7 +43,8 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
 
     let process_messages = |buffers: &mut Buffers,
                             messages: Vec<Message>,
-                            locations_in_consistent_order: Vec<Location>|
+                            locations_in_consistent_order: Vec<Location>,
+                            workspace_root: &Path|
      -> Result<()> {
         let messages = messages.into_iter();
         if options.json_message_format {

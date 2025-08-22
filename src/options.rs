@@ -96,7 +96,7 @@ impl Options {
             .chain(self.args_after_app_args_delimiter.clone())
     }
 
-    pub fn from_os_env(current_exe: String, workspace_root: &Path) -> Result<Self> {
+    pub fn from_os_env(current_exe: String, workspace_root: Option<&Path>) -> Result<Self> {
         Self::new()?.process_args(current_exe, env::args(), workspace_root)
     }
 
@@ -138,7 +138,7 @@ impl Options {
         mut self,
         current_exe: String,
         args: impl Iterator<Item = String>,
-        workspace_root: &Path,
+        workspace_root: Option<&Path>,
     ) -> Result<Self> {
         let ParsedSubcommand {
             subcommand,
@@ -261,12 +261,16 @@ impl Options {
         &mut self,
         subcommand: String,
         app_color_is_set: bool,
-        workspace_root: &Path,
+        workspace_root: Option<&Path>,
     ) -> Result<()> {
         let is_test = subcommand == "test";
         let is_bench = subcommand == "bench";
         let command_supports_color_arg = is_test || is_bench;
-        if command_supports_color_arg && !app_color_is_set && self.terminal_supports_colors {
+        if command_supports_color_arg
+            && !app_color_is_set
+            && self.terminal_supports_colors
+            && let Some(workspace_root) = workspace_root
+        {
             let cargo_toml = CargoToml::parse(workspace_root)?;
             let all_items_have_harness = if is_test {
                 cargo_toml.all_tests_have_harness()
@@ -1008,7 +1012,7 @@ mod tests {
         let options = Options::default().process_args(
             input[0].to_owned(),
             to_string(input),
-            &Path::new("tests/stubs").join(Path::new(stub)),
+            Some(&Path::new("tests/stubs").join(Path::new(stub))),
         )?;
 
         let expected = Options {
