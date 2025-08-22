@@ -48,6 +48,7 @@ pub struct Options {
     pub open_in_external_app_on_warnings: bool,
     pub help: bool,
     pub version: bool,
+    pub keep_going: bool,
     pub json_message_format: bool,
     short_message_format: bool,
 }
@@ -74,6 +75,7 @@ impl Default for Options {
             open_in_external_app_on_warnings: false,
             help: false,
             version: false,
+            keep_going: false,
             json_message_format: false,
             short_message_format: false,
         }
@@ -95,11 +97,10 @@ impl Options {
     }
 
     pub fn from_os_env(current_exe: String, workspace_root: &Path) -> Result<Self> {
-        Self::from_vars_and_atty()?.process_args(current_exe, env::args(), workspace_root)
+        Self::from_environment()?.process_args(current_exe, env::args(), workspace_root)
     }
 
-    // TODO: rename
-    fn from_vars_and_atty() -> Result<Self> {
+    fn from_environment() -> Result<Self> {
         let mut result = Self {
             terminal_supports_colors: io::stderr().is_terminal(),
             ..Self::default()
@@ -185,6 +186,10 @@ impl Options {
                 args_before_app_args_delimiter.push(arg);
             } else if arg == "-V" || arg == "--version" {
                 self.version = true;
+                args_before_app_args_delimiter.push(arg);
+            } else if arg == "--keep-going" {
+                self.keep_going = true;
+                self.time_limit_after_error = None;
                 args_before_app_args_delimiter.push(arg);
             } else if arg == COLOR[..COLOR.len() - 1] {
                 *color = passed_args.next().context(
