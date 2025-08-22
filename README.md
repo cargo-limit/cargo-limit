@@ -73,6 +73,7 @@ This tool is especially useful in combination with [cargo-watch](https://crates.
 
 ### CARGO_TIME_LIMIT
 - `cargo` execution time limit in seconds after encountering first compiling error
+    - automatically overwritten with `0` when `--keep-going` is used
 - `1` is default
 - `0` means no limit
 

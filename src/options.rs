@@ -48,6 +48,7 @@ pub struct Options {
     pub open_in_external_app_on_warnings: bool,
     pub help: bool,
     pub version: bool,
+    pub keep_going: bool,
     pub json_message_format: bool,
     short_message_format: bool,
 }
@@ -74,6 +75,7 @@ impl Default for Options {
             open_in_external_app_on_warnings: false,
             help: false,
             version: false,
+            keep_going: false,
             json_message_format: false,
             short_message_format: false,
         }
@@ -184,6 +186,10 @@ impl Options {
                 args_before_app_args_delimiter.push(arg);
             } else if arg == "-V" || arg == "--version" {
                 self.version = true;
+                args_before_app_args_delimiter.push(arg);
+            } else if arg == "--keep-going" {
+                self.keep_going = true;
+                self.time_limit_after_error = None;
                 args_before_app_args_delimiter.push(arg);
             } else if arg == COLOR[..COLOR.len() - 1] {
                 *color = passed_args.next().context(
