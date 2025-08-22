@@ -436,7 +436,7 @@ fun! s:jump_to_location(location_index) abort
 
   let l:current_file = s:current_file()
   if l:current_file !=# l:location.path
-    execute 'tab drop ' . fnameescape(l:location.path)
+    execute 'silent! tab drop ' . fnameescape(l:location.path)
   end
 
   let l:current_position = getpos('.')
