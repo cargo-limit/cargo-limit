@@ -183,6 +183,7 @@ impl FilteredAndOrderedMessages {
                     .min_by_key(|(_, line_start)| *line_start)?;
                 Some((key, i))
             })
+            .sorted_by_key(|(key, _)| key.clone())
             .map(|(_, message)| message);
 
         let mut project_messages = Vec::new();
