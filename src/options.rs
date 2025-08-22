@@ -180,8 +180,18 @@ impl Options {
         args_before_app_args_delimiter: &mut Vec<String>,
         app_args_started: &mut bool,
     ) -> Result<()> {
+        let mut unstable_flag_started = false;
         while let Some(arg) = passed_args.next() {
-            if arg == "-h" || arg == "--help" {
+            if arg == "-Z" {
+                unstable_flag_started = true;
+                args_before_app_args_delimiter.push(arg);
+            } else if unstable_flag_started {
+                if arg == "help" {
+                    self.help = true;
+                }
+                args_before_app_args_delimiter.push(arg);
+                unstable_flag_started = false;
+            } else if arg == "-h" || arg == "--help" {
                 self.help = true;
                 args_before_app_args_delimiter.push(arg);
             } else if arg == "-V" || arg == "--version" {
