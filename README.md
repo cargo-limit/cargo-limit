@@ -282,11 +282,11 @@ fun! g:CargoLimitUpdate(editor_data)
   if l:current_file != '' && !filereadable(l:current_file)
     return
   endif
-  for location in reverse(a:editor_data.locations)
-    let l:path = fnameescape(location.path)
+  for l:location in reverse(a:editor_data.locations)
+    let l:path = fnameescape(l:location.path)
     if mode() == 'n' && &l:modified == 0
       execute 'edit ' . l:path
-      call cursor((location.line), (location.column))
+      call cursor((l:location.line), (l:location.column))
     else
       break
     endif
@@ -301,8 +301,8 @@ set errorformat =%f:%l:%c:%m
 fun! g:CargoLimitUpdate(editor_data)
   if a:editor_data.corrected_locations
     let l:quickfix_list_is_open = v:false
-    for win in getwininfo()
-      if win.quickfix
+    for l:win in getwininfo()
+      if l:win.quickfix
         let l:quickfix_list_is_open = v:true
         break
       endif
@@ -316,8 +316,8 @@ fun! g:CargoLimitUpdate(editor_data)
   let l:winnr = winnr()
 
   cgetexpr []
-  for location in a:editor_data.locations
-    caddexpr location.path . ':' . location.line . ':' . location.column . ':' . location.message
+  for l:location in a:editor_data.locations
+    caddexpr l:location.path . ':' . l:location.line . ':' . l:location.column . ':' . l:location.message
   endfor
 
   if empty(a:editor_data.locations)
@@ -326,6 +326,11 @@ fun! g:CargoLimitUpdate(editor_data)
     copen
   endif
 
+  for l:i in getbufinfo()
+    if stridx(l:i.name, '/BqfPreviewScrollBar') ># 0
+      return
+    endif
+  endfor
   if l:winnr !=# winnr()
     wincmd p
   endif
