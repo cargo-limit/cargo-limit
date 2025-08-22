@@ -30,14 +30,22 @@ pub fn transform_and_process_messages(
     buffers: &mut Buffers,
     messages: Messages,
     options: &Options,
-    workspace_root: &Path,
-    mut process: impl FnMut(&mut Buffers, Vec<Message>, Vec<Location>) -> Result<()>,
+    workspace_root: Option<&Path>,
+    mut process: impl FnMut(&mut Buffers, Vec<Message>, Vec<Location>, &Path) -> Result<()>,
 ) -> Result<()> {
-    let TransformedMessages {
-        messages,
-        locations_in_consistent_order,
-    } = TransformedMessages::transform(messages, options, workspace_root)?;
-    process(buffers, messages, locations_in_consistent_order)
+    if let Some(workspace_root) = workspace_root {
+        let TransformedMessages {
+            messages,
+            locations_in_consistent_order,
+        } = TransformedMessages::transform(messages, options, workspace_root)?;
+        process(
+            buffers,
+            messages,
+            locations_in_consistent_order,
+            workspace_root,
+        )?;
+    }
+    Ok(())
 }
 
 impl Messages {
