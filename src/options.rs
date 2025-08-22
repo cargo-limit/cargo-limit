@@ -97,10 +97,10 @@ impl Options {
     }
 
     pub fn from_os_env(current_exe: String, workspace_root: &Path) -> Result<Self> {
-        Self::from_environment()?.process_args(current_exe, env::args(), workspace_root)
+        Self::new()?.process_args(current_exe, env::args(), workspace_root)
     }
 
-    fn from_environment() -> Result<Self> {
+    fn new() -> Result<Self> {
         let mut result = Self {
             terminal_supports_colors: io::stderr().is_terminal(),
             ..Self::default()
