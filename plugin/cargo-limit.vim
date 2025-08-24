@@ -283,9 +283,9 @@ fun! s:compute_shifts(path) abort
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
     \ 'git diff --unified=0 --ignore-cr-at-eol --ignore-space-at-eol --no-index --no-color --no-ext-diff -- '
-    \ . fnameescape(l:temp_source_path)
+    \ . shellescape(l:temp_source_path)
     \ . ' '
-    \ . a:path
+    \ . shellescape(a:path)
 
   let l:offset_to_shift = []
   let l:maybe_edited_line_numbers = {}
@@ -338,8 +338,8 @@ fun! s:shift_locations(path, maybe_edited_line_numbers, start, end, shift_accumu
   return a:maybe_edited_line_numbers
 endf
 
-fun! s:parse_diff_stats(text, delimiter) abort
-  let l:offset_and_lines = split(split(a:text, a:delimiter)[0], ',')
+fun! s:parse_diff_stats(text, separator) abort
+  let l:offset_and_lines = split(split(a:text, a:separator)[0], ',')
   let l:offset = str2nr(l:offset_and_lines[0])
   let l:lines = len(l:offset_and_lines) ># 1 ? str2nr(l:offset_and_lines[1]) : 1
   return [l:offset, l:lines]
