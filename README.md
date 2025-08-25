@@ -109,7 +109,7 @@ This plugin is [LSP](https://microsoft.github.io/language-server-protocol/)-inde
 
 ### Using **[vim-plug](https://github.com/junegunn/vim-plug#neovim):**
 ```viml
-Plug 'cargo-limit/cargo-limit', { 'do': 'cargo install --locked cargo-limit nvim-send' }
+Plug 'cargo-limit/cargo-limit', { 'do': 'cargo install --locked cargo-limit' }
 ```
 
 and run
@@ -128,12 +128,12 @@ vim.pack.add({ 'https://github.com/cargo-limit/cargo-limit' })
 
 and run
 ```bash
-nvim '+lua vim.pack.update()' +qa && cargo install --locked cargo-limit nvim-send
+nvim '+lua vim.pack.update()' +qa && cargo install --locked cargo-limit
 ```
 
 ### [lazy.nvim](https://github.com/folke/lazy.nvim):
 ```lua
-{ 'cargo-limit/cargo-limit', build = 'cargo install --locked cargo-limit nvim-send' },
+{ 'cargo-limit/cargo-limit', build = 'cargo install --locked cargo-limit' },
 ```
 
 and run
@@ -145,7 +145,7 @@ nvim --headless "+Lazy! sync" +qa
 ```lua
 add({
   source = 'cargo-limit/cargo-limit',
-  hooks = { post_checkout = function() vim.cmd(':!cargo install --locked cargo-limit nvim-send') end },
+  hooks = { post_checkout = function() vim.cmd(':!cargo install --locked cargo-limit') end },
 })
 ```
 
@@ -156,7 +156,7 @@ nvim +DepsUpdate +qa
 
 ### [paq-nvim](https://github.com/savq/paq-nvim):
 ```lua
-{ 'cargo-limit/cargo-limit', build = ':!cargo install --locked cargo-limit nvim-send' },
+{ 'cargo-limit/cargo-limit', build = ':!cargo install --locked cargo-limit' },
 ```
 
 and run
@@ -166,7 +166,7 @@ nvim +PaqSync +qa
 
 ### [pckr.nvim](https://github.com/lewis6991/pckr.nvim):
 ```lua
-{ 'cargo-limit/cargo-limit', run = ':!cargo install --locked cargo-limit nvim-send' };
+{ 'cargo-limit/cargo-limit', run = ':!cargo install --locked cargo-limit' };
 ```
 
 and run
@@ -176,7 +176,7 @@ nvim '+Pckr install [plugin]+' +qa
 
 ### [packer.nvim](https://github.com/wbthomason/packer.nvim):
 ```lua
-{ use 'cargo-limit/cargo-limit', run = ':!cargo install --locked cargo-limit nvim-send' }
+{ use 'cargo-limit/cargo-limit', run = ':!cargo install --locked cargo-limit' }
 ```
 
 and run
@@ -186,7 +186,7 @@ nvim +PackerUpdate +qa
 
 ### [dein](https://github.com/Shougo/dein.vim):
 ```viml
-call dein#add('cargo-limit/cargo-limit', { 'rev': 'master', 'hook_post_update': '!cargo install --locked cargo-limit nvim-send' })
+call dein#add('cargo-limit/cargo-limit', { 'rev': 'master', 'hook_post_update': '!cargo install --locked cargo-limit' })
 ```
 
 and run
@@ -197,25 +197,32 @@ nvim --cmd '!call dein#install()'
 </p>
 </details>
 
-### Optionally: F2 to save, F2 again to jump to next affected line
+### Optionally: first F2 to save, next F1/F2 to navigate affected lines
 ```viml
-fun! SaveAllFilesOrOpenNextLocation()
+fun! SaveAllFilesOrOpenNextLocation() abort
   let l:all_files_are_saved = v:true
-  for i in getbufinfo({'bufmodified': 1})
-    if i.name !=# ''
+
+  for l:i in getbufinfo({'bufmodified': 1})
+    if exists('l:i.name') && !s:ends_with(l:i.name, '/BqfPreviewScrollBar')
       let l:all_files_are_saved = v:false
-      break
     endif
   endfor
 
-  if l:all_files_are_saved
-    if exists('*CargoLimitOpenNextLocation')
-      call g:CargoLimitOpenNextLocation()
-    endif
-  else
+  if exists('*CargoLimitOpenNextLocation')
+    call g:CargoLimitOpenNextLocation()
+  endif
+  if !l:all_files_are_saved
     execute 'wa!'
   endif
 endf
+
+fun! s:ends_with(text, pattern) abort
+  return stridx(a:text, a:pattern) ==# len(a:text) - len(a:pattern)
+endf
+
+nmap <F1> :call g:CargoLimitOpenPrevLocation()<Enter>
+vmap <F1> <Esc>:call g:CargoLimitOpenPrevLocation()<Enter>v
+imap <F1> <Esc>:call g:CargoLimitOpenPrevLocation()<Enter>i
 
 nmap <F2> :call SaveAllFilesOrOpenNextLocation()<cr>
 vmap <F2> <esc>:call SaveAllFilesOrOpenNextLocation()<cr>v
@@ -252,13 +259,9 @@ let g:CargoLimitVerbosity = 2 " warnings level
 
 This is by design, in order to **not disrupt** from active text editing or file navigation process.
 
-### 2. Auto-jump on each file save is currently imprecise
-- it may jump to a wrong line if it moved
-- it may not jump at all, if the next affected line is supposed to be modified already
+Also, by default, auto-jump won't happen to the affected line if it's **already modified/fixed** (until you rerun `cargo ll{check,run,etc.}`).
 
-For precise jump please rerun `cargo ll{check,run,etc.}`.
-
-### 3. Before running `nvim`: Current Directory should be Project (sub)directory
+### 2. Before running `nvim`: Current Directory should be Project (sub)directory
 - that's required so **cargo-limit** could [figure out](https://github.com/cargo-limit/cargo-limit/issues/30#issuecomment-1219793195) which exact `nvim` instance should be controlled
 - only **first `nvim` instance** with current project (sub)directory will be **controlled by cargo-limit**.
 
@@ -266,24 +269,24 @@ For precise jump please rerun `cargo ll{check,run,etc.}`.
 </details>
 
 ## Customizations
-Add a **custom open handler** to your `init.vim` if you want other Neovim behavior.
+Add **custom update handlers** to your `init.vim` if you want other Neovim behavior.
 
 <details>
-<summary><b>💡 See examples! 👁️</b></summary>
+<summary><b>💡 See examples for Neovim! 👁️</b></summary>
 <p>
 
 ### Open Files in Buffers Instead of Tabs
 ```viml
-function! g:CargoLimitOpen(editor_data)
+fun! g:CargoLimitUpdate(editor_data)
   let l:current_file = resolve(expand('%:p'))
   if l:current_file != '' && !filereadable(l:current_file)
     return
   endif
-  for location in reverse(a:editor_data.files)
-    let l:path = fnameescape(location.path)
+  for l:location in reverse(a:editor_data.locations)
+    let l:path = fnameescape(l:location.path)
     if mode() == 'n' && &l:modified == 0
       execute 'edit ' . l:path
-      call cursor((location.line), (location.column))
+      call cursor((l:location.line), (l:location.column))
     else
       break
     endif
@@ -295,20 +298,39 @@ endf
 ```viml
 set errorformat =%f:%l:%c:%m
 
-function! g:CargoLimitOpen(editor_data)
+fun! g:CargoLimitUpdate(editor_data)
+  if a:editor_data.corrected_locations
+    let l:quickfix_list_is_open = v:false
+    for l:win in getwininfo()
+      if l:win.quickfix
+        let l:quickfix_list_is_open = v:true
+        break
+      endif
+    endfor
+
+    if !l:quickfix_list_is_open
+      return
+    endif
+  endif
+
   let l:winnr = winnr()
 
   cgetexpr []
-  for file in a:editor_data['files']
-    caddexpr file['path'] . ':' . file['line'] . ':' . file['column'] . ':' . file['message']
+  for l:location in a:editor_data.locations
+    caddexpr l:location.path . ':' . l:location.line . ':' . l:location.column . ':' . l:location.message
   endfor
 
-  if empty(a:editor_data['files'])
+  if empty(a:editor_data.locations)
     cclose
   else
     copen
   endif
 
+  for l:i in getbufinfo()
+    if stridx(l:i.name, '/BqfPreviewScrollBar') ># 0
+      return
+    endif
+  endfor
   if l:winnr !=# winnr()
     wincmd p
   endif
@@ -330,7 +352,7 @@ endf
 {
   "protocol_version": "0.0.11",
   "workspace_root": "/full/path/to/project",
-  "files": [
+  "locations": [
     {
       "path": "/full/path/to/project/file.rs",
       "line": 4,
@@ -338,11 +360,12 @@ endf
       "message": "unused import: `diagnostic::DiagnosticSpan`",
       "level": "warning"
     }
-  ]
+  ],
+  "corrected_locations": 0
 }
 ```
 
-Theoretically this can be used for any text editor or IDE, especially if it supports client/server communication. To do that you need a **wrapper app/script** that parses the `files` and gives them to the text editor or IDE client.
+Theoretically this can be used for any text editor or IDE, especially if it supports client/server communication. To do that you need a **wrapper app/script** that parses the `locations` and gives them to the text editor or IDE client.
 
 <details>
 <summary><b>💡 Example: Gedit! 👁️</b></summary>
@@ -353,7 +376,7 @@ Theoretically this can be used for any text editor or IDE, especially if it supp
 ```bash
 #!/bin/bash
 
-jq --raw-output '.files |= unique_by(.path) | .files[] | [
+jq --raw-output '.locations |= unique_by(.path) | .locations[] | [
     "gedit",
     .path,
     "+" + (.line | tostring) + ":" + (.column | tostring),
