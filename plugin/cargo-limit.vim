@@ -77,7 +77,7 @@ fun! s:validate_plugin_version(editor_data)
   let l:crate_message_postfix = ' > crate version'
   if exists('a:editor_data.protocol_version')
     let l:crate_version = a:editor_data.protocol_version
-    let l:version_matched = l:crate_version == PLUGIN_VERSION
+    let l:version_matched = l:crate_version ==# PLUGIN_VERSION
     let l:crate_message_postfix = ' != crate ' . l:crate_version
   endif
 
@@ -113,6 +113,7 @@ fun! s:maybe_setup_handlers() abort
     call s:upgrade_editor_data_format()
 
     if s:deprecated_cargo_limit_open !=# v:null
+      call s:increment_location_index()
       return
     endif
 
@@ -185,12 +186,18 @@ fun! s:downgrade_editor_data_format() abort
     call remove(s:editor_data, 'locations')
     call remove(s:editor_data, 'corrected_locations')
   endif
+  if !exists('s:editor_data.files')
+    let s:editor_data.files = []
+  endif
 endf
 
 fun! s:upgrade_editor_data_format() abort
   if exists('s:editor_data.files')
-    let s:editor_data.locations = s:editor_data.files
+    let s:editor_data.locations = reverse(s:editor_data.files)
     call remove(s:editor_data, 'files')
+  endif
+  if !exists('s:editor_data.locations')
+    let s:editor_data.locations = []
   endif
   if exists('s:editor_data.corrected_locations')
     let s:editor_data.corrected_locations = s:editor_data.corrected_locations ? v:true : v:false
@@ -364,7 +371,10 @@ endfun
 fun! s:read_all_locations_texts() abort
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
-    let s:locations_texts[l:index] = s:read_text(l:location)
+    let l:text = s:read_text(l:location)
+    if l:text !=# v:null
+      let s:locations_texts[l:index] = l:text
+    endif
   endfor
 endf
 
@@ -374,11 +384,12 @@ fun! s:is_same_as_current_location(target) abort
 endf
 
 fun! s:is_current_location_edited() abort
-  return s:locations_texts[s:location_index] != s:read_text(s:current_location())
+  return has_key(s:locations_texts, s:location_index) && s:locations_texts[s:location_index] !=# s:read_text(s:current_location())
 endf
 
 fun! s:read_text(location)
-  return trim(getbufline(bufnr(a:location.path), a:location.line)[0])
+  let l:buf = bufnr(a:location.path)
+  return l:buf ># 0 ? trim(getbufline(l:buf, a:location.line)[0]) : v:null
 endf
 
 fun! s:maybe_delete_dead_unix_socket(server_address) abort
