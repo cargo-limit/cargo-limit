@@ -270,7 +270,7 @@ fun! s:compute_shifts(path) abort
 
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND =
-    \ 'git diff --unified=0 --ignore-cr-at-eol --ignore-space-at-eol --no-index --no-color --no-ext-diff -- '
+    \ 'git diff --unified=0 --ignore-cr-at-eol --ignore-space-at-eol --no-index --no-color --no-ext-diff --diff-algorithm=histogram -- '
     \ . shellescape(l:temp_source_path)
     \ . ' '
     \ . shellescape(a:path)
@@ -369,8 +369,9 @@ fun! s:is_current_location_edited() abort
 endf
 
 fun! s:read_text(location) abort
+  const MAX_LEN = 255
   let l:buf = bufnr(a:location.path)
-  return l:buf ># 0 ? trim(getbufline(l:buf, a:location.line)[0]) : v:null
+  return l:buf ># 0 ? trim(getbufline(l:buf, a:location.line)[0][:MAX_LEN]) : v:null
 endf
 
 fun! s:maybe_delete_dead_unix_socket(server_address) abort
