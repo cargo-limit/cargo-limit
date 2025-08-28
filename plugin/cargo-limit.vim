@@ -69,23 +69,6 @@ fun! s:start_server(escaped_workspace_root) abort
   endif
 endf
 
-fun! s:validate_plugin_version(editor_data) abort
-  const PLUGIN_VERSION = '0.0.11'
-
-  let l:crate_version = v:null
-  let l:version_matched = v:false
-  let l:crate_message_postfix = ' > crate version'
-  if exists('a:editor_data.protocol_version')
-    let l:crate_version = a:editor_data.protocol_version
-    let l:version_matched = l:crate_version ==# PLUGIN_VERSION
-    let l:crate_message_postfix = ' != crate ' . l:crate_version
-  endif
-
-  if !l:version_matched
-    call s:log_info('version mismatch, plugin ' . PLUGIN_VERSION . l:crate_message_postfix)
-  endif
-endf
-
 fun! s:maybe_setup_handlers() abort
   augroup CargoLimitAutocommands
     autocmd!
@@ -99,8 +82,6 @@ fun! s:maybe_setup_handlers() abort
   endif
 
   fun! g:CargoLimitOpen(editor_data) abort
-    "call s:validate_plugin_version(a:editor_data) " TODO: enable on breaking change
-
     let s:editor_data = a:editor_data
     let s:locations_texts = {}
     let s:location_index = -1
