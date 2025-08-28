@@ -212,7 +212,7 @@ fun! SaveAllFilesOrOpenNextLocation() abort
     call g:CargoLimitOpenNextLocation()
   endif
   if !l:all_files_are_saved
-    execute 'wa!'
+    execute 'silent! wa!'
   endif
 endf
 
