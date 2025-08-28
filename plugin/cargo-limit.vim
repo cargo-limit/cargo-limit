@@ -69,7 +69,7 @@ fun! s:start_server(escaped_workspace_root) abort
   endif
 endf
 
-fun! s:validate_plugin_version(editor_data)
+fun! s:validate_plugin_version(editor_data) abort
   const PLUGIN_VERSION = '0.0.11'
 
   let l:crate_version = v:null
@@ -352,7 +352,7 @@ fun! s:parse_diff_stats(text, separator) abort
   return [l:offset, l:lines]
 endf
 
-fun! s:deduplicate_locations_by_paths_and_lines()
+fun! s:deduplicate_locations_by_paths_and_lines() abort
   let l:new_locations = []
   let l:added_lines = {}
 
@@ -387,7 +387,7 @@ fun! s:is_current_location_edited() abort
   return has_key(s:locations_texts, s:location_index) && s:locations_texts[s:location_index] !=# s:read_text(s:current_location())
 endf
 
-fun! s:read_text(location)
+fun! s:read_text(location) abort
   let l:buf = bufnr(a:location.path)
   return l:buf ># 0 ? trim(getbufline(l:buf, a:location.line)[0]) : v:null
 endf
@@ -511,7 +511,7 @@ fun! s:log_info(...) abort
   endif
 endf
 
-fun! s:log_str(args)
+fun! s:log_str(args) abort
   return '[cargo-limit] ' . join(a:args, ' ')
 endf
 
