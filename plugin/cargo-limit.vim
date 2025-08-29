@@ -266,13 +266,24 @@ fun! s:update_locations(path) abort
 endf
 
 fun! s:compute_shifts(path) abort
+  const MAX_LINES = 8192
+
+  let l:offset_to_shift = []
+  let l:maybe_edited_line_numbers = {}
+  let l:buf = bufnr(a:path)
+  if l:buf <# 0
+    return [l:offset_to_shift, l:maybe_edited_line_numbers]
+  endif
+  let l:bufinfo = getbufinfo(l:buf)
+  if !empty(l:bufinfo) && l:bufinfo[0].linecount > MAX_LINES
+    return [l:offset_to_shift, l:maybe_edited_line_numbers]
+  endif
+
   let l:temp_source_path = s:temp_source_path(a:path)
 
   const DIFF_STATS_PATTERN = '@@ '
   const DIFF_COMMAND = ['git', 'diff', '--unified=0', '--ignore-cr-at-eol', '--ignore-space-at-eol', '--no-index', '--no-color', '--no-ext-diff', '--diff-algorithm=histogram', '--', l:temp_source_path, a:path]
 
-  let l:offset_to_shift = []
-  let l:maybe_edited_line_numbers = {}
   if !filereadable(l:temp_source_path)
     return [l:offset_to_shift, l:maybe_edited_line_numbers]
   endif
