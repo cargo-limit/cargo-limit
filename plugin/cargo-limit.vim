@@ -281,7 +281,7 @@ fun! s:compute_shifts(path) abort
     return [l:offset_to_shift, l:maybe_edited_line_numbers]
   endif
 
-  let l:diff_stdout_lines = split(system(DIFF_COMMAND), "\n")
+  let l:diff_stdout_lines = systemlist(DIFF_COMMAND)
   let l:diff_stdout_index = 0
   while l:diff_stdout_index <# len(l:diff_stdout_lines) - 1
     let l:diff_line = l:diff_stdout_lines[l:diff_stdout_index]
