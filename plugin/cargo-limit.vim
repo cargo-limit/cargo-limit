@@ -371,7 +371,11 @@ endf
 fun! s:read_text(location) abort
   const MAX_LEN = 255
   let l:buf = bufnr(a:location.path)
-  return l:buf ># 0 ? trim(getbufline(l:buf, a:location.line)[0][:MAX_LEN]) : v:null
+  if l:buf <# 0
+    return v:null
+  endif
+  let l:bufline = getbufline(l:buf, a:location.line)
+  return empty(l:bufline) ? v:null : trim(l:bufline[0][:MAX_LEN])
 endf
 
 fun! s:maybe_delete_dead_unix_socket(server_address) abort
