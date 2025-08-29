@@ -269,11 +269,7 @@ fun! s:compute_shifts(path) abort
   let l:temp_source_path = s:temp_source_path(a:path)
 
   const DIFF_STATS_PATTERN = '@@ '
-  const DIFF_COMMAND =
-    \ 'git diff --unified=0 --ignore-cr-at-eol --ignore-space-at-eol --no-index --no-color --no-ext-diff --diff-algorithm=histogram -- '
-    \ . shellescape(l:temp_source_path)
-    \ . ' '
-    \ . shellescape(a:path)
+  const DIFF_COMMAND = ['git', 'diff', '--unified=0', '--ignore-cr-at-eol', '--ignore-space-at-eol', '--no-index', '--no-color', '--no-ext-diff', '--diff-algorithm=histogram', '--', l:temp_source_path, a:path]
 
   let l:offset_to_shift = []
   let l:maybe_edited_line_numbers = {}
