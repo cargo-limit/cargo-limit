@@ -321,7 +321,7 @@ fun! g:CargoLimitUpdate(editor_data)
 endf
 ```
 
-Behavior may depend on your configuration. Use `:copen` if the quickfix list didn't appear to you automatically after project rebuild.
+Behavior may depend on your configuration. Use `:copen` if the quickfix list didn't appear to you automatically.
 
 </p>
 </details>
