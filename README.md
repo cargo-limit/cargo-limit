@@ -103,7 +103,8 @@ This tool is especially useful in combination with [cargo-watch](https://crates.
 <summary><b>💡 Neovim Plugin 👁️</b></summary>
 <p>
 
-Requires `nvim >= 0.7.0` and `git` to be installed.
+> [!NOTE]
+> Requires `nvim >= 0.7.0` and `git` to be installed.
 
 This plugin is [LSP](https://microsoft.github.io/language-server-protocol/)-independent, **it will keep working even when [rust-analyzer](https://rust-analyzer.github.io/) fails** to produce diagnostics!
 
@@ -121,7 +122,10 @@ nvim +PlugInstall +UpdateRemotePlugins +qa
 <summary><b>💡 Using other Neovim Plugin Managers 👁️</b></summary>
 <p>
 
-### [vim.pack](https://neovim.io/doc/user/pack.html#vim.pack) (Neovim 0.12+):
+### [vim.pack](https://neovim.io/doc/user/pack.html#vim.pack):
+> [!NOTE]
+> Requires `nvim >= 0.12`.
+
 ```lua
 vim.pack.add({ 'https://github.com/cargo-limit/cargo-limit' })
 ```
@@ -319,7 +323,8 @@ fun! g:CargoLimitUpdate(editor_data)
 endf
 ```
 
-Behavior may depend on your configuration. Run `:copen` if the quickfix list didn't appear to you automatically after building.
+> [!CAUTION]
+> Behavior may depend on your configuration. Use `:copen` if the quickfix list didn't appear to you automatically after project rebuild.
 
 </p>
 </details>
