@@ -299,20 +299,7 @@ endf
 set errorformat =%f:%l:%c:%m
 
 fun! g:CargoLimitUpdate(editor_data)
-  if a:editor_data.corrected_locations
-    let l:quickfix_list_is_open = v:false
-    for l:win in getwininfo()
-      if l:win.quickfix
-        let l:quickfix_list_is_open = v:true
-        break
-      endif
-    endfor
-
-    if !l:quickfix_list_is_open
-      return
-    endif
-  endif
-
+  let l:quickfix_is_visible = getbufvar(bufnr(), '&buftype') ==# 'quickfix'
   let l:winnr = winnr()
 
   cgetexpr []
@@ -322,20 +309,17 @@ fun! g:CargoLimitUpdate(editor_data)
 
   if empty(a:editor_data.locations)
     cclose
-  else
+  elseif !a:editor_data.corrected_locations && !l:quickfix_is_visible
     copen
   endif
 
-  for l:i in getbufinfo()
-    if stridx(l:i.name, '/BqfPreviewScrollBar') ># 0
-      return
-    endif
-  endfor
   if l:winnr !=# winnr()
     wincmd p
   endif
 endf
 ```
+
+Behavior may depend on your configuration. Run `:copen` if the quickfix list didn't appear to you automatically after building.
 
 </p>
 </details>
