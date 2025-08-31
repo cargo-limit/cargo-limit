@@ -169,17 +169,22 @@ impl FilteredAndOrderedMessages {
         let messages = messages
             .into_iter()
             .filter(|i| !i.message.spans.is_empty())
-            .map(|i| {
-                let spans_from_leaf_to_root = i.message.spans.iter().rev();
-                let key = spans_from_leaf_to_root
+            .flat_map(|i| {
+                let locations = i
+                    .message
+                    .spans
+                    .iter()
                     .map(|span| (span.file_name.clone(), span.line_start))
-                    .collect::<Vec<_>>();
-                (key, i)
+                    .collect_vec();
+                let first_file_name = locations.first().map(|(file_name, _)| file_name)?.clone();
+                let key = locations
+                    .into_iter()
+                    .filter(|(file_name, _)| *file_name == first_file_name)
+                    .min_by_key(|(_, line_start)| *line_start)?;
+                Some((key, i))
             })
-            .into_group_map()
-            .into_iter()
-            .sorted_by_key(|(paths, _messages)| paths.clone())
-            .flat_map(|(_paths, messages)| messages);
+            .sorted_by_key(|(key, _)| key.clone())
+            .map(|(_, message)| message);
 
         let mut project_messages = Vec::new();
         let mut dependencies_messages = Vec::new();
@@ -247,7 +252,7 @@ impl TransformedMessages {
                 Either::Right(messages.take(limit_messages))
             }
         }
-        .collect::<Vec<_>>();
+        .collect_vec();
 
         let locations_in_consistent_order =
             Self::extract_locations_for_external_app(&messages, options, workspace_root);
