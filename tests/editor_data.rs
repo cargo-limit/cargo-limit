@@ -5,7 +5,7 @@ use std::{
     process::Command,
 };
 
-// TODO: install xq or jaq
+// TODO: install xq or jaq?
 
 fn check_editor_data(project: &str) -> anyhow::Result<()> {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -39,8 +39,11 @@ fn check_editor_data(project: &str) -> anyhow::Result<()> {
 }
 
 #[test]
-fn smoke() -> anyhow::Result<()> {
-    check_editor_data("bugs")?;
-    check_editor_data("typos")?;
-    Ok(())
+fn bugs() -> anyhow::Result<()> {
+    check_editor_data("bugs")
+}
+
+#[test]
+fn typos() -> anyhow::Result<()> {
+    check_editor_data("typos")
 }
