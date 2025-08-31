@@ -69,11 +69,6 @@ impl Options {
             .chain(self.args_after_app_args_delimiter.clone())
     }
 
-    pub fn from_os_env(current_exe: String, workspace_root: &Path) -> Result<Self> {
-        todo!()
-    }
-
-    // TODO: rename
     fn from_vars_and_atty() -> Result<Self> {
         let mut result = Self::default();
         {
@@ -101,7 +96,7 @@ impl Options {
             subcommand,
             open_in_external_app_on_warnings,
             remaining_args,
-        } = ParsedSubcommand::parse(args, current_exe)?;
+        } = todo!();
         self.open_in_external_app_on_warnings = open_in_external_app_on_warnings;
 
         let mut args = remaining_args.into_iter();
@@ -111,31 +106,9 @@ impl Options {
         let mut app_args_started = false;
         let mut args_before_app_args_delimiter = Vec::new();
 
-        self.parse_options(
-            &mut args,
-            &mut color,
-            &mut args_before_app_args_delimiter,
-            &mut app_args_started,
-        )?;
         self.cargo_args.extend(args_before_app_args_delimiter);
 
         let mut app_color_is_set = false;
         Ok(self)
-    }
-
-    fn parse_options(
-        &mut self,
-        passed_args: &mut impl Iterator<Item = String>,
-        color: &mut String,
-        args_before_app_args_delimiter: &mut Vec<String>,
-        app_args_started: &mut bool,
-    ) -> Result<()> {
-        todo!()
-    }
-}
-
-impl ParsedSubcommand {
-    fn parse(args: impl Iterator<Item = String>, current_exe: String) -> Result<Self> {
-        todo!()
     }
 }
