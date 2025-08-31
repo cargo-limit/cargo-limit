@@ -75,20 +75,11 @@ impl Default for Options {
 
 impl Options {
     pub fn all_args(&self) -> impl Iterator<Item = String> {
-        let delimiter = if self.args_after_app_args_delimiter.is_empty() {
-            Either::Left(iter::empty())
-        } else {
-            Either::Right(iter::once(APP_ARGS_DELIMITER.to_owned()))
-        };
-        self.cargo_args
-            .clone()
-            .into_iter()
-            .chain(delimiter)
-            .chain(self.args_after_app_args_delimiter.clone())
+        todo!()
     }
 
     pub fn from_os_env(current_exe: String, workspace_root: &Path) -> Result<Self> {
-        Self::from_vars_and_atty()?.process_args(current_exe, env::args(), workspace_root)
+        todo!()
     }
 
     // TODO: rename
@@ -109,14 +100,5 @@ impl Options {
         }
 
         Ok(result)
-    }
-
-    fn process_args(
-        mut self,
-        current_exe: String,
-        args: impl Iterator<Item = String>,
-        workspace_root: &Path,
-    ) -> Result<Self> {
-        todo!()
     }
 }
