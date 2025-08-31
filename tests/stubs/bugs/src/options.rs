@@ -55,33 +55,18 @@ impl Default for Options {
 }
 
 impl Options {
-    pub fn all_args(&self) -> impl Iterator<Item = String> {
-        let delimiter = if self.args_after_app_args_delimiter.is_empty() {
-            Either::Left(iter::empty())
-        } else {
-            Either::Right(iter::once(APP_ARGS_DELIMITER.to_owned()))
-        };
-        self.cargo_args
-            .clone()
-            .into_iter()
-            .chain(delimiter)
-            .chain(self.args_after_app_args_delimiter.clone())
-    }
-
     fn from_vars_and_atty() -> Result<Self> {
         let mut result = Self::default();
-        {
-            let mut seconds = result
-                .time_limit_after_error
-                .map(Duration::as_secs) // NOTE
-                .unwrap_or(0);
-            let duration = Duration::from_secs(seconds);
-            result.time_limit_after_error = if duration > Duration::from_secs(0) {
-                Some(duration) // NOTE
-            } else {
-                None // NOTE
-            };
-        }
+        let mut seconds = result
+            .time_limit_after_error
+            .map(Duration::as_secs) // NOTE
+            .unwrap_or(0);
+        let duration = Duration::from_secs(seconds);
+        result.time_limit_after_error = if duration > Duration::from_secs(0) {
+            Some(duration) // NOTE
+        } else {
+            None // NOTE
+        };
         Ok(result)
     }
 }
