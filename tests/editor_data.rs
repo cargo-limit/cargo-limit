@@ -3,6 +3,7 @@ use std::{
     collections::HashSet,
     path::{Path, PathBuf},
     process::Command,
+    str::FromStr,
 };
 
 // TODO: install xq or jaq?
@@ -22,7 +23,12 @@ fn check_editor_data(project: &str) -> anyhow::Result<()> {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let project_dir = workspace_root.join("tests/stubs").join(project);
     dbg!("check_editor_data 2");
-    let output = Command::new(workspace_root.join("target/release/cargo-llcheck"))
+    let target_dir = option_env!("CARGO_TARGET_DIR")
+        .map(PathBuf::from_str)
+        .transpose()?
+        .unwrap_or(workspace_root.join("target"));
+    dbg!("check_editor_data 2.1", &target_dir);
+    let output = Command::new(target_dir.join("release/cargo-llcheck"))
         .env("CARGO_EDITOR", "cat")
         .current_dir(&project_dir)
         .output()?;
