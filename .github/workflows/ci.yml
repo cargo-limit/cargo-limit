@@ -175,9 +175,12 @@ jobs:
       - name: Build Release
         if: ${{ !matrix.no_release_build && !matrix.zigbuild }}
         run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
+      - name: Check Release
+        if: ${{ !matrix.no_release_build && !matrix.zigbuild }}
+        run: target/release/cargo-lclippy --version
       - name: Zigbuild Release
         if: ${{ !matrix.no_release_build && matrix.zigbuild }}
         run: cargo zigbuild --locked --verbose --all-features --release --target=${{ matrix.target }}
       - name: Run Tests
         if: ${{ !matrix.no_build_tests && !matrix.no_run_tests && !matrix.zigbuild && !matrix.no_release_build }}
-        run: cargo test --locked --verbose --all-features --target=${{ matrix.target }} --verbose -- --nocapture
+        run: cargo test --locked --verbose --all-features --target=${{ matrix.target }} -- --nocapture
