@@ -25,8 +25,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
-    include_str!("../additional_environment_variables.txt");
+const ADDITIONAL_ENVIRONMENT_VARIABLES: &str = "";
 
 #[doc(hidden)]
 pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
