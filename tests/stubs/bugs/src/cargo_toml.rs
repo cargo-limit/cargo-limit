@@ -18,22 +18,18 @@ struct Item {
 
 impl CargoToml {
     pub fn parse(workspace_root: &Path) -> Result<Self> {
-        let mut cargo_toml_path = workspace_root.to_path_buf();
-        cargo_toml_path.push("Cargo.toml");
-        Ok(toml::from_str(&String::from_utf8(fs::read(
-            cargo_toml_path,
-        )?)?)?)
+        todo!()
     }
 
     pub fn all_tests_have_harness(&self) -> bool {
-        Self::all_have_harness(self.test.iter())
+        todo!()
     }
 
     pub fn all_benchmarks_have_harness(&self) -> bool {
-        Self::all_have_harness(self.bench.iter())
+        todo!()
     }
 
     fn all_have_harness<'i>(items: impl Iterator<Item = &'i Item>) -> bool {
-        items.filter_map(|i| i.harness).all(identity)
+        todo!()
     }
 }

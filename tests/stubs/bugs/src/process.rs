@@ -43,126 +43,56 @@ trait StateExt {
 
 impl CargoProcess {
     pub fn run(options: &Options) -> Result<Self> {
-        let cargo_path = env::var(CARGO_ENV_VAR)
-            .map(PathBuf::from)
-            .ok()
-            .unwrap_or_else(|| PathBuf::from(CARGO_EXECUTABLE));
-
-        let error_text = failed_to_execute_error_text(&cargo_path);
-        let child = Command::new(cargo_path)
-            .args(options.all_args())
-            .stdout(Stdio::piped())
-            .spawn()
-            .context(error_text)?;
-
-        let state = Arc::new(Atomic::new(State::Running));
-        ctrlc::set_handler({
-            let pid = child.id();
-            let state = state.clone();
-            move || {
-                Self::kill(pid, state.clone());
-            }
-        })?;
-
-        Ok(Self { child, state })
+        todo!()
     }
 
     pub fn buffers(&mut self) -> Result<Buffers> {
-        Buffers::new(&mut self.child)
+        todo!()
     }
 
     pub fn wait(&mut self) -> Result<i32> {
-        let exit_status = self.child.wait()?;
-        self.state.force_set_not_running();
-        Ok(exit_status.code().unwrap_or(NO_EXIT_CODE))
+        todo!()
     }
 
     pub fn wait_if_killing_is_in_progress(&self) -> State {
-        loop {
-            let state = self.state.load(Ordering::Acquire);
-            if state == State::Killing {
-                thread::yield_now();
-            } else {
-                break state;
-            }
-        }
+        todo!()
     }
 
     pub fn kill_after_timeout(&self, time_limit: Duration) {
-        if self.state.try_set_start_kill_timer() {
-            thread::spawn({
-                let pid = self.child.id();
-                let state = self.state.clone();
-                move || {
-                    thread::sleep(time_limit);
-                    Self::kill(pid, state);
-                }
-            });
-        }
+        todo!()
     }
 
     fn kill(pid: u32, state: Arc<Atomic<State>>) {
-        if state.try_set_killing() {
-            let success = {
-                #[cfg(unix)]
-                unsafe {
-                    libc::kill(pid as libc::pid_t, libc::SIGINT) == 0
-                }
-
-                #[cfg(windows)]
-                {
-                    use std::process::Output;
-                    if let Ok(Output { stderr, .. }) = Command::new("taskkill")
-                        .args(["/PID", pid.to_string().as_str(), "/t"])
-                        .output()
-                    {
-                        String::from_utf8_lossy(&stderr).starts_with("SUCCESS")
-                    } else {
-                        false
-                    }
-                }
-
-                #[cfg(not(any(unix, windows)))]
-                compile_error!("this platform is unsupported");
-            };
-
-            if success {
-                state.set_not_running()
-            } else {
-                state.set_failed_to_kill()
-            }
-        }
+        todo!()
     }
 }
 
 impl StateExt for Arc<Atomic<State>> {
     fn try_set_killing(&self) -> bool {
-        self.transit(State::Running, State::Killing)
-            || self.transit(State::KillTimerStarted, State::Killing)
+        todo!()
     }
 
     fn try_set_start_kill_timer(&self) -> bool {
-        self.transit(State::Running, State::KillTimerStarted)
+        todo!()
     }
 
     fn set_not_running(&self) {
-        let _ = self.transit(State::Killing, State::NotRunning);
+        todo!()
     }
 
     fn force_set_not_running(&self) {
-        self.store(State::NotRunning, Ordering::Release);
+        todo!()
     }
 
     fn set_failed_to_kill(&self) {
-        let _ = self.transit(State::Killing, State::FailedToKill);
+        todo!()
     }
 
     fn transit(&self, current: State, new: State) -> bool {
-        self.compare_exchange(current, new, Ordering::AcqRel, Ordering::Acquire)
-            .is_ok()
+        todo!()
     }
 }
 
 pub(crate) fn failed_to_execute_error_text<T: fmt::Debug>(app: T) -> String {
-    format!("failed to execute {:?}", app)
+    todo!()
 }
