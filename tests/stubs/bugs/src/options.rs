@@ -52,13 +52,6 @@ pub struct Options {
     short_message_format: bool,
 }
 
-#[derive(Debug, PartialEq)]
-struct ParsedSubcommand {
-    subcommand: String,
-    open_in_external_app_on_warnings: bool,
-    remaining_args: Vec<String>,
-}
-
 impl Default for Options {
     fn default() -> Self {
         Self {
@@ -124,12 +117,6 @@ impl Options {
         args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
-        todo!()
-    }
-}
-
-impl ParsedSubcommand {
-    fn parse(args: impl Iterator<Item = String>, current_exe: String) -> Result<Self> {
         todo!()
     }
 }
