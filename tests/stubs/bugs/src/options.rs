@@ -108,8 +108,6 @@ impl Options {
                 .time_limit_after_error
                 .map(Duration::as_secs)
                 .unwrap_or(0);
-            Self::parse_var("CARGO_TIME_LIMIT", &mut seconds)?;
-
             let duration = Duration::from_secs(seconds);
             result.time_limit_after_error = if duration > Duration::from_secs(0) {
                 Some(duration)
@@ -117,15 +115,6 @@ impl Options {
                 None
             };
         }
-
-        Self::parse_var("CARGO_MSG_LIMIT", &mut result.limit_messages)?;
-        Self::parse_var("CARGO_ASC", &mut result.ascending_messages_order)?;
-        Self::parse_var(
-            "CARGO_FORCE_WARN",
-            &mut result.show_warnings_if_errors_exist,
-        )?;
-        Self::parse_var("CARGO_DEPS_WARN", &mut result.show_dependencies_warnings)?;
-        Self::parse_var("CARGO_EDITOR", &mut result.open_in_external_app)?;
 
         Ok(result)
     }
