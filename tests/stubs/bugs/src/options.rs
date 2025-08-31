@@ -4,34 +4,9 @@ use const_format::concatcp;
 use itertools::Either;
 use std::{env, io, io::IsTerminal, iter, path::Path, str::FromStr, time::Duration};
 
-const EXECUTABLE_PREFIX: &str = concatcp!(CARGO_EXECUTABLE, "-l");
-
 const APP_ARGS_DELIMITER: &str = "--";
 
-const MESSAGE_FORMAT: &str = "--message-format=";
-const MESSAGE_FORMAT_JSON: &str = "";
-const MESSAGE_FORMAT_JSON_WITH_COLORS: &str = "";
-const MESSAGE_FORMAT_JSON_SHORT: &str = "";
-
-const JSON_FORMAT: &str = "json";
-const JSON_FORMAT_WITH_COLORS: &str = "json-diagnostic-rendered-ansi";
-const JSON_FORMAT_SHORT: &str = "json-diagnostic-short";
-const SHORT_FORMAT: &str = "short";
-const HUMAN_FORMAT: &str = "human";
-const VALID_MESSAGE_FORMATS: &[&str] = &[
-    HUMAN_FORMAT,
-    SHORT_FORMAT,
-    JSON_FORMAT,
-    JSON_FORMAT_SHORT,
-    JSON_FORMAT_WITH_COLORS,
-    JSON_FORMAT_SHORT,
-];
-
-const COLOR: &str = "--color=";
-const COLOR_AUTO: &str = "auto";
-const COLOR_ALWAYS: &str = "always";
-const COLOR_NEVER: &str = "never";
-const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
+const COLOR_AUTO: &str = "";
 
 #[derive(Debug, PartialEq)]
 pub struct Options {
