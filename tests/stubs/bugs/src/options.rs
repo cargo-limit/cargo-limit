@@ -127,41 +127,7 @@ impl Options {
         todo!()
     }
 
-    fn parse_options(
-        &mut self,
-        passed_args: &mut impl Iterator<Item = String>,
-        color: &mut String,
-        args_before_app_args_delimiter: &mut Vec<String>,
-        app_args_started: &mut bool,
-    ) -> Result<()> {
-        todo!()
-    }
-
     fn message_format(&self, color: String) -> &str {
-        todo!()
-    }
-
-    fn process_custom_runners(
-        &mut self,
-        subcommand: String,
-        app_color_is_set: bool,
-        workspace_root: &Path,
-    ) -> Result<()> {
-        todo!()
-    }
-
-    fn process_args_after_app_args_delimiter(
-        &mut self,
-        passed_args: impl Iterator<Item = String>,
-        app_color_is_set: &mut bool,
-    ) {
-        todo!()
-    }
-
-    fn parse_var<T: FromStr>(key: &str, value: &mut T) -> Result<()>
-    where
-        <T as FromStr>::Err: std::error::Error + Sync + Send + 'static,
-    {
         todo!()
     }
 
