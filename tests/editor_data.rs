@@ -7,6 +7,16 @@ use std::{
 
 // TODO: install xq or jaq?
 
+#[test]
+fn bugs() -> anyhow::Result<()> {
+    check_editor_data("bugs")
+}
+
+#[test]
+fn typos() -> anyhow::Result<()> {
+    check_editor_data("typos")
+}
+
 fn check_editor_data(project: &str) -> anyhow::Result<()> {
     dbg!("check_editor_data 1");
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -41,14 +51,4 @@ fn check_editor_data(project: &str) -> anyhow::Result<()> {
     }
     dbg!("check_editor_data 5");
     Ok(())
-}
-
-#[test]
-fn bugs() -> anyhow::Result<()> {
-    check_editor_data("bugs")
-}
-
-#[test]
-fn typos() -> anyhow::Result<()> {
-    check_editor_data("typos")
 }
