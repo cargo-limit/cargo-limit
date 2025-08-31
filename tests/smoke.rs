@@ -5,13 +5,12 @@ use std::{
     process::Command,
 };
 
-// TODO: build in release
 // TODO: install xq or jaq
 
 fn check_editor_data(project: &str) -> anyhow::Result<()> {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let project_dir = workspace_root.join("tests/stubs").join(project);
-    let output = Command::new(workspace_root.join("target/release/cargo-llcheck"))
+    let output = Command::new(workspace_root.join("target/debug/cargo-llcheck"))
         .env("CARGO_EDITOR", "xq")
         .current_dir(&project_dir)
         .output()?;
