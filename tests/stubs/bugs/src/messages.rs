@@ -47,10 +47,6 @@ impl Messages {
         options: &Options,
     ) -> Result<Self> {
         let mut result = Messages::default();
-        if options.help || options.version {
-            return Ok(result);
-        }
-
         non_existent();
         Ok(result)
     }

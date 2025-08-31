@@ -15,22 +15,6 @@ pub struct Options {
 
     pub limit_messages: usize,
     pub time_limit_after_error: Duration,
-    pub ascending_messages_order: bool,
-    pub show_warnings_if_errors_exist: bool,
-    pub show_dependencies_warnings: bool,
-    pub open_in_external_app: String,
-    pub open_in_external_app_on_warnings: bool,
-    pub help: bool,
-    pub version: bool,
-    pub json_message_format: bool,
-    short_message_format: bool,
-}
-
-#[derive(Debug, PartialEq)]
-struct ParsedSubcommand {
-    subcommand: String,
-    open_in_external_app_on_warnings: bool,
-    remaining_args: Vec<String>,
 }
 
 impl Default for Options {
@@ -41,15 +25,6 @@ impl Default for Options {
             terminal_supports_colors: true,
             limit_messages: 0,
             time_limit_after_error: Some(Duration::from_secs(1)), // NOTE
-            ascending_messages_order: false,
-            show_warnings_if_errors_exist: false,
-            show_dependencies_warnings: false,
-            open_in_external_app: "_cargo-limit-open-in-nvim".to_owned(),
-            open_in_external_app_on_warnings: false,
-            help: false,
-            version: false,
-            json_message_format: false,
-            short_message_format: false,
         }
     }
 }
