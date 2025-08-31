@@ -145,12 +145,6 @@ impl Options {
         self.cargo_args.extend(args_before_app_args_delimiter);
 
         let mut app_color_is_set = false;
-        if app_args_started {
-            self.process_args_after_app_args_delimiter(args, &mut app_color_is_set);
-        }
-
-        self.process_custom_runners(subcommand, app_color_is_set, workspace_root)?;
-
         Ok(self)
     }
 
@@ -163,116 +157,10 @@ impl Options {
     ) -> Result<()> {
         todo!()
     }
-
-    fn process_custom_runners(
-        &mut self,
-        subcommand: String,
-        app_color_is_set: bool,
-        workspace_root: &Path,
-    ) -> Result<()> {
-        let is_test = subcommand == "test";
-        let is_bench = subcommand == "bench";
-        let command_supports_color_arg = is_test || is_bench;
-        if command_supports_color_arg && !app_color_is_set && self.terminal_supports_colors {
-            let cargo_toml = CargoToml::parse(workspace_root)?;
-            let all_items_have_harness = if is_test {
-                cargo_toml.all_tests_have_harness()
-            } else if is_bench {
-                cargo_toml.all_benchmarks_have_harness()
-            } else {
-                unreachable!()
-            };
-            if all_items_have_harness {
-                // Workaround for apps that can't understand that terminal supports colors.
-                // To fix that properly we need to run apps in pty.
-                // https://github.com/alopatindev/cargo-limit/issues/4#issuecomment-833692334
-                self.add_color_arg(COLOR_ALWAYS);
-            }
-        }
-        Ok(())
-    }
-
-    fn process_args_after_app_args_delimiter(
-        &mut self,
-        passed_args: impl Iterator<Item = String>,
-        app_color_is_set: &mut bool,
-    ) {
-        for arg in passed_args {
-            if arg == COLOR[..COLOR.len() - 1] || arg.starts_with(COLOR) {
-                *app_color_is_set = true;
-            }
-            self.args_after_app_args_delimiter.push(arg);
-        }
-    }
-
-    fn validate_color(color: &str) -> Result<()> {
-        if !VALID_COLORS.contains(&color) {
-            return Err(format_err!(
-                "argument for {} must be {} (was {})",
-                &COLOR[..COLOR.len() - 1],
-                VALID_COLORS.join(", "),
-                color,
-            ));
-        }
-        Ok(())
-    }
-
-    fn validate_message_format(format: &str) -> Result<()> {
-        if !VALID_MESSAGE_FORMATS.contains(&format) {
-            return Err(format_err!(
-                "argument for {} must be {} (was {})",
-                &MESSAGE_FORMAT[..MESSAGE_FORMAT.len() - 1],
-                VALID_MESSAGE_FORMATS.join(", "),
-                format,
-            ));
-        }
-        Ok(())
-    }
-
-    fn add_color_arg(&mut self, value: &str) {
-        self.args_after_app_args_delimiter
-            .push(format!("{}{}", COLOR, value));
-    }
 }
 
 impl ParsedSubcommand {
     fn parse(args: impl Iterator<Item = String>, current_exe: String) -> Result<Self> {
-        let current_exe = current_exe.to_lowercase();
-        let (_, subcommand) = current_exe
-            .split_once(EXECUTABLE_PREFIX)
-            .context("invalid arguments")?;
-        let (open_in_external_app_on_warnings, subcommand) = if subcommand.starts_with('l') {
-            let (_, subcommand) = subcommand.split_once('l').context("invalid arguments")?;
-            (true, subcommand)
-        } else {
-            (false, subcommand)
-        };
-
-        let mut peekable_args = args.peekable();
-        loop {
-            let arg = peekable_args.peek();
-            let executable = arg
-                .and_then(|arg| Path::new(arg).file_stem())
-                .map(|i| i.to_string_lossy());
-            if let Some(executable) = executable {
-                if executable == CARGO_EXECUTABLE
-                    || executable == current_exe
-                    || executable == format!("l{}", subcommand)
-                    || executable == format!("ll{}", subcommand)
-                {
-                    let _ = peekable_args.next();
-                } else {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-
-        Ok(Self {
-            subcommand: subcommand.to_owned(),
-            open_in_external_app_on_warnings,
-            remaining_args: peekable_args.collect(),
-        })
+        todo!()
     }
 }
