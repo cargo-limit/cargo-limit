@@ -5,7 +5,6 @@ use std::{
     env,
     path::{Path, PathBuf},
     process::Command,
-    str::FromStr,
 };
 
 // TODO: install xq or jaq?
