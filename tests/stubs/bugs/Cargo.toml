@@ -1,0 +1,28 @@
+[package]
+name = "cargo-limit"
+version = "0.0.10"
+authors = ["Alexander Lopatin <github.com/alopatindev>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Cargo with less noise: warnings are skipped until errors are fixed, Neovim integration, etc."
+repository = "https://github.com/alopatindev/cargo-limit"
+keywords = ["cargo", "neovim", "filter", "wrapper", "dedup"]
+readme = "README.md"
+documentation = "https://github.com/alopatindev/cargo-limit#readme"
+
+[dependencies]
+anyhow = "1"
+atomig = { version = "0.4", features = ["derive"] }
+cargo_metadata = "0.15"
+const_format = "0.2.31"
+ctrlc = { version = "3", features = ["termination"] }
+itertools = "0.10"
+serde = "1"
+serde_json = "1"
+toml = "0.7"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+pretty_assertions = "1"

@@ -1,41 +1,31 @@
 use cargo_metadata::diagnostic::{Diagnostic, DiagnosticLevel, DiagnosticSpan};
+use getset::Getters;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Getters)]
 pub struct EditorData {
-    protocol_version: String,
+    #[get = "pub"]
     workspace_root: PathBuf,
-
-    #[serde(rename = "files")]
-    pub locations: Vec<Location>,
+    files: Vec<Location>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize)]
 pub struct Location {
-    pub path: PathBuf,
-    pub line: usize,
-    pub column: usize,
-    pub message: String,
-    pub level: DiagnosticLevel,
+    path: PathBuf,
+    line: usize,
+    column: usize,
+    message: String,
+    level: DiagnosticLevel,
 }
 
 impl EditorData {
     pub fn new(workspace_root: &Path, locations_in_consistent_order: Vec<Location>) -> Self {
         let workspace_root = workspace_root.to_path_buf();
-        let protocol_version = std::env!("CARGO_PKG_VERSION").to_string();
         Self {
-            protocol_version,
             workspace_root,
-            locations: locations_in_consistent_order,
+            files: locations_in_consistent_order,
         }
-    }
-
-    pub fn escaped_workspace_root(&self) -> String {
-        const ESCAPE_CHAR: &str = "%";
-        self.workspace_root
-            .to_string_lossy()
-            .replace(['/', '\\', ':'], ESCAPE_CHAR)
     }
 }
 
