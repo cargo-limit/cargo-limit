@@ -9,21 +9,12 @@ const COLOR_AUTO: &str = "";
 
 #[derive(Debug, PartialEq)]
 pub struct Options {
-    cargo_args: Vec<String>,
-    args_after_app_args_delimiter: Vec<String>,
-    terminal_supports_colors: bool,
-
-    pub limit_messages: usize,
     pub time_limit_after_error: Duration,
 }
 
 impl Default for Options {
     fn default() -> Self {
         Self {
-            cargo_args: Vec::new(),
-            args_after_app_args_delimiter: Vec::new(),
-            terminal_supports_colors: true,
-            limit_messages: 0,
             time_limit_after_error: Some(Duration::from_secs(1)), // NOTE
         }
     }
