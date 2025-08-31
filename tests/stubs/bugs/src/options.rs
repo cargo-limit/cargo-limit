@@ -3,10 +3,6 @@ use anyhow::{format_err, Context, Result};
 use itertools::Either;
 use std::{env, io, io::IsTerminal, iter, path::Path, str::FromStr, time::Duration};
 
-const APP_ARGS_DELIMITER: &str = "--";
-
-const COLOR_AUTO: &str = "";
-
 #[derive(Debug, PartialEq)]
 pub struct Options {
     pub time_limit_after_error: Duration,
