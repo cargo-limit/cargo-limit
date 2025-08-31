@@ -15,7 +15,7 @@ impl Default for Options {
 }
 
 impl Options {
-    fn from_vars_and_atty() -> Result<Self> {
+    fn f() {
         let mut result = Self::default();
         let mut seconds = result
             .time_limit_after_error
@@ -27,6 +27,5 @@ impl Options {
         } else {
             None // NOTE
         };
-        Ok(result)
     }
 }

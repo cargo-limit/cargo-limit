@@ -1,4 +1,4 @@
-use crate::{io::Buffers, options::Options};
+use crate::options::Options;
 use anyhow::{Context, Result};
 use atomig::{Atom, Atomic};
 use std::{
@@ -39,10 +39,6 @@ trait StateExt {
 
 impl CargoProcess {
     pub fn run(options: &Options) -> Result<Self> {
-        todo!()
-    }
-
-    pub fn buffers(&mut self) -> Result<Buffers> {
         todo!()
     }
 
