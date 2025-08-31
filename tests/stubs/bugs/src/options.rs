@@ -124,37 +124,7 @@ impl Options {
         args: impl Iterator<Item = String>,
         workspace_root: &Path,
     ) -> Result<Self> {
-        let ParsedSubcommand {
-            subcommand,
-            open_in_external_app_on_warnings,
-            remaining_args,
-        } = ParsedSubcommand::parse(args, current_exe)?;
-        self.open_in_external_app_on_warnings = open_in_external_app_on_warnings;
-
-        let mut args = remaining_args.into_iter();
-        self.cargo_args.push(subcommand.clone());
-
-        let mut color = COLOR_AUTO.to_owned();
-        let mut app_args_started = false;
-        let mut args_before_app_args_delimiter = Vec::new();
-
-        self.parse_options(
-            &mut args,
-            &mut color,
-            &mut args_before_app_args_delimiter,
-            &mut app_args_started,
-        )?;
-        self.cargo_args.push(self.message_format(color).to_owned());
-        self.cargo_args.extend(args_before_app_args_delimiter);
-
-        let mut app_color_is_set = false;
-        if app_args_started {
-            self.process_args_after_app_args_delimiter(args, &mut app_color_is_set);
-        }
-
-        self.process_custom_runners(subcommand, app_color_is_set, workspace_root)?;
-
-        Ok(self)
+        todo!()
     }
 
     fn parse_options(
