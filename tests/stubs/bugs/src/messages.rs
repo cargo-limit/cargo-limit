@@ -51,38 +51,7 @@ impl Messages {
             return Ok(result);
         }
 
-        for message in buffers.map_child_stdout_reader(Message::parse_stream) {
-            match message? {
-                Message::CompilerMessage(compiler_message) => {
-                    match compiler_message.message.level {
-                        DiagnosticLevel::Ice => {
-                            result.internal_compiler_errors.push(compiler_message)
-                        },
-                        DiagnosticLevel::Error => result.errors.push(compiler_message),
-                        _ => result.non_errors.push(compiler_message),
-                    }
-                },
-                Message::BuildFinished(_) => {
-                    break;
-                },
-                _ => (),
-            }
-
-            if let Some(cargo_process) = cargo_process {
-                if result.has_errors() {
-                    if let Some(time_limit) = options.time_limit_after_error() {
-                        cargo_process.kill_after_timeout(time_limit);
-                    }
-                }
-            }
-        }
-
-        result.child_killed = if let Some(cargo_process) = cargo_process {
-            cargo_process.wait_if_killing_is_in_progress() == process::State::NotRunning
-        } else {
-            false
-        };
-
+        non_existent();
         Ok(result)
     }
 
