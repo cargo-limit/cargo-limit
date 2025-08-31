@@ -1,6 +1,4 @@
-use crate::{cargo_toml::CargoToml, process::CARGO_EXECUTABLE};
 use anyhow::{format_err, Context, Result};
-use itertools::Either;
 use std::{env, io, io::IsTerminal, iter, path::Path, str::FromStr, time::Duration};
 
 #[derive(Debug, PartialEq)]
