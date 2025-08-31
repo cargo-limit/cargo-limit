@@ -95,21 +95,17 @@ impl Options {
     }
 
     pub fn from_os_env(current_exe: String, workspace_root: &Path) -> Result<Self> {
-        Self::from_vars_and_atty()?.process_args(current_exe, env::args(), workspace_root)
+        todo!()
     }
 
     // TODO: rename
     fn from_vars_and_atty() -> Result<Self> {
         let mut result = Self::default();
-        result.detect_terminal_color_support();
-
         {
             let mut seconds = result
                 .time_limit_after_error
                 .map(Duration::as_secs)
                 .unwrap_or(0);
-            Self::parse_var("CARGO_TIME_LIMIT", &mut seconds)?;
-
             let duration = Duration::from_secs(seconds);
             result.time_limit_after_error = if duration > Duration::from_secs(0) {
                 Some(duration)
@@ -117,21 +113,7 @@ impl Options {
                 None
             };
         }
-
-        Self::parse_var("CARGO_MSG_LIMIT", &mut result.limit_messages)?;
-        Self::parse_var("CARGO_ASC", &mut result.ascending_messages_order)?;
-        Self::parse_var(
-            "CARGO_FORCE_WARN",
-            &mut result.show_warnings_if_errors_exist,
-        )?;
-        Self::parse_var("CARGO_DEPS_WARN", &mut result.show_dependencies_warnings)?;
-        Self::parse_var("CARGO_EDITOR", &mut result.open_in_external_app)?;
-
         Ok(result)
-    }
-
-    fn detect_terminal_color_support(&mut self) {
-        self.terminal_supports_colors = io::stderr().is_terminal()
     }
 
     fn process_args(
@@ -282,18 +264,6 @@ impl Options {
             }
             self.args_after_app_args_delimiter.push(arg);
         }
-    }
-
-    fn parse_var<T: FromStr>(key: &str, value: &mut T) -> Result<()>
-    where
-        <T as FromStr>::Err: std::error::Error + Sync + Send + 'static,
-    {
-        if let Ok(new_value) = env::var(key) {
-            *value = new_value
-                .parse()
-                .with_context(|| format!("invalid {} value", key))?;
-        }
-        Ok(())
     }
 
     fn validate_color(color: &str) -> Result<()> {
