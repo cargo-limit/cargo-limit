@@ -1,5 +1,5 @@
-use anyhow::{format_err, Context, Result};
-use std::{env, io, io::IsTerminal, iter, path::Path, str::FromStr, time::Duration};
+use anyhow::Result;
+use std::time::Duration;
 
 #[derive(Debug, PartialEq)]
 pub struct Options {
