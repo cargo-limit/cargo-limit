@@ -11,10 +11,6 @@ use std::{
 };
 
 pub(crate) const CARGO_EXECUTABLE: &str = "cargo";
-const CARGO_ENV_VAR: &str = "CARGO";
-
-#[doc(hidden)]
-pub const NO_EXIT_CODE: i32 = 127;
 
 #[derive(Debug)]
 pub struct CargoProcess {
