@@ -101,7 +101,6 @@ impl Options {
     // TODO: rename
     fn from_vars_and_atty() -> Result<Self> {
         let mut result = Self::default();
-        result.detect_terminal_color_support();
 
         {
             let mut seconds = result
@@ -117,10 +116,6 @@ impl Options {
         }
 
         Ok(result)
-    }
-
-    fn detect_terminal_color_support(&mut self) {
-        todo!()
     }
 
     fn process_args(
