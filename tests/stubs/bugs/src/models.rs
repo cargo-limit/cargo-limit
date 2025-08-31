@@ -1,4 +1,4 @@
-use cargo_metadata::diagnostic::{Diagnostic, DiagnosticLevel, DiagnosticSpan};
+/*use cargo_metadata::diagnostic::{Diagnostic, DiagnosticLevel, DiagnosticSpan};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -52,4 +52,4 @@ impl Location {
             level: diagnostic.level,
         }
     }
-}
+}*/
