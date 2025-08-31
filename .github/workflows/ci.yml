@@ -177,7 +177,10 @@ jobs:
         run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
       - name: Check Release
         if: ${{ !matrix.no_release_build && !matrix.zigbuild }}
-        run: find . -type f -name cargo-lclippy
+        run: |
+          pwd
+          find . -type f -name cargo-lclippy
+          find /home/runner/work/cargo-limit/cargo-limit/ -type f -name cargo-lclippy
         #run: target/release/cargo-lclippy --version
       - name: Zigbuild Release
         if: ${{ !matrix.no_release_build && matrix.zigbuild }}
