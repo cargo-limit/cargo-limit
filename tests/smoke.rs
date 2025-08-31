@@ -8,15 +8,18 @@ use std::{
 // TODO: build in release
 // TODO: install xq or jaq
 
-fn check_messages_sanity(project_dir: &str) -> anyhow::Result<()> {
+fn check_editor_data(project: &str) -> anyhow::Result<()> {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let project_dir = workspace_root.join("tests/stubs").join(project);
     let output = Command::new(workspace_root.join("target/release/cargo-llcheck"))
         .env("CARGO_EDITOR", "xq")
-        .current_dir(workspace_root.join("tests/stubs").join(project_dir))
+        .current_dir(&project_dir)
         .output()?;
     assert!(!output.status.success());
     let data: EditorData = serde_json::from_slice(&output.stdout)?;
     dbg!(&data); // TODO
+    assert_eq!(data.workspace_root, project_dir);
+    assert!(!data.locations.is_empty());
 
     let mut current_line = None;
     let mut current_path = None;
@@ -38,7 +41,7 @@ fn check_messages_sanity(project_dir: &str) -> anyhow::Result<()> {
 
 #[test]
 fn smoke() -> anyhow::Result<()> {
-    check_messages_sanity("bugs")?;
-    check_messages_sanity("typos")?;
+    check_editor_data("bugs")?;
+    check_editor_data("typos")?;
     Ok(())
 }

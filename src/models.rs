@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct EditorData {
-    protocol_version: String,
-    workspace_root: PathBuf,
+    pub protocol_version: String,
+    pub workspace_root: PathBuf,
 
     #[serde(rename = "files")]
     pub locations: Vec<Location>,
