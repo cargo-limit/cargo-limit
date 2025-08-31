@@ -126,22 +126,6 @@ impl Options {
     ) -> Result<Self> {
         todo!()
     }
-
-    fn message_format(&self, color: String) -> &str {
-        todo!()
-    }
-
-    fn validate_color(color: &str) -> Result<()> {
-        todo!()
-    }
-
-    fn validate_message_format(format: &str) -> Result<()> {
-        todo!()
-    }
-
-    fn add_color_arg(&mut self, value: &str) {
-        todo!()
-    }
 }
 
 impl ParsedSubcommand {
