@@ -14,14 +14,8 @@ pub struct Messages {
 }
 
 impl Messages {
-    pub fn parse_with_timeout_on_error(
-        buffers: &mut Buffers,
-        cargo_process: Option<&CargoProcess>,
-        options: &Options,
-    ) -> Result<Self> {
-        let mut result = Messages::default();
+    pub fn f() {
         non_existent(); // NOTE
-        Ok(result)
     }
 
     pub fn merge(&mut self, other: Self) {
