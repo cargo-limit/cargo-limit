@@ -142,7 +142,6 @@ impl Options {
             &mut args_before_app_args_delimiter,
             &mut app_args_started,
         )?;
-        self.cargo_args.push(self.message_format(color).to_owned());
         self.cargo_args.extend(args_before_app_args_delimiter);
 
         let mut app_color_is_set = false;
@@ -162,67 +161,7 @@ impl Options {
         args_before_app_args_delimiter: &mut Vec<String>,
         app_args_started: &mut bool,
     ) -> Result<()> {
-        while let Some(arg) = passed_args.next() {
-            if arg == "-h" || arg == "--help" {
-                self.help = true;
-                args_before_app_args_delimiter.push(arg);
-            } else if arg == "-V" || arg == "--version" {
-                self.version = true;
-                args_before_app_args_delimiter.push(arg);
-            } else if arg == COLOR[..COLOR.len() - 1] {
-                *color = passed_args.next().context(
-                    "the argument '--color <WHEN>' requires a value but none was supplied",
-                )?;
-                Self::validate_color(color)?;
-            } else if let Some(color_value) = arg.strip_prefix(COLOR) {
-                *color = color_value.to_owned();
-                Self::validate_color(color)?;
-            } else if arg == MESSAGE_FORMAT[..MESSAGE_FORMAT.len() - 1] {
-                let format = passed_args.next().context(
-                    "the argument '--message-format <FMT>' requires a value but none was supplied",
-                )?;
-                Self::validate_message_format(&format)?;
-                if format.starts_with(JSON_FORMAT) {
-                    self.json_message_format = true;
-                } else if format == SHORT_FORMAT {
-                    self.short_message_format = true;
-                }
-            } else if let Some(format) = arg.strip_prefix(MESSAGE_FORMAT) {
-                Self::validate_message_format(format)?;
-                if format.starts_with(JSON_FORMAT) {
-                    self.json_message_format = true;
-                } else if format == SHORT_FORMAT {
-                    self.short_message_format = true;
-                }
-            } else if arg == APP_ARGS_DELIMITER {
-                *app_args_started = true;
-                break;
-            } else {
-                args_before_app_args_delimiter.push(arg);
-            }
-        }
-
-        Ok(())
-    }
-
-    fn message_format(&self, color: String) -> &str {
-        if self.short_message_format {
-            MESSAGE_FORMAT_JSON_SHORT
-        } else if self.json_message_format {
-            MESSAGE_FORMAT_JSON
-        } else if color == COLOR_AUTO {
-            if self.terminal_supports_colors {
-                MESSAGE_FORMAT_JSON_WITH_COLORS
-            } else {
-                MESSAGE_FORMAT_JSON
-            }
-        } else if color == COLOR_ALWAYS {
-            MESSAGE_FORMAT_JSON_WITH_COLORS
-        } else if color == COLOR_NEVER {
-            MESSAGE_FORMAT_JSON
-        } else {
-            unreachable!()
-        }
+        todo!()
     }
 
     fn process_custom_runners(
