@@ -8,23 +8,15 @@ struct B {
 impl Default for B {
     fn default() -> Self {
         Self {
-            b: Some(Duration::from_secs(1)), // NOTE
+            b: Some(Duration::from_secs(1)),
         }
     }
 }
 
 impl B {
     fn f() {
-        let mut result = B::default();
-        let mut seconds = result
-            .b
-            .map(Duration::as_secs) // NOTE
-            .unwrap_or(0);
-        let duration = Duration::from_secs(seconds);
-        result.b = if duration > Duration::from_secs(0) {
-            Some(duration) // NOTE
-        } else {
-            None // NOTE
-        };
+        let b = B::default().b.map(Duration::as_secs).unwrap_or(0);
+        let _ = Duration::from_secs(b);
+        result.b = None;
     }
 }
