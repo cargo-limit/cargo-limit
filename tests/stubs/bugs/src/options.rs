@@ -181,7 +181,6 @@ impl Options {
         app_args_started: &mut bool,
     ) -> Result<()> {
         todo!()
-        Ok(())
     }
 
     fn message_format(&self, color: String) -> &str {
