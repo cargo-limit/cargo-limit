@@ -151,9 +151,9 @@ jobs:
       - name: Install cargo-audit
         if: ${{ matrix.audit }}
         run: cargo install --locked cargo-audit
-      #- name: Install xq
-      #  if: ${{ !matrix.no_run_tests }}
-      #  run: cargo install --locked xq
+      - name: Install xq
+        if: ${{ !matrix.no_run_tests }}
+        run: cargo install --locked xq
       - name: Check vulnerabilities with existing patches
         if: ${{ matrix.audit }}
         run: |

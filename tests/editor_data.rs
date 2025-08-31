@@ -1,6 +1,8 @@
+use anyhow::Context;
 use cargo_limit::models::EditorData;
 use std::{
     collections::HashSet,
+    env,
     path::{Path, PathBuf},
     process::Command,
     str::FromStr,
@@ -10,26 +12,26 @@ use std::{
 
 #[test]
 fn bugs() -> anyhow::Result<()> {
-    check_editor_data("bugs")
+    check("bugs")
 }
 
 #[test]
 fn typos() -> anyhow::Result<()> {
-    check_editor_data("typos")
+    check("typos")
 }
 
-fn check_editor_data(project: &str) -> anyhow::Result<()> {
+fn check(project: &str) -> anyhow::Result<()> {
     dbg!("check_editor_data 1");
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let project_dir = workspace_root.join("tests/stubs").join(project);
     dbg!("check_editor_data 2");
-    let target_dir = option_env!("CARGO_TARGET_DIR")
-        .map(PathBuf::from_str)
-        .transpose()?
-        .unwrap_or(workspace_root.join("target"));
+    let target_dir = env::current_exe()?
+        .parent()
+        .context("parent")?
+        .join("../../release");
     dbg!("check_editor_data 2.1", &target_dir);
-    let output = Command::new(target_dir.join("release/cargo-llcheck"))
-        .env("CARGO_EDITOR", "cat")
+    let output = Command::new(target_dir.join("cargo-llcheck"))
+        .env("CARGO_EDITOR", "xq")
         .current_dir(&project_dir)
         .output()?;
     dbg!("check_editor_data 3");
