@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 #[derive(Debug, PartialEq)]
-pub struct Options {
+struct Options {
     a: Duration,
 }
 
