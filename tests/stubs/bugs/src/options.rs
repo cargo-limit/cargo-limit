@@ -1,6 +1,5 @@
 use crate::{cargo_toml::CargoToml, process::CARGO_EXECUTABLE};
 use anyhow::{format_err, Context, Result};
-use const_format::concatcp;
 use itertools::Either;
 use std::{env, io, io::IsTerminal, iter, path::Path, str::FromStr, time::Duration};
 
@@ -41,7 +40,7 @@ impl Default for Options {
             args_after_app_args_delimiter: Vec::new(),
             terminal_supports_colors: true,
             limit_messages: 0,
-            time_limit_after_error: Some(Duration::from_secs(1)),
+            time_limit_after_error: Some(Duration::from_secs(1)), // NOTE
             ascending_messages_order: false,
             show_warnings_if_errors_exist: false,
             show_dependencies_warnings: false,
@@ -74,41 +73,15 @@ impl Options {
         {
             let mut seconds = result
                 .time_limit_after_error
-                .map(Duration::as_secs)
+                .map(Duration::as_secs) // NOTE
                 .unwrap_or(0);
             let duration = Duration::from_secs(seconds);
             result.time_limit_after_error = if duration > Duration::from_secs(0) {
-                Some(duration)
+                Some(duration) // NOTE
             } else {
-                None
+                None // NOTE
             };
         }
         Ok(result)
-    }
-
-    fn process_args(
-        mut self,
-        current_exe: String,
-        args: impl Iterator<Item = String>,
-        workspace_root: &Path,
-    ) -> Result<Self> {
-        let ParsedSubcommand {
-            subcommand,
-            open_in_external_app_on_warnings,
-            remaining_args,
-        } = todo!();
-        self.open_in_external_app_on_warnings = open_in_external_app_on_warnings;
-
-        let mut args = remaining_args.into_iter();
-        self.cargo_args.push(subcommand.clone());
-
-        let mut color = COLOR_AUTO.to_owned();
-        let mut app_args_started = false;
-        let mut args_before_app_args_delimiter = Vec::new();
-
-        self.cargo_args.extend(args_before_app_args_delimiter);
-
-        let mut app_color_is_set = false;
-        Ok(self)
     }
 }
