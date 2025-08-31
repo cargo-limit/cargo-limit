@@ -3,8 +3,6 @@
 #[doc(hidden)]
 pub mod models;
 
-mod cargo_toml;
-mod io;
 mod messages;
 mod options;
 mod process;
