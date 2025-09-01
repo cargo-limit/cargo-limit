@@ -1,5 +1,5 @@
-use crate::non::Buffers;
 use anyhow::Result;
+use non_existent;
 
 fn f() -> Result<()> {
     Ok1(())
