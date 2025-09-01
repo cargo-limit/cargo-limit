@@ -29,57 +29,14 @@ struct TransformedMessages {
     locations_in_consistent_order: Vec<Location>,
 }
 
-// TODO: make it as method of TransformedMessages?
-pub fn process_parsed_messages(
-    buffers: &mut Buffers,
-    parsed_messages: Messages,
-    options: &Options,
-    workspace_root: &Path,
-    mut process: impl FnMut(&mut Buffers, Vec<Message>, Vec<Location>) -> Result<()>,
-) -> Result<()> {
-    let TransformedMessages {
-        messages,
-        locations_in_consistent_order,
-    } = TransformedMessages::transform(parsed_messages, options, workspace_root)?;
-    process(buffers, messages, locations_in_consistent_order)
-}
-
 impl Messages {
     pub fn parse_with_timeout_on_error(
-        buffers: &mut Buffers,
         cargo_process: Option<&CargoProcess>,
         options: &Options,
     ) -> Result<Self> {
         let mut result = Messages::default();
         if options.help() || options.version() {
             return Ok(result);
-        }
-
-        for message in Message::parse_stream(buffers.child_stdout_reader_mut()) {
-            match message? {
-                Message::CompilerMessage(compiler_message) => {
-                    match compiler_message.message.level {
-                        DiagnosticLevel::Ice => {
-                            result.internal_compiler_errors.push(compiler_message)
-                        },
-                        DiagnosticLevel::Error => result.errors.push(compiler_message),
-                        _ => result.non_errors.push(compiler_message),
-                    }
-                },
-                Message::BuildFinished(_) => {
-                    break;
-                },
-                _ => (),
-            }
-
-            if let Some(cargo_process) = cargo_process {
-                if result.has_errors() {
-                    let time_limit = options.time_limit_after_error();
-                    if time_limit > Duration::from_secs(0) {
-                        cargo_process.kill_after_timeout(time_limit);
-                    }
-                }
-            }
         }
 
         result.child_killed = if let Some(cargo_process) = cargo_process {
@@ -249,11 +206,7 @@ impl TransformedMessages {
         for (span, message) in spans_and_messages {
             if !used_file_names.contains(&span.file_name) {
                 used_file_names.insert(span.file_name.clone());
-                locations_in_consistent_order.push(Location::new(
-                    span,
-                    message,
-                    workspace_root,
-                ));
+                locations_in_consistent_order.push(Location::new(span, message, workspace_root));
             }
         }
 

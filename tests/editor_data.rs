@@ -34,6 +34,7 @@ fn check(project: &str) -> anyhow::Result<()> {
     assert_eq!(data.workspace_root, project_dir);
     assert!(!data.locations.is_empty());
 
+    // TODO: distinguish warnings, normal errors and ICE errors?
     let mut current_line = None;
     let mut current_path = None;
     let mut visited_paths = HashSet::<PathBuf>::default();
