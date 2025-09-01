@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::{Context, Result};
 use cargo_limit::models::EditorData;
 use std::{
     collections::HashSet,
@@ -8,30 +8,35 @@ use std::{
 };
 
 #[test]
-fn a() -> anyhow::Result<()> {
+fn a() -> Result<()> {
     check("a")
 }
 
 #[ignore]
 #[test]
-fn b() -> anyhow::Result<()> {
+fn b() -> Result<()> {
     check("b") // FIXME
 }
 
 #[ignore]
 #[test]
-fn c() -> anyhow::Result<()> {
+fn c() -> Result<()> {
     check("c") // FIXME
 }
 
-fn check(project: &str) -> anyhow::Result<()> {
+fn check(project: &str) -> Result<()> {
+    check_with("cargo-llcheck", &[], project)?;
+    check_with("cargo-lltest", &["--no-run"], project)?;
+    Ok(())
+}
+
+fn check_with(bin: &str, args: &[&str], project: &str) -> Result<()> {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let project_dir = workspace_root.join("tests/stubs").join(project);
     let target_dir = env::current_exe()?
         .parent()
         .context("parent")?
         .join("../../release");
-    let bin = "cargo-lltest";
     let lltest = target_dir.join(bin);
     if !fs::exists(&lltest)? {
         assert!(
@@ -43,12 +48,13 @@ fn check(project: &str) -> anyhow::Result<()> {
         );
     }
     let output = Command::new(lltest)
-        .args(["--no-run"])
+        .args(args)
         .env("CARGO_EDITOR", "xq")
         .current_dir(&project_dir)
         .output()?;
     assert!(!output.status.success());
     let data: EditorData = serde_json::from_slice(&output.stdout)?;
+
     dbg!(&data);
     assert_eq!(data.workspace_root, project_dir);
     assert!(!data.locations.is_empty());
@@ -69,5 +75,6 @@ fn check(project: &str) -> anyhow::Result<()> {
         assert_eq!(current_path, Some(i.path));
         current_line = Some(i.line);
     }
+
     Ok(())
 }
