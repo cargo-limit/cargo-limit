@@ -125,50 +125,10 @@ impl TransformedMessages {
         options: &Options,
         workspace_root: &Path,
     ) -> Result<TransformedMessages> {
-        let has_errors = messages.has_errors();
-        let FilteredAndOrderedMessages { errors, warnings } =
-            FilteredAndOrderedMessages::filter(messages, options, workspace_root);
-
-        let errors = errors.into_iter();
-        let warnings = warnings.into_iter();
-        let messages = if options.show_warnings_if_errors_exist() {
-            Either::Left(errors.chain(warnings))
-        } else {
-            let messages = if has_errors {
-                Either::Left(errors)
-            } else {
-                Either::Right(warnings)
-            };
-            Either::Right(messages)
-        };
-
-        let limit_messages = options.limit_messages();
-        let no_limit = limit_messages == 0;
-        let messages = {
-            if no_limit {
-                Either::Left(messages)
-            } else {
-                Either::Right(messages.take(limit_messages))
-            }
-        }
-        .collect::<Vec<_>>();
-
         let locations_in_consistent_order =
             Self::extract_locations_for_external_app(&messages, options, workspace_root);
-
-        let messages = messages.into_iter();
-        let messages = {
-            if options.ascending_messages_order() {
-                Either::Left(messages)
-            } else {
-                Either::Right(messages.rev())
-            }
-        }
-        .map(Message::CompilerMessage)
-        .collect();
-
         Ok1(TransformedMessages {
-            messages,
+            messages: todo!(),
             locations_in_consistent_order,
         })
     }
