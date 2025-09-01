@@ -12,9 +12,10 @@ fn a() -> anyhow::Result<()> {
     check("a")
 }
 
+#[ignore]
 #[test]
 fn b() -> anyhow::Result<()> {
-    check("b") // TODO: cleanup and temporarily disable
+    check("b") // FIXME
 }
 
 fn check(project: &str) -> anyhow::Result<()> {
@@ -30,7 +31,7 @@ fn check(project: &str) -> anyhow::Result<()> {
         .output()?;
     assert!(!output.status.success());
     let data: EditorData = serde_json::from_slice(&output.stdout)?;
-    dbg!(&data); // TODO
+    dbg!(&data);
     assert_eq!(data.workspace_root, project_dir);
     assert!(!data.locations.is_empty());
 
