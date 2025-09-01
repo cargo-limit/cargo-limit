@@ -46,6 +46,7 @@ jobs:
           - os: ubuntu-latest
             target: aarch64-unknown-linux-musl
             no_build_tests: true # NOTE: Relocations in generic ELF (EM: 183)
+            no_release_build: true # NOTE: Relocations in generic ELF (EM: 183)
             #zigbuild: true # NOTE: Failed to read build.zig.zon (using latest): Error: ENOENT: no such file or directory, open 'build.zig.zon'
           # - os: ubuntu-latest
           #   target: riscv64gc-unknown-linux-musl # NOTE: error: target 'riscv64gc-unknown-linux-musl' not found in channel.
