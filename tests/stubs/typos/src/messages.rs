@@ -1,6 +1,5 @@
-use anyhow::Result;
 use non_existent;
 
-fn f() -> Result<()> {
+fn f() {
     Ok1(())
 }
