@@ -1,4 +1,4 @@
-use crate::non_existent;
+use crate::non::Buffers;
 use anyhow::Result;
 
 fn f() -> Result<()> {
