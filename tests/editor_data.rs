@@ -13,8 +13,8 @@ fn bugs() -> anyhow::Result<()> {
 }
 
 #[test]
-fn typos() -> anyhow::Result<()> {
-    check("typos") // TODO: cleanup and temporarily disable
+fn b() -> anyhow::Result<()> {
+    check("b") // TODO: cleanup and temporarily disable
 }
 
 fn check(project: &str) -> anyhow::Result<()> {
