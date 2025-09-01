@@ -25,6 +25,8 @@ fn check(project: &str) -> anyhow::Result<()> {
         .parent()
         .context("parent")?
         .join("../../release");
+
+    // TODO: run build --release when not found?
     let output = Command::new(target_dir.join("cargo-llcheck"))
         .env("CARGO_EDITOR", "xq")
         .current_dir(&project_dir)

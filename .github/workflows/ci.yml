@@ -30,7 +30,7 @@ jobs:
           - os: ubuntu-latest
             target: i686-unknown-linux-gnu
             no_build_tests: true
-            zigbuild: true
+            #zigbuild: true # NOTE: Failed to read build.zig.zon (using latest): Error: ENOENT: no such file or directory, open 'build.zig.zon'
           - os: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
             no_build_tests: true # NOTE: Relocations in generic ELF (EM: 243)
@@ -157,7 +157,7 @@ jobs:
         if: ${{ matrix.audit }}
         run: cargo install --locked cargo-audit
       - name: Install xq
-        if: ${{ !matrix.no_run_tests }}
+        if: ${{ !matrix.no_build_tests && !matrix.no_run_tests && !matrix.no_release_build }}
         run: cargo install --locked xq
       - name: Check vulnerabilities with existing patches
         if: ${{ matrix.audit }}
