@@ -3,7 +3,7 @@ use std::{collections::HashSet, path::PathBuf, process::Command};
 
 #[test]
 fn c() {
-    let output = Command::new("ls").output().unwrap();
+    let output = Command::new("").output().unwrap();
     let data: A = serde_json::from_slice(&output.stdout).unwrap();
     let mut current = None;
     let mut visited = HashSet::<PathBuf>::default();
