@@ -10,7 +10,7 @@ use std::{
     time::Duration,
 };
 
-pub(crate) const CARGO_EXECUTABLE: &str = "cargo";
+pub const CARGO_EXECUTABLE: &str = "cargo";
 const CARGO_ENV_VAR: &str = "CARGO";
 
 #[doc(hidden)]
