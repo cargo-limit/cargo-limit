@@ -6,6 +6,7 @@ use std::{
     process::{Command, ExitStatus, Output, exit},
 };
 
+#[doc(hidden)]
 struct NeovimCommand {
     escaped_workspace_root: String,
     command: String,
@@ -63,6 +64,7 @@ impl NeovimCommand {
     }
 }
 
+#[doc(hidden)]
 fn nvim_listen_address(escaped_workspace_root: String) -> Result<String> {
     const PREFIX: &str = "nvim-cargo-limit-";
 
@@ -88,6 +90,7 @@ fn nvim_listen_address(escaped_workspace_root: String) -> Result<String> {
     Ok(result)
 }
 
+#[doc(hidden)]
 fn main() -> Result<()> {
     let mut raw_editor_data = String::new();
     io::stdin().read_to_string(&mut raw_editor_data)?;

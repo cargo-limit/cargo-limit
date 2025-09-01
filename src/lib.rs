@@ -12,7 +12,6 @@ mod io;
 mod messages;
 mod options;
 
-#[doc(hidden)]
 pub use process::NO_EXIT_CODE;
 
 use crate::models::{EditorData, Location};
