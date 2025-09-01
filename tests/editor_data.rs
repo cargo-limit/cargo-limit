@@ -12,12 +12,13 @@ fn a() -> anyhow::Result<()> {
     check("a")
 }
 
-#[ignore]
+//#[ignore]
 #[test]
 fn b() -> anyhow::Result<()> {
     check("b") // FIXME
 }
 
+//#[ignore]
 #[test]
 fn c() -> anyhow::Result<()> {
     check("c") // FIXME
