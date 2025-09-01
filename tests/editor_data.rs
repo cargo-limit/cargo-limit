@@ -18,6 +18,11 @@ fn b() -> anyhow::Result<()> {
     check("b") // FIXME
 }
 
+#[test]
+fn c() -> anyhow::Result<()> {
+    check("c") // FIXME
+}
+
 fn check(project: &str) -> anyhow::Result<()> {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let project_dir = workspace_root.join("tests/stubs").join(project);
@@ -25,9 +30,9 @@ fn check(project: &str) -> anyhow::Result<()> {
         .parent()
         .context("parent")?
         .join("../../release");
-    let bin = "cargo-llcheck";
-    let llcheck = target_dir.join(bin);
-    if !fs::exists(&llcheck)? {
+    let bin = "cargo-lltest";
+    let lltest = target_dir.join(bin);
+    if !fs::exists(&lltest)? {
         assert!(
             Command::new("cargo")
                 .args(["build", "--release", "--bin", bin])
@@ -36,7 +41,8 @@ fn check(project: &str) -> anyhow::Result<()> {
                 .success()
         );
     }
-    let output = Command::new(llcheck)
+    let output = Command::new(lltest)
+        .args(["--no-run"])
         .env("CARGO_EDITOR", "xq")
         .current_dir(&project_dir)
         .output()?;
