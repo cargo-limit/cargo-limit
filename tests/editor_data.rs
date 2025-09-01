@@ -2,7 +2,7 @@ use anyhow::Context;
 use cargo_limit::models::EditorData;
 use std::{
     collections::HashSet,
-    env,
+    env, fs,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -25,9 +25,18 @@ fn check(project: &str) -> anyhow::Result<()> {
         .parent()
         .context("parent")?
         .join("../../release");
-
-    // TODO: run build --release when not found?
-    let output = Command::new(target_dir.join("cargo-llcheck"))
+    let bin = "cargo-llcheck";
+    let llcheck = target_dir.join(bin);
+    if !fs::exists(&llcheck)? {
+        assert!(
+            Command::new("cargo")
+                .args(["build", "--release", "--bin", bin])
+                .output()?
+                .status
+                .success()
+        );
+    }
+    let output = Command::new(llcheck)
         .env("CARGO_EDITOR", "xq")
         .current_dir(&project_dir)
         .output()?;
