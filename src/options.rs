@@ -1,4 +1,4 @@
-use crate::{cargo_toml::CargoToml, process::CARGO_EXECUTABLE};
+use crate::{cargo_toml::CargoToml, env_vars, process::CARGO_EXECUTABLE};
 use anyhow::{Context, Result, format_err};
 use const_format::concatcp;
 use itertools::Either;
@@ -112,7 +112,7 @@ impl Options {
                 .as_ref()
                 .map(Duration::as_secs)
                 .unwrap_or(0);
-            Self::parse_var("CARGO_TIME_LIMIT", &mut seconds)?;
+            Self::parse_var(env_vars::TIME_LIMIT, &mut seconds)?;
 
             let duration = Duration::from_secs(seconds);
             result.time_limit_after_error = if duration > Duration::from_secs(0) {
@@ -122,14 +122,14 @@ impl Options {
             };
         }
 
-        Self::parse_var("CARGO_MSG_LIMIT", &mut result.limit_messages)?;
-        Self::parse_var("CARGO_ASC", &mut result.ascending_messages_order)?;
+        Self::parse_var(env_vars::MSG_LIMIT, &mut result.limit_messages)?;
+        Self::parse_var(env_vars::ASC, &mut result.ascending_messages_order)?;
         Self::parse_var(
-            "CARGO_FORCE_WARN",
+            env_vars::FORCE_WARN,
             &mut result.show_warnings_if_errors_exist,
         )?;
-        Self::parse_var("CARGO_DEPS_WARN", &mut result.show_dependencies_warnings)?;
-        Self::parse_var("CARGO_EDITOR", &mut result.open_in_external_app)?;
+        Self::parse_var(env_vars::DEPS_WARN, &mut result.show_dependencies_warnings)?;
+        Self::parse_var(env_vars::EDITOR, &mut result.open_in_external_app)?;
 
         Ok(result)
     }
