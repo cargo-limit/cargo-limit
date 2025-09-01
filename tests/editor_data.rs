@@ -12,13 +12,13 @@ fn a() -> Result<()> {
     check("a")
 }
 
-#[ignore]
+//#[ignore]
 #[test]
 fn b() -> Result<()> {
     check("b") // FIXME
 }
 
-#[ignore]
+//#[ignore]
 #[test]
 fn c() -> Result<()> {
     check("c") // FIXME
