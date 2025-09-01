@@ -8,8 +8,8 @@ use std::{
 };
 
 #[test]
-fn bugs() -> anyhow::Result<()> {
-    check("bugs")
+fn a() -> anyhow::Result<()> {
+    check("a")
 }
 
 #[test]
