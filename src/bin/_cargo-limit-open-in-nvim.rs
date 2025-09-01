@@ -6,6 +6,7 @@ use std::{
     process::{Command, ExitStatus, Output, exit},
 };
 
+#[doc(hidden)]
 struct NeovimCommand {
     escaped_workspace_root: String,
     command: String,
@@ -65,6 +66,7 @@ impl NeovimCommand {
     }
 }
 
+#[doc(hidden)]
 fn nvim_listen_address(escaped_workspace_root: String) -> Result<String> {
     const PREFIX: &str = "nvim-cargo-limit-";
 
@@ -90,6 +92,7 @@ fn nvim_listen_address(escaped_workspace_root: String) -> Result<String> {
     Ok(result)
 }
 
+#[doc(hidden)]
 fn main() -> Result<()> {
     let code = if let Some(neovim_command) = NeovimCommand::from_editor_data(&mut io::stdin())? {
         neovim_command.run()?.code().unwrap_or(NO_EXIT_CODE)
