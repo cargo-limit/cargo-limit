@@ -77,46 +77,39 @@ fn check_with(bin: &str, args: &[&str], project: &str) -> Result<()> {
     Ok(())
 }
 
-fn resolve_dependency(bin: &str, target_dir: &Path) -> Result<PathBuf> {
-    let bin_path = target_dir.join(bin);
-    resolve_binary(&bin_path, move || {
-        let output = Command::new(CARGO_EXECUTABLE)
-            .args(["build", "--release", "--bin", bin])
-            .output()?;
-        assert!(output.status.success());
-        Ok(())
-    })?;
-    Ok(bin_path)
-}
-
 fn resolve_jq(target_dir: &Path) -> Result<PathBuf> {
-    let bin_path = target_dir.join("bin").join(JQ_EXECUTABLE);
-    resolve_binary(&bin_path, || {
-        let output = Command::new(CARGO_EXECUTABLE)
-            .args([
-                "install",
-                "--locked",
-                JQ_EXECUTABLE,
-                "--version",
-                JQ_VERSION,
-                "--root",
-                target_dir.to_str().context("target_dir")?,
-            ])
-            .output()?;
-        assert!(output.status.success());
-        Ok(())
-    })?;
-    Ok(bin_path)
-}
-
-fn resolve_binary<F: FnOnce() -> Result<()>>(bin_path: &Path, install: F) -> Result<()> {
+    // it uses multiple temporary directories when called in parallel
+    // which causes multiple unnecessary builds
     static MUTEX: OnceLock<Mutex<()>> = OnceLock::new();
     let mutex = MUTEX.get_or_init(|| Mutex::new(()));
+
+    let bin_path = target_dir.join("bin").join(JQ_EXECUTABLE);
     {
         let _unused = mutex.lock();
         if !fs::exists(&bin_path)? {
-            install()?;
+            let output = Command::new(CARGO_EXECUTABLE)
+                .args([
+                    "install",
+                    "--locked",
+                    JQ_EXECUTABLE,
+                    "--version",
+                    JQ_VERSION,
+                    "--root",
+                    target_dir.to_str().context("target_dir")?,
+                ])
+                .output()?;
+            assert!(output.status.success());
         }
     }
-    Ok(())
+    Ok(bin_path)
+}
+
+fn resolve_dependency(bin: &str, target_dir: &Path) -> Result<PathBuf> {
+    // file-locked by cargo, no need in mutex
+    let bin_path = target_dir.join(bin);
+    let output = Command::new(CARGO_EXECUTABLE)
+        .args(["build", "--release", "--bin", bin])
+        .output()?;
+    assert!(output.status.success());
+    Ok(bin_path)
 }
