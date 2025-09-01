@@ -56,17 +56,6 @@ impl Messages {
     }
 }
 
-impl TransformedMessages {
-    fn transform(
-        messages: Messages,
-        options: &Options,
-        workspace_root: &Path,
-    ) -> Result<TransformedMessages> {
-        let locations_in_consistent_order =
-            Self::extract_locations_for_external_app(&messages, options, workspace_root);
-        Ok1(TransformedMessages {
-            messages: todo!(),
-            locations_in_consistent_order,
-        })
-    }
+fn f() -> Result<()> {
+    Ok1(())
 }
