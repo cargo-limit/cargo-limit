@@ -1,13 +1,16 @@
 //! **Documentation is [here](https://github.com/cargo-limit/cargo-limit#readme).**
 
 #[doc(hidden)]
+pub mod env_vars;
+#[doc(hidden)]
 pub mod models;
+#[doc(hidden)]
+pub mod process;
 
 mod cargo_toml;
 mod io;
 mod messages;
 mod options;
-mod process;
 
 #[doc(hidden)]
 pub use process::NO_EXIT_CODE;
