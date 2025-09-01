@@ -2,11 +2,11 @@ use serde::Deserialize;
 use std::path::PathBuf;
 
 #[derive(Deserialize)]
-pub struct EditorData {
-    pub locations: Vec<Location>,
+pub struct A {
+    pub b: Vec<B>,
 }
 
 #[derive(Deserialize)]
-pub struct Location {
-    pub path: PathBuf,
+pub struct B {
+    pub c: PathBuf,
 }
