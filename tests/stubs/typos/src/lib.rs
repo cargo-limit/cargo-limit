@@ -7,10 +7,6 @@ mod cargo_toml;
 mod io;
 mod messages;
 mod options;
-mod process;
-
-#[doc(hidden)]
-pub use process::NO_EXIT_CODE;
 
 use crate::models::{EditorData, Location};
 use anyhow::{Context, Result};
@@ -18,15 +14,11 @@ use cargo_metadata::{Message, MetadataCommand};
 use io::Buffers;
 use messages::{process_parsed_messages, Messages};
 use options::Options;
-use process::{failed_to_execute_error_text, CargoProcess};
 use std::{
     io::Write,
     path::Path,
     process::{Command, Stdio},
 };
-
-const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
-    include_str!("../additional_environment_variables.txt");
 
 #[doc(hidden)]
 pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
@@ -95,10 +87,6 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
         buffers.copy_from_child_stdout_reader_to_stdout_writer()?;
         cargo_process.wait()?
     };
-
-    if options.help() {
-        buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
-    }
 
     Ok(exit_code)
 }
