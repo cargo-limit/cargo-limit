@@ -2,22 +2,22 @@ use cargo_metadata::diagnostic::{Diagnostic, DiagnosticLevel, DiagnosticSpan};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct EditorData {
-    protocol_version: String,
-    workspace_root: PathBuf,
+    pub protocol_version: String,
+    pub workspace_root: PathBuf,
 
     #[serde(rename = "files")]
-    locations: Vec<Location>,
+    pub locations: Vec<Location>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Location {
-    path: PathBuf,
-    line: usize,
-    column: usize,
-    message: String,
-    level: DiagnosticLevel,
+    pub path: PathBuf,
+    pub line: usize,
+    pub column: usize,
+    pub message: String,
+    pub level: DiagnosticLevel,
 }
 
 impl EditorData {

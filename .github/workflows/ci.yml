@@ -29,35 +29,43 @@ jobs:
             target: x86_64-unknown-linux-musl
           - os: ubuntu-latest
             target: i686-unknown-linux-gnu
-            zigbuild: true
+            no_build_tests: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
+            no_release_build: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
+            #zigbuild: true # NOTE: Failed to read build.zig.zon (using latest): Error: ENOENT: no such file or directory, open 'build.zig.zon'
           - os: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
             no_build_tests: true # NOTE: Relocations in generic ELF (EM: 243)
             no_release_build: true # NOTE: Relocations in generic ELF (EM: 243)
-            zigbuild: true # NOTE: tests linking fail with "error: unknown directive .cfi_label .Ldummy"
+            #zigbuild: true # NOTE: tests linking fail with "error: unknown directive .cfi_label .Ldummy"
           # - os: ubuntu-latest
           #   target: i686-unknown-linux-musl # NOTE: target 'i686-unknown-linux-musl' not found in channel
           - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu # NOTE: Relocations in generic ELF (EM: 183)
-            zigbuild: true
+            target: aarch64-unknown-linux-gnu
+            no_build_tests: true
+            no_release_build: true # NOTE: Relocations in generic ELF (EM: 183)
+            #zigbuild: true # NOTE: Failed to read build.zig.zon (using latest): Error: ENOENT: no such file or directory, open 'build.zig.zon'
           - os: ubuntu-latest
-            target: aarch64-unknown-linux-musl # NOTE: Relocations in generic ELF (EM: 183)
-            zigbuild: true
+            target: aarch64-unknown-linux-musl
+            no_build_tests: true # NOTE: Relocations in generic ELF (EM: 183)
+            no_release_build: true # NOTE: Relocations in generic ELF (EM: 183)
+            #zigbuild: true # NOTE: Failed to read build.zig.zon (using latest): Error: ENOENT: no such file or directory, open 'build.zig.zon'
           # - os: ubuntu-latest
           #   target: riscv64gc-unknown-linux-musl # NOTE: error: target 'riscv64gc-unknown-linux-musl' not found in channel.
 
           # macOS
           - os: macos-latest
             target: x86_64-apple-darwin
+            audit: true
           - os: macos-latest
             target: aarch64-apple-darwin
+            audit: true
 
           # Windows
           - os: windows-latest
             target: x86_64-pc-windows-gnu
-          - os: windows-latest
-            target: x86_64-pc-windows-gnu
-            zigbuild: true
+          #- os: windows-latest
+          #  target: x86_64-pc-windows-gnu
+          #  zigbuild: true # NOTE: failed to link with LLD: UnableToWriteArchive
           - os: windows-latest
             target: x86_64-pc-windows-msvc
           - os: windows-latest
@@ -77,6 +85,7 @@ jobs:
           # FreeBSD
           - os: ubuntu-latest
             target: x86_64-unknown-freebsd
+            audit: true
             no_build_tests: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
             no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
             #zigbuild: true # NOTE: tests linking fails "unsupported target 'x86_64-unknown-freebsd'"
@@ -90,6 +99,7 @@ jobs:
           # NetBSD
           - os: ubuntu-latest
             target: x86_64-unknown-netbsd
+            audit: true
             no_build_tests: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
             no_release_build: true # NOTE: ld: cannot find -lexecinfo: No such file or directory
             #zigbuild: true # NOTE: tests linking fails "Error: unsupported target 'x86_64-unknown-netbsd'"
@@ -150,7 +160,10 @@ jobs:
         run: vint plugin/cargo-limit.vim
       - name: Install cargo-audit
         if: ${{ matrix.audit }}
-        run: cargo install cargo-audit --locked
+        run: cargo install --locked cargo-audit
+      - name: Install xq
+        if: ${{ !matrix.no_build_tests && !matrix.no_run_tests && !matrix.no_release_build }}
+        run: cargo install --locked xq
       - name: Check vulnerabilities with existing patches
         if: ${{ matrix.audit }}
         run: |
@@ -169,12 +182,12 @@ jobs:
       - name: Zigbuild Tests
         if: ${{ !matrix.no_build_tests && matrix.zigbuild }}
         run: cargo zigbuild --tests --locked --verbose --all-features --target=${{ matrix.target }}
-      - name: Run Tests
-        if: ${{ !matrix.no_build_tests && !matrix.no_run_tests && !matrix.zigbuild }}
-        run: cargo test --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Build Release
         if: ${{ !matrix.no_release_build && !matrix.zigbuild }}
         run: cargo build --locked --verbose --all-features --release --target=${{ matrix.target }}
       - name: Zigbuild Release
         if: ${{ !matrix.no_release_build && matrix.zigbuild }}
         run: cargo zigbuild --locked --verbose --all-features --release --target=${{ matrix.target }}
+      - name: Run Tests
+        if: ${{ !matrix.no_build_tests && !matrix.no_run_tests && !matrix.zigbuild && !matrix.no_release_build }}
+        run: cargo test --locked --verbose --all-features --target=${{ matrix.target }} -- --nocapture
