@@ -274,7 +274,8 @@ fun! s:on_buffer_write() abort
   const l:diff_command = [
     \ 'git', 'diff', '--unified=0', '--ignore-cr-at-eol', '--ignore-space-at-eol',
     \ '--no-index', '--no-color', '--no-ext-diff', '--diff-algorithm=histogram', '--',
-    \ l:temp_source_path, l:current_file]
+    \ l:temp_source_path, l:current_file
+    \ ]
 
   let l:job_id = jobstart(l:diff_command, {
     \ 'on_stdout': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
@@ -457,14 +458,10 @@ fun! s:temp_source_path(path) abort
 endf
 
 fun! s:maybe_copy_to_temp(path) abort
-  call s:maybe_copy(a:path, s:temp_source_path(a:path))
-endf
-
-fun! s:maybe_copy(source, destination) abort
   const MAX_SIZE_BYTES = 1024 * 1024
-  if getfsize(a:source) <=# MAX_SIZE_BYTES
-    let l:data = readblob(a:source)
-    call writefile(l:data, a:destination, 'b')
+  if getfsize(a:path) <=# MAX_SIZE_BYTES
+    let l:data = readblob(a:path)
+    call writefile(l:data, s:temp_source_path(a:path), 'b')
   endif
 endf
 
