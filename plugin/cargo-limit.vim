@@ -250,7 +250,7 @@ endf
 
 fun! s:on_buffer_write() abort
   const DIFF_TIMEOUT_SECS = 5
-  const MAX_LINES = 8192
+  const MAX_LINES = 16 * 1024
 
   let l:current_file = s:current_file()
   if l:current_file ==# '' || !filereadable(l:current_file)
