@@ -9,7 +9,6 @@ fun! s:main() abort
     if !exists('g:CargoLimitVerbosity')
       let g:CargoLimitVerbosity = 3 " info level
     endif
-    let s:data_chunks = {} " TODO: remove?
     let s:editor_data = {'locations': []}
     let s:locations_texts = {}
     let s:workspace_root = v:null
@@ -19,7 +18,6 @@ fun! s:main() abort
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
     \ 'on_stdout': function('s:on_cargo_metadata'),
     \ 'on_stderr': function('s:on_cargo_metadata'),
-    \ 'on_exit': function('s:on_cargo_metadata'),
     \ 'stdout_buffered': v:true,
     \ 'stderr_buffered': v:true,
     \ })
@@ -28,25 +26,19 @@ fun! s:main() abort
   endif
 endf
 
-fun! s:on_cargo_metadata(job_id, data, event) abort
+fun! s:on_cargo_metadata(_job_id, data, event) abort
   if a:event ==# 'stdout'
-    if !has_key(s:data_chunks, a:job_id)
-      let s:data_chunks[a:job_id] = []
-    endif
-    call add(s:data_chunks[a:job_id], join(a:data, ''))
-  elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
-    let l:stderr = trim(join(a:data, "\n"))
-    if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
-      call s:log_error('cargo metadata', l:stderr)
-    endif
-  elseif a:event ==# 'exit'
-    let l:stdout = trim(join(s:data_chunks[a:job_id], ''))
-    call remove(s:data_chunks, a:job_id)
+    let l:stdout = trim(join(a:data, ''))
     if !empty(l:stdout)
       let l:metadata = json_decode(l:stdout)
       let s:workspace_root = get(l:metadata, 'workspace_root')
       let l:escaped_workspace_root = s:escape_path(s:workspace_root)
       call s:start_server(l:escaped_workspace_root)
+    endif
+  elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
+    let l:stderr = trim(join(a:data, "\n"))
+    if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
+      call s:log_error('cargo metadata', l:stderr)
     endif
   endif
 endf
@@ -287,39 +279,25 @@ fun! s:on_buffer_write() abort
   let l:job_id = jobstart(l:diff_command, {
   \ 'on_stdout': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
   \ 'on_stderr': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
-  \ 'on_exit': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
   \ 'stdout_buffered': v:true,
   \ 'stderr_buffered': v:true,
   \ })
 
   if l:job_id ># 0
-    call timer_start(DIFF_TIMEOUT_SECS * 1000, {-> jobstop(l:job_id)})
+    call timer_start(DIFF_TIMEOUT_SECS * 1000, { -> jobstop(l:job_id) })
   endif
 endf
 
-fun! s:on_diff(job_id, data, event, current_file) abort
+fun! s:on_diff(_job_id, data, event, current_file) abort
   const DIFF_STATS_PATTERN = '@@ '
 
   if a:event ==# 'stdout'
-    if !has_key(s:data_chunks, a:job_id)
-      let s:data_chunks[a:job_id] = []
-    endif
-    call add(s:data_chunks[a:job_id], join(a:data, "\n"))
-  elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
-    let l:stderr = trim(join(a:data, "\n"))
-    if !empty(l:stderr)
-      call s:log_error('diff', l:stderr)
-    endif
-  elseif a:event ==# 'exit'
-    let l:diff_stdout_lines = split(join(s:data_chunks[a:job_id], ''), "\n")
-    call remove(s:data_chunks, a:job_id)
-
     let l:offset_to_shift = []
     let l:maybe_edited_line_numbers = {}
 
     let l:diff_stdout_index = 0
-    while l:diff_stdout_index <# len(l:diff_stdout_lines) - 1
-      let l:diff_line = l:diff_stdout_lines[l:diff_stdout_index]
+    while l:diff_stdout_index <# len(a:data) - 1
+      let l:diff_line = a:data[l:diff_stdout_index]
       if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
         let l:raw_diff_stats = split(split(l:diff_line, DIFF_STATS_PATTERN)[0], ' ')
 
@@ -339,6 +317,11 @@ fun! s:on_diff(job_id, data, event, current_file) abort
 
     let l:path = a:current_file
     call s:on_compute_shifts(l:offset_to_shift, l:maybe_edited_line_numbers, l:path)
+  elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
+    let l:stderr = trim(join(a:data, "\n"))
+    if !empty(l:stderr)
+      call s:log_error('diff', l:stderr)
+    endif
   endif
 endf
 
