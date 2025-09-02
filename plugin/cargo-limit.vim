@@ -259,13 +259,11 @@ fun! s:on_buffer_write() abort
 
   let l:buf = bufnr(l:current_file)
   if l:buf <# 0
-    call s:on_compute_shifts([], {}, l:current_file)
-    return
+    return s:on_compute_shifts([], {}, l:current_file)
   endif
   let l:bufinfo = getbufinfo(l:buf)
   if !empty(l:bufinfo) && l:bufinfo[0].linecount ># MAX_LINES
-    call s:on_compute_shifts([], {}, l:current_file)
-    return
+    return s:on_compute_shifts([], {}, l:current_file)
   endif
 
   let l:temp_source_path = s:temp_source_path(l:current_file)
@@ -275,8 +273,7 @@ fun! s:on_buffer_write() abort
     \ l:temp_source_path, l:current_file]
 
   if !filereadable(l:temp_source_path)
-    call s:on_compute_shifts([], {}, l:current_file)
-    return
+    return s:on_compute_shifts([], {}, l:current_file)
   endif
 
   let l:job_id = jobstart(l:diff_command, {
