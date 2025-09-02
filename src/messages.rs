@@ -131,7 +131,12 @@ impl FilteredAndOrderedMessages {
         Self { errors, warnings }
     }
 
+    // TODO: rename
+    // TODO: rewrite with loop?
     fn filter_cargo_errors(messages: &[CompilerMessage]) -> Vec<CompilerMessage> {
+        // TODO: error: could not compile `a` (lib) due to 4 previous errors
+        // TODO: warning: build failed, waiting for other jobs to finish...
+        // TODO: error: could not compile `a` (lib test) due to 4 previous errors
         let (good, bad): (Vec<_>, Vec<_>) = messages
             .iter()
             .filter_map(|i| {
@@ -166,57 +171,29 @@ impl FilteredAndOrderedMessages {
         messages: impl IntoIterator<Item = CompilerMessage>,
         workspace_root: &Path,
     ) -> Vec<CompilerMessage> {
-        let messages = messages
+        messages
             .into_iter()
-            .filter(|i| !i.message.spans.is_empty())
             .flat_map(|i| {
-                let locations = i
+                let key = i
                     .message
                     .spans
                     .iter()
-                    .map(|span| (span.file_name.clone(), span.line_start))
-                    .collect_vec();
-                let first_file_name = locations.first().map(|(file_name, _)| file_name)?.clone();
-                let key = locations
-                    .into_iter()
-                    .filter(|(file_name, _)| *file_name == first_file_name)
-                    .min_by_key(|(_, line_start)| *line_start)?;
-                Some((key, i))
+                    .filter(|span| span.is_primary)
+                    .cloned()
+                    .map(TransformedMessages::find_leaf_project_expansion)
+                    .map(|span| (span.file_name, span.line_start, span.column_start))
+                    .min_by_key(|(_, line, column)| (*line, *column));
+                Some((key?, i))
             })
-            .sorted_by_key(|(key, _)| key.clone())
-            .map(|(_, message)| message);
-
-        let mut project_messages = Vec::new();
-        let mut dependencies_messages = Vec::new();
-        for i in messages {
-            if i.target.src_path.starts_with(workspace_root) {
-                project_messages.push(i);
-            } else {
-                dependencies_messages.push(i);
-            }
-        }
-
-        project_messages
-            .into_iter()
-            .chain(dependencies_messages)
-            .unique_by(|i| {
-                i.message
-                    .spans
-                    .clone()
-                    .into_iter()
-                    .unique_by(|span| {
-                        (
-                            span.line_start,
-                            span.text
-                                .iter()
-                                .map(|text| text.text.clone())
-                                .unique()
-                                .next(),
-                        )
-                    })
-                    .collect_vec()
+            .sorted_by_key(|(key, message)| {
+                let (file_name, _, _) = &key;
+                let is_dependency = !message.target.src_path.starts_with(workspace_root);
+                let is_relative = Path::new(&file_name).is_relative();
+                (is_dependency, is_relative, key.clone())
             })
-            .collect()
+            .unique_by(|(key, _)| key.clone())
+            .map(|(_, message)| message)
+            .collect_vec()
     }
 }
 
@@ -268,7 +245,7 @@ impl TransformedMessages {
         .map(Message::CompilerMessage)
         .collect();
 
-        Ok(TransformedMessages {
+        Ok(Self {
             messages,
             locations_in_consistent_order,
         })
@@ -279,6 +256,7 @@ impl TransformedMessages {
         options: &Options,
         workspace_root: &Path,
     ) -> Vec<Location> {
+        // TODO: do find_leaf_project_expansion once
         messages
             .iter()
             .filter(|message| {

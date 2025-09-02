@@ -16,16 +16,14 @@ fn a() -> Result<()> {
     check("a")
 }
 
-#[ignore]
 #[test]
 fn b() -> Result<()> {
-    check("b") // FIXME
+    check("b")
 }
 
-#[ignore]
 #[test]
 fn c() -> Result<()> {
-    check("c") // FIXME
+    check("c")
 }
 
 fn check(project: &str) -> Result<()> {
@@ -55,9 +53,13 @@ fn check_with(bin: &str, args: &[&str], project: &str) -> Result<()> {
     assert!(!output.status.success() || data.locations.is_empty());
     if !output.status.success() {
         dbg!(&data);
+        eprintln!("{}", String::from_utf8(output.stderr)?);
     }
 
     // TODO: distinguish warnings, normal errors and ICE errors?
+    // TODO: check duplicates
+    // TODO: check dependencies warnings prioritization
+    // TODO: check external path dependencies' warnings skipping
     let mut current_line = None;
     let mut current_path = None;
     let mut visited_paths = HashSet::<PathBuf>::default();
