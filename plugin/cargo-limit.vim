@@ -16,11 +16,11 @@ fun! s:main() abort
     let s:temp_sources_dir = v:null
     let s:deprecated_cargo_limit_open = v:null
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
-    \ 'on_stdout': function('s:on_cargo_metadata'),
-    \ 'on_stderr': function('s:on_cargo_metadata'),
-    \ 'stdout_buffered': v:true,
-    \ 'stderr_buffered': v:true,
-    \ })
+      \ 'on_stdout': function('s:on_cargo_metadata'),
+      \ 'on_stderr': function('s:on_cargo_metadata'),
+      \ 'stdout_buffered': v:true,
+      \ 'stderr_buffered': v:true,
+      \ })
   else
     throw 'unsupported text editor'
   endif
@@ -269,7 +269,10 @@ fun! s:on_buffer_write() abort
   endif
 
   let l:temp_source_path = s:temp_source_path(l:current_file)
-  const l:diff_command = ['git', 'diff', '--unified=0', '--ignore-cr-at-eol', '--ignore-space-at-eol', '--no-index', '--no-color', '--no-ext-diff', '--diff-algorithm=histogram', '--', l:temp_source_path, l:current_file]
+  const l:diff_command = [
+    \ 'git', 'diff', '--unified=0', '--ignore-cr-at-eol', '--ignore-space-at-eol',
+    \ '--no-index', '--no-color', '--no-ext-diff', '--diff-algorithm=histogram', '--',
+    \ l:temp_source_path, l:current_file]
 
   if !filereadable(l:temp_source_path)
     call s:on_compute_shifts([], {}, l:current_file)
@@ -277,18 +280,18 @@ fun! s:on_buffer_write() abort
   endif
 
   let l:job_id = jobstart(l:diff_command, {
-  \ 'on_stdout': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
-  \ 'on_stderr': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
-  \ 'stdout_buffered': v:true,
-  \ 'stderr_buffered': v:true,
-  \ })
+    \ 'on_stdout': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
+    \ 'on_stderr': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
+    \ 'stdout_buffered': v:true,
+    \ 'stderr_buffered': v:true,
+    \ })
 
   if l:job_id ># 0
     call timer_start(DIFF_TIMEOUT_SECS * 1000, { -> jobstop(l:job_id) })
   endif
 endf
 
-fun! s:on_diff(_job_id, data, event, current_file) abort
+fun! s:on_diff(_job_id, data, event, path) abort
   const DIFF_STATS_PATTERN = '@@ '
 
   if a:event ==# 'stdout'
@@ -315,8 +318,7 @@ fun! s:on_diff(_job_id, data, event, current_file) abort
       let l:diff_stdout_index += 1
     endwhile
 
-    let l:path = a:current_file
-    call s:on_compute_shifts(l:offset_to_shift, l:maybe_edited_line_numbers, l:path)
+    call s:on_compute_shifts(l:offset_to_shift, l:maybe_edited_line_numbers, a:path)
   elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
     let l:stderr = trim(join(a:data, "\n"))
     if !empty(l:stderr)
