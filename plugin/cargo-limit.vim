@@ -9,7 +9,7 @@ fun! s:main() abort
     if !exists('g:CargoLimitVerbosity')
       let g:CargoLimitVerbosity = 3 " info level
     endif
-    let s:data_chunks = []
+    let s:data_chunks = {} " TODO: remove?
     let s:editor_data = {'locations': []}
     let s:locations_texts = {}
     let s:workspace_root = v:null
@@ -20,22 +20,28 @@ fun! s:main() abort
     \ 'on_stdout': function('s:on_cargo_metadata'),
     \ 'on_stderr': function('s:on_cargo_metadata'),
     \ 'on_exit': function('s:on_cargo_metadata'),
+    \ 'stdout_buffered': v:true,
+    \ 'stderr_buffered': v:true,
     \ })
   else
     throw 'unsupported text editor'
   endif
 endf
 
-fun! s:on_cargo_metadata(_job_id, data, event) abort
+fun! s:on_cargo_metadata(job_id, data, event) abort
   if a:event ==# 'stdout'
-    call add(s:data_chunks, join(a:data, ''))
+    if !has_key(s:data_chunks, a:job_id)
+      let s:data_chunks[a:job_id] = []
+    endif
+    call add(s:data_chunks[a:job_id], join(a:data, ''))
   elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
     let l:stderr = trim(join(a:data, "\n"))
     if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
       call s:log_error('cargo metadata', l:stderr)
     endif
   elseif a:event ==# 'exit'
-    let l:stdout = trim(join(s:data_chunks, ''))
+    let l:stdout = trim(join(s:data_chunks[a:job_id], ''))
+    call remove(s:data_chunks, a:job_id)
     if !empty(l:stdout)
       let l:metadata = json_decode(l:stdout)
       let s:workspace_root = get(l:metadata, 'workspace_root')
@@ -250,69 +256,114 @@ fun! s:decrement_location_index() abort
   endwhile
 endf
 
-fun! s:update_locations(path) abort
-  let [l:offset_to_shift, l:maybe_edited_line_numbers] = s:compute_shifts(a:path)
+fun! s:on_buffer_write() abort
+  const DIFF_TIMEOUT_SECS = 5
+  const MAX_LINES = 8192
 
+  let l:current_file = s:current_file()
+  if l:current_file ==# '' || !filereadable(l:current_file)
+    return
+  endif
+
+  let l:buf = bufnr(l:current_file)
+  if l:buf <# 0
+    call s:on_compute_shifts([], {}, l:current_file)
+    return
+  endif
+  let l:bufinfo = getbufinfo(l:buf)
+  if !empty(l:bufinfo) && l:bufinfo[0].linecount ># MAX_LINES
+    call s:on_compute_shifts([], {}, l:current_file)
+    return
+  endif
+
+  let l:temp_source_path = s:temp_source_path(l:current_file)
+  const l:diff_command = ['git', 'diff', '--unified=0', '--ignore-cr-at-eol', '--ignore-space-at-eol', '--no-index', '--no-color', '--no-ext-diff', '--diff-algorithm=histogram', '--', l:temp_source_path, l:current_file]
+
+  if !filereadable(l:temp_source_path)
+    call s:on_compute_shifts([], {}, l:current_file)
+    return
+  endif
+
+  let l:job_id = jobstart(l:diff_command, {
+  \ 'on_stdout': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
+  \ 'on_stderr': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
+  \ 'on_exit': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
+  \ 'stdout_buffered': v:true,
+  \ 'stderr_buffered': v:true,
+  \ })
+
+  if l:job_id ># 0
+    call timer_start(DIFF_TIMEOUT_SECS * 1000, {-> jobstop(l:job_id)})
+  endif
+endf
+
+fun! s:on_diff(job_id, data, event, current_file) abort
+  const DIFF_STATS_PATTERN = '@@ '
+
+  if a:event ==# 'stdout'
+    if !has_key(s:data_chunks, a:job_id)
+      let s:data_chunks[a:job_id] = []
+    endif
+    call add(s:data_chunks[a:job_id], join(a:data, "\n"))
+  elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
+    let l:stderr = trim(join(a:data, "\n"))
+    if !empty(l:stderr)
+      call s:log_error('diff', l:stderr)
+    endif
+  elseif a:event ==# 'exit'
+    let l:diff_stdout_lines = split(join(s:data_chunks[a:job_id], ''), "\n")
+    call remove(s:data_chunks, a:job_id)
+
+    let l:offset_to_shift = []
+    let l:maybe_edited_line_numbers = {}
+
+    let l:diff_stdout_index = 0
+    while l:diff_stdout_index <# len(l:diff_stdout_lines) - 1
+      let l:diff_line = l:diff_stdout_lines[l:diff_stdout_index]
+      if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
+        let l:raw_diff_stats = split(split(l:diff_line, DIFF_STATS_PATTERN)[0], ' ')
+
+        let [l:removal_offset, l:removals] = s:parse_diff_stats(l:raw_diff_stats[0], '-')
+        let [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_diff_stats[1], '+')
+        if l:additions ==# 0 || l:removals ==# 0
+          let l:shifted_lines = l:additions - l:removals
+          call add(l:offset_to_shift, [l:removal_offset, l:shifted_lines])
+        else
+          for l:index in range(0, l:removals - 1)
+            let l:maybe_edited_line_numbers[l:removal_offset + l:index] = v:true
+          endfor
+        endif
+      endif
+      let l:diff_stdout_index += 1
+    endwhile
+
+    let l:path = a:current_file
+    call s:on_compute_shifts(l:offset_to_shift, l:maybe_edited_line_numbers, l:path)
+  endif
+endf
+
+fun! s:on_compute_shifts(offset_to_shift, maybe_edited_line_numbers, path) abort
+  let l:maybe_edited_line_numbers = a:maybe_edited_line_numbers
   let l:shift_accumulator = 0
-  for l:index in range(0, len(l:offset_to_shift) - 1)
-    let l:shifted_lines = l:offset_to_shift[l:index][1]
-    let l:start = l:offset_to_shift[l:index][0]
-    let l:end = l:index + 1 <# len(l:offset_to_shift) ? l:offset_to_shift[l:index + 1][0] : v:null
+  for l:index in range(0, len(a:offset_to_shift) - 1)
+    let l:shifted_lines = a:offset_to_shift[l:index][1]
+    let l:start = a:offset_to_shift[l:index][0]
+    let l:end = l:index + 1 <# len(a:offset_to_shift) ? a:offset_to_shift[l:index + 1][0] : v:null
     let l:shift_accumulator += l:shifted_lines
     let l:maybe_edited_line_numbers = s:shift_locations(a:path, l:maybe_edited_line_numbers, l:start, l:end, l:shift_accumulator)
   endfor
 
-  return len(l:offset_to_shift) + len(l:maybe_edited_line_numbers)
-endf
-
-fun! s:compute_shifts(path) abort
-  const MAX_LINES = 8192
-
-  let l:offset_to_shift = []
-  let l:maybe_edited_line_numbers = {}
-  let l:buf = bufnr(a:path)
-  if l:buf <# 0
-    return [l:offset_to_shift, l:maybe_edited_line_numbers]
+  let l:has_changes = len(a:offset_to_shift) + len(l:maybe_edited_line_numbers)
+  if l:has_changes
+    call s:maybe_copy_to_temp(a:path)
+    let s:editor_data.corrected_locations = v:true
+    call g:CargoLimitUpdate(s:editor_data)
   endif
-  let l:bufinfo = getbufinfo(l:buf)
-  if !empty(l:bufinfo) && l:bufinfo[0].linecount > MAX_LINES
-    return [l:offset_to_shift, l:maybe_edited_line_numbers]
-  endif
-
-  let l:temp_source_path = s:temp_source_path(a:path)
-
-  const DIFF_STATS_PATTERN = '@@ '
-  const DIFF_COMMAND = ['git', 'diff', '--unified=0', '--ignore-cr-at-eol', '--ignore-space-at-eol', '--no-index', '--no-color', '--no-ext-diff', '--diff-algorithm=histogram', '--', l:temp_source_path, a:path]
-
-  if !filereadable(l:temp_source_path)
-    return [l:offset_to_shift, l:maybe_edited_line_numbers]
-  endif
-
-  let l:diff_stdout_lines = systemlist(DIFF_COMMAND)
-  let l:diff_stdout_index = 0
-  while l:diff_stdout_index <# len(l:diff_stdout_lines) - 1
-    let l:diff_line = l:diff_stdout_lines[l:diff_stdout_index]
-    if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
-      let l:raw_diff_stats = split(split(l:diff_line, DIFF_STATS_PATTERN)[0], ' ')
-
-      let [l:removal_offset, l:removals] = s:parse_diff_stats(l:raw_diff_stats[0], '-')
-      let [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_diff_stats[1], '+')
-      if l:additions ==# 0 || l:removals ==# 0
-        let l:shifted_lines = l:additions - l:removals
-        call add(l:offset_to_shift, [l:removal_offset, l:shifted_lines])
-      else
-        for l:index in range(0, l:removals - 1)
-          let l:maybe_edited_line_numbers[l:removal_offset + l:index] = v:true
-        endfor
-      endif
-    endif
-    let l:diff_stdout_index += 1
-  endwhile
-
-  return [l:offset_to_shift, l:maybe_edited_line_numbers]
 endf
 
 fun! s:shift_locations(path, maybe_edited_line_numbers, start, end, shift_accumulator) abort
+  let l:maybe_edited_line_numbers = a:maybe_edited_line_numbers
+
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
     if l:location.path ==# a:path
@@ -323,14 +374,14 @@ fun! s:shift_locations(path, maybe_edited_line_numbers, start, end, shift_accumu
     endif
   endfor
 
-  for l:line in keys(a:maybe_edited_line_numbers)
+  for l:line in keys(l:maybe_edited_line_numbers)
     if l:line ># a:start && (a:end ==# v:null || l:line <# a:end)
-      call remove(a:maybe_edited_line_numbers, l:line)
-      let a:maybe_edited_line_numbers[l:line + a:shift_accumulator] = v:true
+      call remove(l:maybe_edited_line_numbers, l:line)
+      let l:maybe_edited_line_numbers[l:line + a:shift_accumulator] = v:true
     endif
   endfor
 
-  return a:maybe_edited_line_numbers
+  return l:maybe_edited_line_numbers
 endf
 
 fun! s:parse_diff_stats(text, separator) abort
@@ -451,18 +502,6 @@ endf
 
 fun! s:current_location() abort
   return s:editor_data.locations[s:location_index]
-endf
-
-fun! s:on_buffer_write() abort
-  let l:current_file = s:current_file()
-  if l:current_file !=# '' && filereadable(l:current_file)
-    let l:has_changes = s:update_locations(l:current_file)
-    if l:has_changes
-      call s:maybe_copy_to_temp(l:current_file)
-      let s:editor_data.corrected_locations = v:true
-      call g:CargoLimitUpdate(s:editor_data)
-    endif
-  endif
 endf
 
 fun! s:current_file() abort
