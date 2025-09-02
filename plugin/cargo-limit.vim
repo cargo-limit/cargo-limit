@@ -267,14 +267,14 @@ fun! s:on_buffer_write() abort
   endif
 
   let l:temp_source_path = s:temp_source_path(l:current_file)
+  if !filereadable(l:temp_source_path)
+    return s:on_compute_shifts([], {}, l:current_file)
+  endif
+
   const l:diff_command = [
     \ 'git', 'diff', '--unified=0', '--ignore-cr-at-eol', '--ignore-space-at-eol',
     \ '--no-index', '--no-color', '--no-ext-diff', '--diff-algorithm=histogram', '--',
     \ l:temp_source_path, l:current_file]
-
-  if !filereadable(l:temp_source_path)
-    return s:on_compute_shifts([], {}, l:current_file)
-  endif
 
   let l:job_id = jobstart(l:diff_command, {
     \ 'on_stdout': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
