@@ -31,7 +31,7 @@ fun! s:on_cargo_metadata(_job_id, data, event) abort
     let l:stdout = trim(join(a:data, ''))
     if !empty(l:stdout)
       let l:metadata = json_decode(l:stdout)
-      let s:workspace_root = get(l:metadata, 'workspace_root')
+      let s:workspace_root = l:metadata.workspace_root
       let l:escaped_workspace_root = s:escape_path(s:workspace_root)
       call s:start_server(l:escaped_workspace_root)
     endif
