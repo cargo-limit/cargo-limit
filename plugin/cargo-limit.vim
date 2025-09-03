@@ -249,8 +249,12 @@ fun! s:decrement_location_index() abort
 endf
 
 fun! s:on_buffer_write() abort
-  const DIFF_TIMEOUT_SECS = 5
+  const DIFF_TIMEOUT_SECS = 2
   const MAX_LINES = 16 * 1024
+
+  if empty(s:editor_data.locations)
+    return
+  endif
 
   let l:current_file = s:current_file()
   if l:current_file ==# '' || !filereadable(l:current_file)
@@ -458,10 +462,14 @@ fun! s:temp_source_path(path) abort
 endf
 
 fun! s:maybe_copy_to_temp(path) abort
+  " TODO: don't copy the file, read the buffer instead
   const MAX_SIZE_BYTES = 1024 * 1024
   if getfsize(a:path) <=# MAX_SIZE_BYTES
     let l:data = readblob(a:path)
-    call writefile(l:data, s:temp_source_path(a:path), 'b')
+    let l:target = s:temp_source_path(a:path)
+    let l:temp_target = l:target . '_' . rand()
+    call writefile(l:data, l:temp_target, 'b')
+    call rename(l:temp_target, l:target)
   endif
 endf
 
