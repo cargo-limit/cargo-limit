@@ -103,7 +103,7 @@ fun! s:maybe_setup_handlers() abort
     if !exists('*CargoLimitUpdate')
       fun! g:CargoLimitUpdate(editor_data) abort
         let l:current_file = s:current_file()
-        if (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:editor_data.locations)
+        if empty(s:editor_data.locations) || (l:current_file !=# '' && !filereadable(l:current_file))
           return
         endif
 
@@ -123,7 +123,7 @@ fun! s:maybe_setup_handlers() abort
   fun! g:CargoLimitOpenNextLocation() abort
     echomsg ''
     let l:current_file = s:current_file()
-    if &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:editor_data.locations)
+    if &l:modified !=# 0 || empty(s:editor_data.locations) || (l:current_file !=# '' && !filereadable(l:current_file))
       return
     endif
 
@@ -141,7 +141,7 @@ fun! s:maybe_setup_handlers() abort
   fun! g:CargoLimitOpenPrevLocation() abort
     echomsg ''
     let l:current_file = s:current_file()
-    if &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:editor_data.locations)
+    if &l:modified !=# 0 || empty(s:editor_data.locations) || (l:current_file !=# '' && !filereadable(l:current_file))
       return
     endif
 
@@ -246,12 +246,8 @@ fun! s:on_buffer_write() abort
   const DIFF_TIMEOUT_SECS = 2
   const MAX_LINES = 16 * 1024
 
-  if empty(s:editor_data.locations)
-    return
-  endif
-
   let l:current_file = s:current_file()
-  if l:current_file ==# '' || !filereadable(l:current_file)
+  if empty(s:editor_data.locations) || l:current_file ==# '' || !filereadable(l:current_file)
     return
   endif
 
