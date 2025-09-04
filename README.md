@@ -204,7 +204,7 @@ nvim --cmd '!call dein#install()'
 fun! SaveAllFilesOrOpenNextLocation() abort
   if exists('*CargoLimitOpenNextLocation')
     call g:CargoLimitOpenNextLocation()
-  endif
+  end
   execute 'silent! wa!'
 endf
 
@@ -269,7 +269,7 @@ fun! g:CargoLimitUpdate(editor_data) abort
   let l:current_file = resolve(expand('%:p'))
   if l:current_file != '' && !filereadable(l:current_file)
     return
-  endif
+  end
   for l:location in reverse(a:editor_data.locations)
     let l:path = fnameescape(l:location.path)
     if mode() == 'n' && &l:modified == 0
@@ -277,7 +277,7 @@ fun! g:CargoLimitUpdate(editor_data) abort
       call cursor((l:location.line), (l:location.column))
     else
       break
-    endif
+    end
   endfor
 endf
 ```
@@ -299,11 +299,11 @@ fun! g:CargoLimitUpdate(editor_data) abort
     cclose
   elseif !a:editor_data.corrected_locations && !l:quickfix_is_visible
     copen
-  endif
+  end
 
   if l:winnr !=# winnr()
     wincmd p
-  endif
+  end
 endf
 ```
 
