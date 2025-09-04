@@ -265,7 +265,7 @@ Add **custom update handlers** to your `init.vim` if you want other Neovim behav
 
 ### Open Files in Buffers Instead of Tabs
 ```viml
-fun! g:CargoLimitUpdate(editor_data)
+fun! g:CargoLimitUpdate(editor_data) abort
   let l:current_file = resolve(expand('%:p'))
   if l:current_file != '' && !filereadable(l:current_file)
     return
@@ -286,7 +286,7 @@ endf
 ```viml
 set errorformat =%f:%l:%c:%m
 
-fun! g:CargoLimitUpdate(editor_data)
+fun! g:CargoLimitUpdate(editor_data) abort
   let l:quickfix_is_visible = getbufvar(bufnr(), '&buftype') ==# 'quickfix'
   let l:winnr = winnr()
 
