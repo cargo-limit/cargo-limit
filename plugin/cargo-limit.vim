@@ -37,7 +37,7 @@ fun! s:on_cargo_metadata(_job_id, data, event) abort
       let l:escaped_workspace_root = s:escape_path(s:workspace_root)
       call s:start_server(l:escaped_workspace_root)
     en
-  elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
+  elseif a:event ==# 'stderr'
     let l:stderr = trim(join(a:data, "\n"))
     if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
       call s:log_error('cargo metadata', l:stderr)
@@ -312,7 +312,7 @@ fun! s:on_diff(_job_id, data, event, path) abort
       let s:editor_data.corrected_locations = v:true
       call g:CargoLimitUpdate(s:editor_data)
     en
-  elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
+  elseif a:event ==# 'stderr'
     let l:stderr = trim(join(a:data, "\n"))
     if !empty(l:stderr)
       call s:log_error('diff', l:stderr)
