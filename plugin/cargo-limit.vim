@@ -275,17 +275,17 @@ fun! s:on_buffer_write() abort
 endf
 
 fun! s:on_diff(_job_id, data, event, path) abort
-  const DIFF_STATS_PATTERN = '@@ '
+  const STATS_PATTERN = '@@ '
 
   if a:event ==# 'stdout'
     let l:offset_to_shift = []
     let l:maybe_edited_line_numbers = {}
-    for l:diff_stdout_index in range(0, len(a:data) - 1)
-      let l:diff_line = a:data[l:diff_stdout_index]
-      if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
-        let l:raw_diff_stats = split(split(l:diff_line, DIFF_STATS_PATTERN)[0], ' ')
-        let [l:removal_offset, l:removals] = s:parse_diff_stats(l:raw_diff_stats[0], '-')
-        let [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_diff_stats[1], '+')
+    for l:stdout_index in range(0, len(a:data) - 1)
+      let l:diff_line = a:data[l:stdout_index]
+      if s:starts_with(l:diff_line, STATS_PATTERN)
+        let l:raw_stats = split(split(l:diff_line, STATS_PATTERN)[0], ' ')
+        let [l:removal_offset, l:removals] = s:parse_diff_stats(l:raw_stats[0], '-')
+        let [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_stats[1], '+')
         if l:additions ==# 0 || l:removals ==# 0
           let l:shifted_lines = l:additions - l:removals
           call add(l:offset_to_shift, [l:removal_offset, l:shifted_lines])
