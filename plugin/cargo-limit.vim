@@ -268,12 +268,9 @@ fun! s:on_buffer_write() abort
   endif
 
   let l:buf = bufnr(l:current_file)
-  if l:buf <# 0
-    return s:on_compute_shifts([], {}, l:current_file)
-  endif
   let l:bufinfo = getbufinfo(l:buf)
   let l:temp_source_path = s:temp_source_path(l:current_file)
-  if (!empty(l:bufinfo) && l:bufinfo[0].linecount ># MAX_LINES) || !filereadable(l:temp_source_path)
+  if l:buf <# 0 || (!empty(l:bufinfo) && l:bufinfo[0].loaded && l:bufinfo[0].linecount ># MAX_LINES) || !filereadable(l:temp_source_path)
     return s:on_compute_shifts([], {}, l:current_file)
   endif
 
@@ -418,7 +415,8 @@ endf
 fun! s:read_text(location) abort
   const MAX_LEN = 255
   let l:buf = bufnr(a:location.path)
-  if l:buf <# 0
+  let l:bufinfo = getbufinfo(l:buf)
+  if l:buf <# 0 || empty(l:bufinfo) || !l:bufinfo[0].loaded
     return v:null
   endif
   let l:bufline = getbufline(l:buf, a:location.line)
