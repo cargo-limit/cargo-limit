@@ -202,24 +202,10 @@ nvim --cmd '!call dein#install()'
 ### Optionally: first F2 to save, next F1/F2 to navigate affected lines
 ```viml
 fun! SaveAllFilesOrOpenNextLocation() abort
-  let l:all_files_are_saved = v:true
-
-  for l:i in getbufinfo({'bufmodified': 1})
-    if exists('l:i.name') && !s:ends_with(l:i.name, '/BqfPreviewScrollBar')
-      let l:all_files_are_saved = v:false
-    endif
-  endfor
-
   if exists('*CargoLimitOpenNextLocation')
     call g:CargoLimitOpenNextLocation()
   endif
-  if !l:all_files_are_saved
-    execute 'silent! wa!'
-  endif
-endf
-
-fun! s:ends_with(text, pattern) abort
-  return stridx(a:text, a:pattern) ==# len(a:text) - len(a:pattern)
+  execute 'silent! wa!'
 endf
 
 nmap <F1> :call g:CargoLimitOpenPrevLocation()<Enter>
