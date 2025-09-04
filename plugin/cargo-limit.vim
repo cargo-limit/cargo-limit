@@ -184,11 +184,7 @@ fun! s:upgrade_editor_data_format() abort
   if !exists('s:editor_data.locations')
     let s:editor_data.locations = []
   endif
-  if exists('s:editor_data.corrected_locations')
-    let s:editor_data.corrected_locations = s:editor_data.corrected_locations ? v:true : v:false
-  else
-    let s:editor_data.corrected_locations = v:false
-  endif
+  let s:editor_data.corrected_locations = exists('s:editor_data.corrected_locations') && s:editor_data.corrected_locations ? v:true : v:false
 endf
 
 fun! s:copy_affected_files_to_temp() abort
