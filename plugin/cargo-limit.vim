@@ -282,8 +282,7 @@ fun! s:on_diff(_job_id, data, event, path) abort
   if a:event ==# 'stdout'
     let l:offset_to_shift = []
     let l:maybe_edited_line_numbers = {}
-    let l:diff_stdout_index = 0
-    while l:diff_stdout_index <# len(a:data) - 1
+    for l:diff_stdout_index in range(0, len(a:data) - 1)
       let l:diff_line = a:data[l:diff_stdout_index]
       if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
         let l:raw_diff_stats = split(split(l:diff_line, DIFF_STATS_PATTERN)[0], ' ')
@@ -298,8 +297,7 @@ fun! s:on_diff(_job_id, data, event, path) abort
           endfo
         en
       en
-      let l:diff_stdout_index += 1
-    endw
+    endfo
 
     let l:shift_accumulator = 0
     for l:index in range(0, len(l:offset_to_shift) - 1)
