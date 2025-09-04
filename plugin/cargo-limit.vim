@@ -202,7 +202,6 @@ fun! s:open_all_locations_in_reverse() abort
   endfo
 
   call s:disable_redraw()
-
   for l:index in range(len(s:editor_data.locations) - 1, 0, -1)
     let l:path = s:editor_data.locations[l:index].path
     if !has_key(l:path_to_location_index, l:path)
@@ -215,7 +214,6 @@ fun! s:open_all_locations_in_reverse() abort
       break
     en
   endfo
-
   call s:enable_redraw()
 endf
 
@@ -446,9 +444,7 @@ fun! s:maybe_copy_to_temp(path) abort
     return
   en
 
-  let l:buf = bufnr(a:path)
   let l:target = s:temp_source_path(a:path)
-
   let l:temp_target = l:target . '_' . rand()
   let l:data = readblob(a:path)
   call writefile(l:data, l:temp_target, 'b')
