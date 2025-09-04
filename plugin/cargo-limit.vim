@@ -54,9 +54,9 @@ fun! s:start_server(escaped_workspace_root) abort
     let s:temp_sources_dir = l:server_address . SOURCES
     call s:maybe_delete_dead_unix_socket(l:server_address)
   elseif has('win32')
-    const SERVER_ADDRESS_POSTFIX = TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
-    let l:server_address = '\\.\pipe\' . SERVER_ADDRESS_POSTFIX
-    let s:temp_sources_dir = $TEMP . '\' . SERVER_ADDRESS_POSTFIX . SOURCES
+    let l:server_address_postfix = TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
+    let l:server_address = '\\.\pipe\' . l:server_address_postfix
+    let s:temp_sources_dir = $TEMP . '\' . l:server_address_postfix . SOURCES
   else
     throw 'unsupported OS'
   endif
