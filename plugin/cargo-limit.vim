@@ -266,12 +266,8 @@ fun! s:on_buffer_write() abort
     return s:on_compute_shifts([], {}, l:current_file)
   endif
   let l:bufinfo = getbufinfo(l:buf)
-  if !empty(l:bufinfo) && l:bufinfo[0].linecount ># MAX_LINES
-    return s:on_compute_shifts([], {}, l:current_file)
-  endif
-
   let l:temp_source_path = s:temp_source_path(l:current_file)
-  if !filereadable(l:temp_source_path)
+  if (!empty(l:bufinfo) && l:bufinfo[0].linecount ># MAX_LINES) || !filereadable(l:temp_source_path)
     return s:on_compute_shifts([], {}, l:current_file)
   endif
 
@@ -462,15 +458,19 @@ fun! s:temp_source_path(path) abort
 endf
 
 fun! s:maybe_copy_to_temp(path) abort
-  " TODO: don't copy the file, read the buffer instead
   const MAX_SIZE_BYTES = 1024 * 1024
-  if getfsize(a:path) <=# MAX_SIZE_BYTES
-    let l:data = readblob(a:path)
-    let l:target = s:temp_source_path(a:path)
-    let l:temp_target = l:target . '_' . rand()
-    call writefile(l:data, l:temp_target, 'b')
-    call rename(l:temp_target, l:target)
+
+  if getfsize(a:path) ># MAX_SIZE_BYTES
+    return
   endif
+
+  let l:buf = bufnr(a:path)
+  let l:target = s:temp_source_path(a:path)
+
+  let l:temp_target = l:target . '_' . rand()
+  let l:data = readblob(a:path)
+  call writefile(l:data, l:temp_target, 'b')
+  call rename(l:temp_target, l:target)
 endf
 
 fun! s:jump_to_location(location_index) abort
