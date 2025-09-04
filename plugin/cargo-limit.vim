@@ -15,6 +15,8 @@ fun! s:main() abort
     let s:location_index = v:null
     let s:temp_sources_dir = v:null
     let s:deprecated_cargo_limit_open = v:null
+    let s:lazyredraw = &lazyredraw
+    let s:allow_redraw = v:true
     call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
       \ 'on_stdout': function('s:on_cargo_metadata'),
       \ 'on_stderr': function('s:on_cargo_metadata'),
@@ -134,7 +136,9 @@ fun! s:maybe_setup_handlers() abort
     if s:is_current_location_edited()
       let s:location_index = l:initial_location_index
     else
+      call s:disable_redraw()
       call s:jump_to_location(s:location_index)
+      call s:enable_redraw()
     endif
   endf
 
@@ -154,7 +158,9 @@ fun! s:maybe_setup_handlers() abort
     if s:is_current_location_edited()
       let s:location_index = l:initial_location_index
     else
+      call s:disable_redraw()
       call s:jump_to_location(s:location_index)
+      call s:enable_redraw()
     endif
   endf
 endf
@@ -204,7 +210,7 @@ fun! s:open_all_locations_in_reverse() abort
     let l:path_to_location_index[s:editor_data.locations[l:index].path] = l:index
   endfor
 
-  redraw!
+  call s:disable_redraw()
 
   for l:index in range(len(s:editor_data.locations) - 1, 0, -1)
     let l:path = s:editor_data.locations[l:index].path
@@ -219,7 +225,7 @@ fun! s:open_all_locations_in_reverse() abort
     endif
   endfor
 
-  redraw
+  call s:enable_redraw()
 endf
 
 fun! s:increment_location_index() abort
@@ -485,6 +491,24 @@ fun! s:jump_to_location(location_index) abort
   if l:current_position[1] !=# l:location.line || current_position[2] !=# l:location.column
     call cursor((l:location.line), (l:location.column))
   endif
+endf
+
+fun! s:disable_redraw() abort
+  if !s:allow_redraw
+    return
+  endif
+  let s:allow_redraw = v:false
+  let s:lazyredraw = &lazyredraw
+  set lazyredraw
+endf
+
+fun! s:enable_redraw() abort
+  if s:allow_redraw
+    return
+  endif
+  let s:allow_redraw = v:true
+  let &lazyredraw = s:lazyredraw
+  redraw!
 endf
 
 fun! s:current_location() abort
