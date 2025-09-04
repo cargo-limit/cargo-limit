@@ -287,7 +287,6 @@ fun! s:on_diff(_job_id, data, event, path) abort
       let l:diff_line = a:data[l:diff_stdout_index]
       if s:starts_with(l:diff_line, DIFF_STATS_PATTERN)
         let l:raw_diff_stats = split(split(l:diff_line, DIFF_STATS_PATTERN)[0], ' ')
-
         let [l:removal_offset, l:removals] = s:parse_diff_stats(l:raw_diff_stats[0], '-')
         let [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_diff_stats[1], '+')
         if l:additions ==# 0 || l:removals ==# 0
@@ -325,8 +324,6 @@ fun! s:on_diff(_job_id, data, event, path) abort
 endf
 
 fun! s:shift_locations(path, maybe_edited_line_numbers, start, end, shift_accumulator) abort
-  let l:maybe_edited_line_numbers = a:maybe_edited_line_numbers
-
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
     if l:location.path ==# a:path
@@ -337,13 +334,13 @@ fun! s:shift_locations(path, maybe_edited_line_numbers, start, end, shift_accumu
     endif
   endfor
 
+  let l:maybe_edited_line_numbers = a:maybe_edited_line_numbers
   for l:line in keys(l:maybe_edited_line_numbers)
     if l:line ># a:start && (a:end ==# v:null || l:line <# a:end)
       call remove(l:maybe_edited_line_numbers, l:line)
       let l:maybe_edited_line_numbers[l:line + a:shift_accumulator] = v:true
     endif
   endfor
-
   return l:maybe_edited_line_numbers
 endf
 
