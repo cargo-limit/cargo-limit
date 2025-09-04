@@ -258,7 +258,7 @@ fun! s:on_buffer_write() abort
     return s:on_compute_shifts([], {}, l:current_file)
   endif
 
-  const l:diff_command = [
+  let l:diff_command = [
     \ 'git', 'diff', '--unified=0', '--ignore-cr-at-eol', '--ignore-space-at-eol',
     \ '--no-index', '--no-color', '--no-ext-diff', '--diff-algorithm=histogram', '--',
     \ l:temp_source_path, l:current_file
