@@ -264,9 +264,9 @@ fun! s:on_buffer_write() abort
   endif
 
   let l:buf = bufnr(l:current_file)
-  let l:bufinfo = getbufinfo(l:buf)
+  let l:bufinfo = s:bufinfo_if_loaded(l:buf)
   let l:temp_source_path = s:temp_source_path(l:current_file)
-  if l:buf <# 0 || (!empty(l:bufinfo) && l:bufinfo[0].loaded && l:bufinfo[0].linecount ># MAX_LINES) || !filereadable(l:temp_source_path)
+  if l:bufinfo ==# {} || l:bufinfo.linecount ># MAX_LINES || !filereadable(l:temp_source_path)
     return s:on_compute_shifts([], {}, l:current_file)
   endif
 
@@ -410,13 +410,19 @@ endf
 
 fun! s:read_text(location) abort
   const MAX_LEN = 255
+
   let l:buf = bufnr(a:location.path)
-  let l:bufinfo = getbufinfo(l:buf)
-  if l:buf <# 0 || empty(l:bufinfo) || !l:bufinfo[0].loaded
+  let l:bufinfo = s:bufinfo_if_loaded(l:buf)
+  if l:bufinfo ==# {}
     return v:null
   endif
   let l:bufline = getbufline(l:buf, a:location.line)
   return empty(l:bufline) ? v:null : trim(l:bufline[0][:MAX_LEN])
+endf
+
+fun! s:bufinfo_if_loaded(buf) abort
+  let l:bufinfo = getbufinfo(a:buf)
+  return a:buf >=# 0 && !empty(l:bufinfo) && l:bufinfo[0].loaded ? l:bufinfo[0] : {}
 endf
 
 fun! s:maybe_delete_dead_unix_socket(server_address) abort
