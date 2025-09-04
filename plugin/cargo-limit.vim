@@ -365,11 +365,11 @@ fun! s:deduplicate_locations_by_paths_and_lines() abort
   let l:new_locations = []
   let l:added_lines = {}
 
-  for i in s:editor_data.locations
-    let l:added_line_key = string([i.path, i.line])
+  for l:i in s:editor_data.locations
+    let l:added_line_key = string([l:i.path, l:i.line])
     let l:is_added_line = get(l:added_lines, l:added_line_key)
     if !l:is_added_line
-      call add(l:new_locations, i)
+      call add(l:new_locations, l:i)
       let l:added_lines[l:added_line_key] = 1
     endif
   endfor
