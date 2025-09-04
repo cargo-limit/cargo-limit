@@ -250,15 +250,12 @@ fun! s:on_buffer_write() abort
   const MAX_LINES = 16 * 1024
 
   let l:current_file = s:current_file()
-  if empty(s:editor_data.locations) || l:current_file ==# '' || !filereadable(l:current_file)
-    return
-  endif
-
   let l:buf = bufnr(l:current_file)
   let l:bufinfo = s:bufinfo_if_loaded(l:buf)
   let l:temp_source_path = s:temp_source_path(l:current_file)
-  if l:bufinfo ==# {} || l:bufinfo.linecount ># MAX_LINES || !filereadable(l:temp_source_path)
-    return s:on_compute_shifts([], {}, l:current_file)
+  if empty(s:editor_data.locations) || l:current_file ==# '' || !filereadable(l:current_file) ||
+    \ l:bufinfo ==# {} || l:bufinfo.linecount ># MAX_LINES || !filereadable(l:temp_source_path)
+    return
   endif
 
   let l:diff_command = [
@@ -285,7 +282,6 @@ fun! s:on_diff(_job_id, data, event, path) abort
   if a:event ==# 'stdout'
     let l:offset_to_shift = []
     let l:maybe_edited_line_numbers = {}
-
     let l:diff_stdout_index = 0
     while l:diff_stdout_index <# len(a:data) - 1
       let l:diff_line = a:data[l:diff_stdout_index]
@@ -306,31 +302,25 @@ fun! s:on_diff(_job_id, data, event, path) abort
       let l:diff_stdout_index += 1
     endwhile
 
-    call s:on_compute_shifts(l:offset_to_shift, l:maybe_edited_line_numbers, a:path)
+    let l:shift_accumulator = 0
+    for l:index in range(0, len(l:offset_to_shift) - 1)
+      let l:shifted_lines = l:offset_to_shift[l:index][1]
+      let l:start = l:offset_to_shift[l:index][0]
+      let l:end = l:index + 1 <# len(l:offset_to_shift) ? l:offset_to_shift[l:index + 1][0] : v:null
+      let l:shift_accumulator += l:shifted_lines
+      let l:maybe_edited_line_numbers = s:shift_locations(a:path, l:maybe_edited_line_numbers, l:start, l:end, l:shift_accumulator)
+    endfor
+    let l:has_changes = len(l:offset_to_shift) + len(l:maybe_edited_line_numbers)
+    if l:has_changes
+      call s:maybe_copy_to_temp(a:path)
+      let s:editor_data.corrected_locations = v:true
+      call g:CargoLimitUpdate(s:editor_data)
+    endif
   elseif a:event ==# 'stderr' && type(a:data) ==# v:t_list
     let l:stderr = trim(join(a:data, "\n"))
     if !empty(l:stderr)
       call s:log_error('diff', l:stderr)
     endif
-  endif
-endf
-
-fun! s:on_compute_shifts(offset_to_shift, maybe_edited_line_numbers, path) abort
-  let l:maybe_edited_line_numbers = a:maybe_edited_line_numbers
-  let l:shift_accumulator = 0
-  for l:index in range(0, len(a:offset_to_shift) - 1)
-    let l:shifted_lines = a:offset_to_shift[l:index][1]
-    let l:start = a:offset_to_shift[l:index][0]
-    let l:end = l:index + 1 <# len(a:offset_to_shift) ? a:offset_to_shift[l:index + 1][0] : v:null
-    let l:shift_accumulator += l:shifted_lines
-    let l:maybe_edited_line_numbers = s:shift_locations(a:path, l:maybe_edited_line_numbers, l:start, l:end, l:shift_accumulator)
-  endfor
-
-  let l:has_changes = len(a:offset_to_shift) + len(l:maybe_edited_line_numbers)
-  if l:has_changes
-    call s:maybe_copy_to_temp(a:path)
-    let s:editor_data.corrected_locations = v:true
-    call g:CargoLimitUpdate(s:editor_data)
   endif
 endf
 
