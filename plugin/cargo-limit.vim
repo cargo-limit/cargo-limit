@@ -122,12 +122,8 @@ fun! s:maybe_setup_handlers() abort
 
   fun! g:CargoLimitOpenNextLocation() abort
     echomsg ''
-    if empty(s:editor_data.locations)
-      return
-    endif
-
     let l:current_file = s:current_file()
-    if &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
+    if &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:editor_data.locations)
       return
     endif
 
@@ -144,12 +140,8 @@ fun! s:maybe_setup_handlers() abort
 
   fun! g:CargoLimitOpenPrevLocation() abort
     echomsg ''
-    if empty(s:editor_data.locations)
-      return
-    endif
-
     let l:current_file = s:current_file()
-    if &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file))
+    if &l:modified !=# 0 || (l:current_file !=# '' && !filereadable(l:current_file)) || empty(s:editor_data.locations)
       return
     endif
 
