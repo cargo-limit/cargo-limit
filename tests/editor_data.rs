@@ -78,20 +78,16 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
         .env(env_vars::FORCE_WARN, warnings.force.to_string().as_str())
         .env(
             env_vars::DEPS_WARN,
-            warnings.external_path_dependencies.to_string().as_str(), // TODO
+            warnings.external_path_dependencies.to_string().as_str(),
         )
         .current_dir(&project_dir)
         .output()?;
-    // TODO: ASC?
-    // TODO: MSG_LIMIT?
     let data: EditorData = serde_json::from_slice(&output.stdout)?;
 
     assert_eq!(data.workspace_root, project_dir);
     dbg!(&data);
     eprintln!("{}", String::from_utf8(output.stderr)?);
 
-    // TODO: distinguish normal errors and ICE errors?
-    // TODO: check external path dependencies' warnings skipping
     let mut current_line = None;
     let mut current_path = None;
     let mut visited_paths = HashSet::<PathBuf>::default();
@@ -112,7 +108,10 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
 
         if i.level == DiagnosticLevel::Error {
             assert!(!visited_warning);
+        } else if i.level == DiagnosticLevel::Warning && warnings.external_path_dependencies {
+            assert!(i.path.starts_with(&data.workspace_root));
         }
+
         if visited_warning {
             assert_eq!(i.level, DiagnosticLevel::Warning);
             if !warnings.force {
