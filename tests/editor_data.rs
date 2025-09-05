@@ -34,26 +34,13 @@ fn c() -> Result<()> {
 }
 
 #[test]
+fn d() -> Result<()> {
+    check_external_path_dependencies("d/d")
+}
+
+#[test]
 fn e() -> Result<()> {
-    check_with(
-        "cargo-llcheck",
-        &[],
-        "e/e",
-        Warnings {
-            force: true,
-            external_path_dependencies: false,
-        },
-    )?;
-    check_with(
-        "cargo-llcheck",
-        &[],
-        "e/e",
-        Warnings {
-            force: true,
-            external_path_dependencies: true,
-        },
-    )?;
-    Ok(())
+    check_external_path_dependencies("e/e")
 }
 
 fn check(project: &str) -> Result<()> {
@@ -62,7 +49,33 @@ fn check(project: &str) -> Result<()> {
     Ok(())
 }
 
-fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Result<()> {
+fn check_external_path_dependencies(project: &str) -> Result<()> {
+    let few_messages = check_with(
+        "cargo-llcheck",
+        &[],
+        project,
+        Warnings {
+            force: true,
+            external_path_dependencies: false,
+        },
+    )?
+    .locations;
+    let more_messages = check_with(
+        "cargo-llcheck",
+        &[],
+        project,
+        Warnings {
+            force: true,
+            external_path_dependencies: true,
+        },
+    )?
+    .locations;
+    dbg!(project, few_messages.len(), more_messages.len());
+    assert!(few_messages.len() < more_messages.len());
+    Ok(())
+}
+
+fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Result<EditorData> {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let project_dir = workspace_root.join("tests/stubs").join(project);
     let _ = fs::remove_dir_all(project_dir.join("target"));
@@ -93,7 +106,7 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
     let mut visited_paths = HashSet::<PathBuf>::default();
     let mut visited_warning = false;
     let mut visited_error = false;
-    for i in data.locations {
+    for i in &data.locations {
         if !visited_paths.contains(&i.path) {
             visited_paths.insert(i.path.clone());
             current_path = None;
@@ -130,7 +143,7 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
         current_path = Some(i.path.clone());
     }
 
-    Ok(())
+    Ok(data)
 }
 
 fn resolve_jq(target_dir: &Path) -> Result<PathBuf> {

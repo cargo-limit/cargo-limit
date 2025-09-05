@@ -5,4 +5,3 @@ edition = "2024"
 [dependencies]
 g = { path = "../g" }
 h = { path = "../../h" }
-#TODO: itertools = { git = "https://github.com/rust-itertools/itertools", tag = "0.0.7" }
