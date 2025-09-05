@@ -35,12 +35,12 @@ fn c() -> Result<()> {
 
 #[test]
 fn d() -> Result<()> {
-    check_external_path_dependencies("d/d")
+    check_external_path_dependencies_warnings("d/d")
 }
 
 #[test]
 fn e() -> Result<()> {
-    check_external_path_dependencies("e/e")
+    check_external_path_dependencies_warnings("e/e")
 }
 
 #[test]
@@ -69,34 +69,44 @@ fn check(project: &str) -> Result<()> {
     Ok(())
 }
 
-fn check_external_path_dependencies(project: &str) -> Result<()> {
-    let few_messages = check_with(
-        "cargo-llcheck",
-        &[],
-        project,
-        Warnings {
-            force: true,
-            external_path_dependencies: false,
-        },
-    )?
-    .locations
-    .into_iter()
-    .filter(|i| i.level == DiagnosticLevel::Warning);
+fn check_external_path_dependencies_warnings(project: &str) -> Result<()> {
+    {
+        let data = check_with(
+            "cargo-llcheck",
+            &[],
+            project,
+            Warnings {
+                force: true,
+                external_path_dependencies: false,
+            },
+        )?;
+        let workspace_root = data.workspace_root.clone();
+        let zero = data
+            .locations
+            .into_iter()
+            .filter(|i| i.level == DiagnosticLevel::Warning && !i.path.starts_with(&workspace_root))
+            .count();
+        assert_eq!(zero, 0);
+    }
 
-    let more_messages = check_with(
-        "cargo-llcheck",
-        &[],
-        project,
-        Warnings {
-            force: true,
-            external_path_dependencies: true,
-        },
-    )?
-    .locations
-    .into_iter()
-    .filter(|i| i.level == DiagnosticLevel::Warning);
-
-    assert!(few_messages.count() < more_messages.count());
+    {
+        let data = check_with(
+            "cargo-llcheck",
+            &[],
+            project,
+            Warnings {
+                force: true,
+                external_path_dependencies: true,
+            },
+        )?;
+        let workspace_root = data.workspace_root.clone();
+        let non_zero = data
+            .locations
+            .into_iter()
+            .filter(|i| i.level == DiagnosticLevel::Warning && !i.path.starts_with(&workspace_root))
+            .count();
+        assert!(non_zero > 0);
+    }
     Ok(())
 }
 
