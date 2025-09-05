@@ -138,6 +138,7 @@ impl FilteredAndOrderedMessages {
         // TODO: warning: build failed, waiting for other jobs to finish...
         // TODO: error: could not compile `a` (lib test) due to 4 previous errors
         // TODO: is it just DiagnosticLevel::FailureNote?
+        // TODO: write test?
         let (good, bad): (Vec<_>, Vec<_>) = messages
             .iter()
             .filter_map(|i| {
@@ -277,11 +278,12 @@ impl TransformedMessages {
                     .iter()
                     .filter(|span| span.is_primary)
                     .cloned()
-                    .map(move |span| (span, message))
+                    .map(TransformedMessages::find_leaf_project_expansion)
+                    .map(|span| (span.line_start, span.column_start, span))
+                    .min_by_key(|(line, column, _)| (*line, *column))
+                    .map(move |(_, _, span)| (span, message))
             })
-            .map(|(span, message)| (Self::find_leaf_project_expansion(span), &message.message))
-            //.filter(|(span, _)| Path::new(&span.file_name).is_relative()) // TODO
-            .map(|(span, message)| Location::new(span, message, workspace_root))
+            .map(|(span, message)| Location::new(span, &message.message, workspace_root))
             .collect()
     }
 
