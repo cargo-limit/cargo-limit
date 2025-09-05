@@ -43,6 +43,19 @@ fn e() -> Result<()> {
     check_external_path_dependencies("e/e")
 }
 
+#[test]
+fn error_is_visible_when_path_dependencies_warnings_are_disabled() -> Result<()> {
+    let data = check_with("cargo-llcheck", &[], "f/f", Warnings::default())?;
+    let external_path = data
+        .locations
+        .into_iter()
+        .find(|i| i.level == DiagnosticLevel::Error)
+        .context("external error location")?
+        .path;
+    assert!(!external_path.starts_with(data.workspace_root));
+    Ok(())
+}
+
 fn check(project: &str) -> Result<()> {
     check_with("cargo-llcheck", &[], project, Warnings::default())?;
     check_with("cargo-lltest", &["--no-run"], project, Warnings::default())?;
