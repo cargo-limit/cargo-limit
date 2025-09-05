@@ -12,6 +12,12 @@ use std::{
 const JQ_EXECUTABLE: &str = "jaq";
 const JQ_VERSION: &str = "2.3.0";
 
+#[derive(Default)]
+struct Warnings {
+    force: bool,
+    external_path_dependencies: bool,
+}
+
 #[test]
 fn a() -> Result<()> {
     check("a")
@@ -29,16 +35,34 @@ fn c() -> Result<()> {
 
 #[test]
 fn e() -> Result<()> {
-    check("e/e")
-}
-
-fn check(project: &str) -> Result<()> {
-    check_with("cargo-llcheck", &[], project)?;
-    check_with("cargo-lltest", &["--no-run"], project)?;
+    check_with(
+        "cargo-llcheck",
+        &[],
+        "e/e",
+        Warnings {
+            force: true,
+            external_path_dependencies: false,
+        },
+    )?;
+    check_with(
+        "cargo-llcheck",
+        &[],
+        "e/e",
+        Warnings {
+            force: true,
+            external_path_dependencies: true,
+        },
+    )?;
     Ok(())
 }
 
-fn check_with(bin: &str, args: &[&str], project: &str) -> Result<()> {
+fn check(project: &str) -> Result<()> {
+    check_with("cargo-llcheck", &[], project, Warnings::default())?;
+    check_with("cargo-lltest", &["--no-run"], project, Warnings::default())?;
+    Ok(())
+}
+
+fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Result<()> {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let project_dir = workspace_root.join("tests/stubs").join(project);
     let _ = fs::remove_dir_all(project_dir.join("target"));
@@ -51,6 +75,11 @@ fn check_with(bin: &str, args: &[&str], project: &str) -> Result<()> {
         .args(args)
         .env(env_vars::EDITOR, resolve_jq(&target_dir)?)
         .env(env_vars::TIME_LIMIT, "0")
+        .env(env_vars::FORCE_WARN, warnings.force.to_string().as_str())
+        .env(
+            env_vars::DEPS_WARN,
+            warnings.external_path_dependencies.to_string().as_str(), // TODO
+        )
         .current_dir(&project_dir)
         .output()?;
     let data: EditorData = serde_json::from_slice(&output.stdout)?;
@@ -61,12 +90,12 @@ fn check_with(bin: &str, args: &[&str], project: &str) -> Result<()> {
 
     // TODO: distinguish normal errors and ICE errors?
     // TODO: check duplicates
-    // TODO: check dependencies warnings prioritization
     // TODO: check external path dependencies' warnings skipping
     let mut current_line = None;
     let mut current_path = None;
     let mut visited_paths = HashSet::<PathBuf>::default();
     let mut visited_warning = false;
+    let mut visited_error = false;
     for i in data.locations {
         if !visited_paths.contains(&i.path) {
             visited_paths.insert(i.path.clone());
@@ -75,12 +104,18 @@ fn check_with(bin: &str, args: &[&str], project: &str) -> Result<()> {
             if !visited_warning {
                 visited_warning = i.level == DiagnosticLevel::Warning;
             }
+            if !visited_error {
+                visited_error = i.level == DiagnosticLevel::Error;
+            }
         }
         if i.level == DiagnosticLevel::Error {
             assert!(!visited_warning);
         }
         if visited_warning {
             assert_eq!(i.level, DiagnosticLevel::Warning);
+            if !warnings.force {
+                assert!(!visited_error);
+            }
         }
         if let Some(current_line) = current_line {
             assert!(i.line >= current_line);
