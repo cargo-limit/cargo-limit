@@ -79,7 +79,7 @@ fun! s:maybe_setup_handlers() abort
   if exists('*CargoLimitOpen')
     let s:deprecated_cargo_limit_open = funcref('g:CargoLimitOpen')
     call s:log_warn(
-      \ 'g:CargoLimitOpen is deprecated, please migrate to g:CargoLimitUpdate (requires cargo-limit >=0.0.11):',
+      \ 'g:CargoLimitOpen is deprecated, please migrate to g:CargoLimitUpdate:',
       \ 'https://github.com/cargo-limit/cargo-limit#text-editoride-integrations'
       \ )
   end
