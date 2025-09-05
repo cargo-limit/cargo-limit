@@ -82,6 +82,8 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
         )
         .current_dir(&project_dir)
         .output()?;
+    // TODO: ASC?
+    // TODO: MSG_LIMIT?
     let data: EditorData = serde_json::from_slice(&output.stdout)?;
 
     assert_eq!(data.workspace_root, project_dir);
@@ -89,7 +91,6 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
     eprintln!("{}", String::from_utf8(output.stderr)?);
 
     // TODO: distinguish normal errors and ICE errors?
-    // TODO: check duplicates
     // TODO: check external path dependencies' warnings skipping
     let mut current_line = None;
     let mut current_path = None;
@@ -99,8 +100,8 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
     for i in data.locations {
         if !visited_paths.contains(&i.path) {
             visited_paths.insert(i.path.clone());
-            current_line = Some(i.line);
-            current_path = Some(i.path.clone());
+            current_path = None;
+            current_line = None;
             if !visited_warning {
                 visited_warning = i.level == DiagnosticLevel::Warning;
             }
@@ -108,6 +109,7 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
                 visited_error = i.level == DiagnosticLevel::Error;
             }
         }
+
         if i.level == DiagnosticLevel::Error {
             assert!(!visited_warning);
         }
@@ -117,11 +119,16 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
                 assert!(!visited_error);
             }
         }
+
         if let Some(current_line) = current_line {
-            assert!(i.line >= current_line);
+            assert!(i.line > current_line);
         }
-        assert_eq!(current_path, Some(i.path));
         current_line = Some(i.line);
+
+        if let Some(current_path) = current_path {
+            assert_eq!(current_path, i.path);
+        }
+        current_path = Some(i.path.clone());
     }
 
     Ok(())
