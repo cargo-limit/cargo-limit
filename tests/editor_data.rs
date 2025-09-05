@@ -69,49 +69,6 @@ fn check(project: &str) -> Result<()> {
     Ok(())
 }
 
-fn check_external_path_dependencies_warnings(project: &str) -> Result<()> {
-    {
-        let data = check_with(
-            "cargo-llcheck",
-            &[],
-            project,
-            Warnings {
-                force: true,
-                external_path_dependencies: false,
-            },
-        )?;
-        let zero = data
-            .locations
-            .iter()
-            .filter(|i| {
-                i.level == DiagnosticLevel::Warning && !i.path.starts_with(&data.workspace_root)
-            })
-            .count();
-        assert_eq!(zero, 0);
-    }
-
-    {
-        let data = check_with(
-            "cargo-llcheck",
-            &[],
-            project,
-            Warnings {
-                force: true,
-                external_path_dependencies: true,
-            },
-        )?;
-        let non_zero = data
-            .locations
-            .iter()
-            .filter(|i| {
-                i.level == DiagnosticLevel::Warning && !i.path.starts_with(&data.workspace_root)
-            })
-            .count();
-        assert!(non_zero > 0);
-    }
-    Ok(())
-}
-
 fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Result<EditorData> {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let project_dir = workspace_root.join("tests/stubs").join(project);
@@ -181,6 +138,42 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
     }
 
     Ok(data)
+}
+
+fn check_external_path_dependencies_warnings(project: &str) -> Result<()> {
+    assert_eq!(
+        count_path_dependencies_warnings(
+            project,
+            Warnings {
+                force: true,
+                external_path_dependencies: false,
+            }
+        )?,
+        0
+    );
+
+    assert!(
+        count_path_dependencies_warnings(
+            project,
+            Warnings {
+                force: true,
+                external_path_dependencies: true,
+            }
+        )? > 0
+    );
+    Ok(())
+}
+
+fn count_path_dependencies_warnings(project: &str, warnings: Warnings) -> Result<usize> {
+    let data = check_with("cargo-llcheck", &[], project, warnings)?;
+    let result = data
+        .locations
+        .iter()
+        .filter(|i| {
+            i.level == DiagnosticLevel::Warning && !i.path.starts_with(&data.workspace_root)
+        })
+        .count();
+    Ok(result)
 }
 
 fn resolve_jq(target_dir: &Path) -> Result<PathBuf> {
