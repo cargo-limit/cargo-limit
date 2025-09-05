@@ -46,13 +46,20 @@ fn e() -> Result<()> {
 #[test]
 fn error_is_visible_when_path_dependencies_warnings_are_disabled() -> Result<()> {
     let data = check_with("cargo-llcheck", &[], "f/f", Warnings::default())?;
-    let external_path = data
-        .locations
-        .into_iter()
-        .find(|i| i.level == DiagnosticLevel::Error)
-        .context("external error location")?
-        .path;
-    assert!(!external_path.starts_with(data.workspace_root));
+    let locations = &data.locations;
+    assert!(
+        locations
+            .iter()
+            .find(|i| i.level == DiagnosticLevel::Error && !i.path.starts_with(&data.workspace_root))
+            .is_some()
+    );
+    assert!(
+        locations
+            .iter()
+            .find(|i| i.level == DiagnosticLevel::Warning
+                && !i.path.starts_with(&data.workspace_root))
+            .is_none()
+    );
     Ok(())
 }
 
