@@ -137,6 +137,7 @@ impl FilteredAndOrderedMessages {
         // TODO: error: could not compile `a` (lib) due to 4 previous errors
         // TODO: warning: build failed, waiting for other jobs to finish...
         // TODO: error: could not compile `a` (lib test) due to 4 previous errors
+        // TODO: is it just DiagnosticLevel::FailureNote?
         let (good, bad): (Vec<_>, Vec<_>) = messages
             .iter()
             .filter_map(|i| {

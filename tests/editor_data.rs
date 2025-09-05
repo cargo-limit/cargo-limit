@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use cargo_limit::{env_vars, models::EditorData, process::CARGO_EXECUTABLE};
+use cargo_metadata::diagnostic::DiagnosticLevel;
 use std::{
     collections::HashSet,
     env, fs,
@@ -26,6 +27,11 @@ fn c() -> Result<()> {
     check("c")
 }
 
+#[test]
+fn e() -> Result<()> {
+    check("e/e")
+}
+
 fn check(project: &str) -> Result<()> {
     check_with("cargo-llcheck", &[], project)?;
     check_with("cargo-lltest", &["--no-run"], project)?;
@@ -50,24 +56,31 @@ fn check_with(bin: &str, args: &[&str], project: &str) -> Result<()> {
     let data: EditorData = serde_json::from_slice(&output.stdout)?;
 
     assert_eq!(data.workspace_root, project_dir);
-    assert!(!output.status.success() || data.locations.is_empty());
-    if !output.status.success() {
-        dbg!(&data);
-        eprintln!("{}", String::from_utf8(output.stderr)?);
-    }
+    dbg!(&data);
+    eprintln!("{}", String::from_utf8(output.stderr)?);
 
-    // TODO: distinguish warnings, normal errors and ICE errors?
+    // TODO: distinguish normal errors and ICE errors?
     // TODO: check duplicates
     // TODO: check dependencies warnings prioritization
     // TODO: check external path dependencies' warnings skipping
     let mut current_line = None;
     let mut current_path = None;
     let mut visited_paths = HashSet::<PathBuf>::default();
+    let mut visited_warning = false;
     for i in data.locations {
         if !visited_paths.contains(&i.path) {
             visited_paths.insert(i.path.clone());
             current_line = Some(i.line);
             current_path = Some(i.path.clone());
+            if !visited_warning {
+                visited_warning = i.level == DiagnosticLevel::Warning;
+            }
+        }
+        if i.level == DiagnosticLevel::Error {
+            assert!(!visited_warning);
+        }
+        if visited_warning {
+            assert_eq!(i.level, DiagnosticLevel::Warning);
         }
         if let Some(current_line) = current_line {
             assert!(i.line >= current_line);
