@@ -79,7 +79,10 @@ fn check_external_path_dependencies(project: &str) -> Result<()> {
             external_path_dependencies: false,
         },
     )?
-    .locations;
+    .locations
+    .into_iter()
+    .filter(|i| i.level == DiagnosticLevel::Warning);
+
     let more_messages = check_with(
         "cargo-llcheck",
         &[],
@@ -89,9 +92,11 @@ fn check_external_path_dependencies(project: &str) -> Result<()> {
             external_path_dependencies: true,
         },
     )?
-    .locations;
-    dbg!(project, few_messages.len(), more_messages.len());
-    assert!(few_messages.len() < more_messages.len());
+    .locations
+    .into_iter()
+    .filter(|i| i.level == DiagnosticLevel::Warning);
+
+    assert!(few_messages.count() < more_messages.count());
     Ok(())
 }
 
