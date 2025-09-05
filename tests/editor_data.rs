@@ -80,11 +80,12 @@ fn check_external_path_dependencies_warnings(project: &str) -> Result<()> {
                 external_path_dependencies: false,
             },
         )?;
-        let workspace_root = data.workspace_root.clone();
         let zero = data
             .locations
-            .into_iter()
-            .filter(|i| i.level == DiagnosticLevel::Warning && !i.path.starts_with(&workspace_root))
+            .iter()
+            .filter(|i| {
+                i.level == DiagnosticLevel::Warning && !i.path.starts_with(&data.workspace_root)
+            })
             .count();
         assert_eq!(zero, 0);
     }
@@ -99,11 +100,12 @@ fn check_external_path_dependencies_warnings(project: &str) -> Result<()> {
                 external_path_dependencies: true,
             },
         )?;
-        let workspace_root = data.workspace_root.clone();
         let non_zero = data
             .locations
-            .into_iter()
-            .filter(|i| i.level == DiagnosticLevel::Warning && !i.path.starts_with(&workspace_root))
+            .iter()
+            .filter(|i| {
+                i.level == DiagnosticLevel::Warning && !i.path.starts_with(&data.workspace_root)
+            })
             .count();
         assert!(non_zero > 0);
     }
