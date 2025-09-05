@@ -357,7 +357,7 @@ fun! s:deduplicate_locations_by_paths_and_lines() abort
     let l:is_added_line = get(l:added_lines, l:added_line_key)
     if !l:is_added_line
       call add(l:new_locations, l:i)
-      let l:added_lines[l:added_line_key] = 1
+      let l:added_lines[l:added_line_key] = v:true
     end
   endfor
 
