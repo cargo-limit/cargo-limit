@@ -280,7 +280,7 @@ impl TransformedMessages {
                     .map(move |span| (span, message))
             })
             .map(|(span, message)| (Self::find_leaf_project_expansion(span), &message.message))
-            .filter(|(span, _)| Path::new(&span.file_name).is_relative())
+            //.filter(|(span, _)| Path::new(&span.file_name).is_relative()) // TODO
             .map(|(span, message)| Location::new(span, message, workspace_root))
             .collect()
     }

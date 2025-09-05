@@ -121,7 +121,7 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
 
         if i.level == DiagnosticLevel::Error {
             assert!(!visited_warning);
-        } else if i.level == DiagnosticLevel::Warning && warnings.external_path_dependencies {
+        } else if i.level == DiagnosticLevel::Warning && !warnings.external_path_dependencies {
             assert!(i.path.starts_with(&data.workspace_root));
         }
 
