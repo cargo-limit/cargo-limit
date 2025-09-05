@@ -288,11 +288,9 @@ impl TransformedMessages {
     }
 
     fn find_leaf_project_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {
-        let mut project_span = span.clone();
         while let Some(expansion) = span.expansion {
             span = expansion.span;
-            project_span = span.clone();
         }
-        project_span
+        span
     }
 }
