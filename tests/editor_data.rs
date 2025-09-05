@@ -18,25 +18,21 @@ struct Warnings {
     external_path_dependencies: bool,
 }
 
-#[ignore]
 #[test]
 fn a() -> Result<()> {
     check("a")
 }
 
-#[ignore]
 #[test]
 fn b() -> Result<()> {
     check("b")
 }
 
-#[ignore]
 #[test]
 fn c() -> Result<()> {
     check("c")
 }
 
-#[ignore]
 #[test]
 fn d() -> Result<()> {
     check_external_path_dependencies_warnings("d/d")
@@ -47,7 +43,6 @@ fn e() -> Result<()> {
     check_external_path_dependencies_warnings("e/e")
 }
 
-#[ignore]
 #[test]
 fn error_is_visible_when_path_dependencies_warnings_are_disabled() -> Result<()> {
     let data = check_with("cargo-llcheck", &[], "f/f", Warnings::default())?;
