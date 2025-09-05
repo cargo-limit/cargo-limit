@@ -352,7 +352,7 @@ fun! s:deduplicate_locations_by_paths_and_lines() abort
   let l:new_locations = []
   let l:added_lines = {}
 
-  for l:i in s:editor_data.locations
+  for l:i in reverse(s:editor_data.locations)
     let l:added_line_key = string([l:i.path, l:i.line])
     let l:is_added_line = get(l:added_lines, l:added_line_key)
     if !l:is_added_line
@@ -361,7 +361,7 @@ fun! s:deduplicate_locations_by_paths_and_lines() abort
     end
   endfor
 
-  let s:editor_data.locations = l:new_locations
+  let s:editor_data.locations = reverse(l:new_locations)
 endfun
 
 fun! s:read_all_locations_texts() abort
