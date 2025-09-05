@@ -85,6 +85,7 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
     let bin_path = resolve_dependency(bin, &target_dir)?;
     let output = Command::new(bin_path)
         .args(args)
+        .env("RUSTFLAGS", "")
         .env(env_vars::EDITOR, resolve_jq(&target_dir)?)
         .env(env_vars::TIME_LIMIT, "0")
         .env(env_vars::FORCE_WARN, warnings.force.to_string().as_str())
