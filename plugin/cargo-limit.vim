@@ -173,7 +173,7 @@ endf
 
 fun! s:upgrade_editor_data_format() abort
   if exists('s:editor_data.files')
-    let s:editor_data.locations = reverse(s:editor_data.files)
+    let s:editor_data.locations = s:editor_data.files
     call remove(s:editor_data, 'files')
   end
   if !exists('s:editor_data.locations')
