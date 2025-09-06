@@ -24,7 +24,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             audit: true
             rustfmt: true
-            #vint: true # TODO
+            vint: true
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
           - os: ubuntu-latest
@@ -157,7 +157,7 @@ jobs:
           patch -p1 ~/.local/lib/python3*/site-packages/vint/ast/plugin/scope_plugin/identifier_classifier.py vint-const.patch
       - name: Run Vint
         if: ${{ matrix.vint }}
-        run: vint plugin/cargo-limit.vim
+        run: vint --style-problem --enable-neovim plugin/cargo-limit.vim
       - name: Install cargo-audit
         if: ${{ matrix.audit }}
         run: cargo install --locked cargo-audit
