@@ -257,8 +257,8 @@ fun! s:on_buffer_write() abort
   end
 
   let l:diff_command = [
-    \ 'git', 'diff', '--unified=0', '--ignore-cr-at-eol', '--ignore-space-at-eol',
-    \ '--no-index', '--no-color', '--no-ext-diff', '--diff-algorithm=histogram', '--',
+    \ 'git', 'diff', '--unified=0', '--ignore-all-space', '--no-index', '--no-color',
+    \ '--no-ext-diff', '--diff-algorithm=histogram', '--',
     \ l:temp_source_path, l:current_file
     \ ]
 
