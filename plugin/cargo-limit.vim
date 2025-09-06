@@ -228,8 +228,8 @@ fun! s:on_buffer_write(path) abort
   if empty(s:editor_data.locations) || a:path ==# '' || !filereadable(a:path)
     return
   end
-  let l:has_changes = s:update_locations(a:path)
-  if l:has_changes
+  let l:corrected = s:update_locations(a:path)
+  if l:corrected
     let s:editor_data.corrected_locations = v:true
     call g:CargoLimitUpdate(s:editor_data)
   end
@@ -238,7 +238,7 @@ endf
 fun! s:update_locations(path) abort
   const MAX_LINES = 16 * 1024
 
-  let l:has_changes = v:false
+  let l:corrected = v:false
   let l:bufinfo = s:bufinfo_if_loaded(bufnr(a:path))
   let l:max_buf_line = empty(l:bufinfo) ? 0 : min([l:bufinfo.linecount, MAX_LINES])
 
@@ -268,11 +268,11 @@ fun! s:update_locations(path) abort
 
     if l:found_line !=# v:null && l:found_line !=# l:location.line
       let s:editor_data.locations[l:index].line = l:found_line
-      let l:has_changes = v:true
+      let l:corrected = v:true
     end
   endfor
 
-  return l:has_changes
+  return l:corrected
 endf
 
 fun! s:deduplicate_locations_by_paths_and_lines() abort
