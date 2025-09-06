@@ -13,7 +13,7 @@ fun! s:main() abort
     let s:locations_texts = {}
     let s:workspace_root = v:null
     let s:location_index = v:null
-    let s:temp_sources_dir = v:null
+    let s:temp_dir = v:null
     let s:deprecated_cargo_limit_open = v:null
     let s:lazyredraw = &lazyredraw
     let s:allow_redraw = v:true
@@ -47,22 +47,20 @@ endf
 
 fun! s:start_server(escaped_workspace_root) abort
   const TEMP_DIR_PREFIX = 'nvim-cargo-limit-'
-  const SOURCES = '.sources'
 
   if has('unix')
-    let l:server_address = '/tmp/' . TEMP_DIR_PREFIX . $USER . '/' . a:escaped_workspace_root
-    let s:temp_sources_dir = l:server_address . SOURCES
+    let s:temp_dir = '/tmp/' . TEMP_DIR_PREFIX . $USER
+    let l:server_address = s:temp_dir . '/' . a:escaped_workspace_root
     call s:maybe_delete_dead_unix_socket(l:server_address)
   elseif has('win32')
     let l:server_address_postfix = TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
     let l:server_address = '\\.\pipe\' . l:server_address_postfix
-    let s:temp_sources_dir = $TEMP . '\' . l:server_address_postfix . SOURCES
   else
     throw 'unsupported OS'
   end
 
   if !filereadable(l:server_address)
-    call s:recreate_temp_sources_dir()
+    call s:maybe_create_temp_dir()
     call s:maybe_setup_handlers()
     call serverstart(l:server_address)
     call s:log_info('ready')
@@ -72,8 +70,8 @@ endf
 fun! s:maybe_setup_handlers() abort
   augroup CargoLimitAutocommands
     autocmd!
-    autocmd VimLeavePre * call s:recreate_temp_sources_dir()
-    autocmd BufWritePost *.rs call s:on_buffer_write()
+    autocmd VimLeavePre * call s:maybe_create_temp_dir()
+    autocmd BufWritePost *.rs call s:on_buffer_write(expand('<afile>:p'))
   augroup END
 
   if exists('*CargoLimitOpen')
@@ -100,8 +98,6 @@ fun! s:maybe_setup_handlers() abort
       call s:increment_location_index()
       return
     end
-
-    call s:copy_affected_files_to_temp()
 
     if !exists('*CargoLimitUpdate')
       fun! g:CargoLimitUpdate(editor_data) abort
@@ -182,19 +178,6 @@ fun! s:upgrade_editor_data_format() abort
   let s:editor_data.corrected_locations = exists('s:editor_data.corrected_locations') && s:editor_data.corrected_locations ? v:true : v:false
 endf
 
-fun! s:copy_affected_files_to_temp() abort
-  call s:recreate_temp_sources_dir()
-
-  let l:paths = {}
-  for l:index in range(0, len(s:editor_data.locations) - 1)
-    let l:paths[s:editor_data.locations[l:index].path] = v:true
-  endfor
-
-  for l:path in keys(l:paths)
-    call s:maybe_copy_to_temp(l:path)
-  endfor
-endf
-
 fun! s:open_all_locations_in_reverse() abort
   let l:path_to_location_index = {}
   for l:index in range(len(s:editor_data.locations) - 1, 0, -1)
@@ -243,109 +226,54 @@ fun! s:decrement_location_index() abort
   endw
 endf
 
-fun! s:on_buffer_write() abort
-  const DIFF_TIMEOUT_SECS = 2
-  const MAX_LINES = 16 * 1024
-
-  let l:current_file = s:current_file()
-  let l:buf = bufnr(l:current_file)
-  let l:bufinfo = s:bufinfo_if_loaded(l:buf)
-  let l:temp_source_path = s:temp_source_path(l:current_file)
-  if empty(s:editor_data.locations) || l:current_file ==# '' || !filereadable(l:current_file) ||
-    \ l:bufinfo ==# {} || l:bufinfo.linecount ># MAX_LINES || !filereadable(l:temp_source_path)
+fun! s:on_buffer_write(path) abort
+  if empty(s:editor_data.locations) || a:path ==# '' || !filereadable(a:path)
     return
   end
-
-  let l:diff_command = [
-    \ 'git', 'diff', '--unified=0', '--ignore-all-space', '--no-index', '--no-color',
-    \ '--no-ext-diff', '--diff-algorithm=histogram', '--',
-    \ l:temp_source_path, l:current_file
-    \ ]
-
-  let l:job_id = jobstart(l:diff_command, {
-    \ 'on_stdout': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
-    \ 'on_stderr': { job_id, data, event -> s:on_diff(job_id, data, event, l:current_file) },
-    \ 'stdout_buffered': v:true,
-    \ 'stderr_buffered': v:true,
-    \ })
-
-  if l:job_id ># 0
-    call timer_start(DIFF_TIMEOUT_SECS * 1000, { -> jobstop(l:job_id) })
+  let l:has_changes = s:update_locations(a:path)
+  if l:has_changes
+    let s:editor_data.corrected_locations = v:true
+    call g:CargoLimitUpdate(s:editor_data)
   end
 endf
 
-fun! s:on_diff(_job_id, data, event, path) abort
-  const STATS_PATTERN = '@@ '
+fun! s:update_locations(path) abort
+  const MAX_LINES = 16 * 1024
 
-  if a:event ==# 'stdout'
-    let l:offset_to_shift = []
-    let l:maybe_edited_line_numbers = {}
-    for l:stdout_index in range(0, len(a:data) - 1)
-      let l:diff_line = a:data[l:stdout_index]
-      if !s:starts_with(l:diff_line, STATS_PATTERN)
-        continue
-      end
-      let l:raw_stats = split(split(l:diff_line, STATS_PATTERN)[0], ' ')
-      let [l:removal_offset, l:removals] = s:parse_diff_stats(l:raw_stats[0], '-')
-      let [l:addition_offset, l:additions] = s:parse_diff_stats(l:raw_stats[1], '+')
-      if l:additions ==# 0 || l:removals ==# 0
-        let l:shifted_lines = l:additions - l:removals
-        call add(l:offset_to_shift, [l:removal_offset, l:shifted_lines])
-      else
-        for l:index in range(0, l:removals - 1)
-          let l:maybe_edited_line_numbers[l:removal_offset + l:index] = v:true
-        endfor
-      end
-    endfor
-
-    let l:shift_accumulator = 0
-    for l:index in range(0, len(l:offset_to_shift) - 1)
-      let l:shifted_lines = l:offset_to_shift[l:index][1]
-      let l:start = l:offset_to_shift[l:index][0]
-      let l:end = l:index + 1 <# len(l:offset_to_shift) ? l:offset_to_shift[l:index + 1][0] : v:null
-      let l:shift_accumulator += l:shifted_lines
-      let l:maybe_edited_line_numbers = s:shift_locations(a:path, l:maybe_edited_line_numbers, l:start, l:end, l:shift_accumulator)
-    endfor
-    let l:has_changes = len(l:offset_to_shift) + len(l:maybe_edited_line_numbers)
-    if l:has_changes
-      call s:maybe_copy_to_temp(a:path)
-      let s:editor_data.corrected_locations = v:true
-      call g:CargoLimitUpdate(s:editor_data)
-    end
-  elseif a:event ==# 'stderr'
-    let l:stderr = trim(join(a:data, "\n"))
-    if !empty(l:stderr)
-      call s:log_error('diff', l:stderr)
-    end
-  end
-endf
-
-fun! s:shift_locations(path, maybe_edited_line_numbers, start, end, shift_accumulator) abort
+  let l:has_changes = v:false
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
-    if l:location.path ==# a:path
-      let l:current_line = l:location.line
-      if l:current_line ># a:start && (a:end ==# v:null || l:current_line <# a:end)
-        let s:editor_data.locations[l:index].line += a:shift_accumulator
+    if l:location.path !=# a:path || s:locations_texts[l:index] ==# s:read_text(l:location)
+      continue
+    end
+
+    let l:found_line = v:null
+    let l:max_line = min([l:location.line - 1, MAX_LINES])
+    for l:line in range(max([1, l:max_line]), 1, -1)
+      if s:read_text_by_line(a:path, l:line) ==# s:locations_texts[l:index]
+        let l:found_line = l:line
+        break
       end
+    endfor
+
+    if l:found_line ==# v:null
+      let l:bufinfo = s:bufinfo_if_loaded(bufnr(a:path))
+      let l:max_line = empty(l:bufinfo) ? 0 : min([l:bufinfo.linecount, MAX_LINES])
+      for l:line in range(min([l:location.line + 1, l:max_line]), l:max_line)
+        if s:read_text_by_line(a:path, l:line) ==# s:locations_texts[l:index]
+          let l:found_line = l:line
+          break
+        end
+      endfor
+    end
+
+    if l:found_line !=# v:null && l:found_line !=# l:location.line
+      let s:editor_data.locations[l:index].line = l:found_line
+      let l:has_changes = v:true
     end
   endfor
 
-  let l:maybe_edited_line_numbers = a:maybe_edited_line_numbers
-  for l:line in keys(l:maybe_edited_line_numbers)
-    if l:line ># a:start && (a:end ==# v:null || l:line <# a:end)
-      call remove(l:maybe_edited_line_numbers, l:line)
-      let l:maybe_edited_line_numbers[l:line + a:shift_accumulator] = v:true
-    end
-  endfor
-  return l:maybe_edited_line_numbers
-endf
-
-fun! s:parse_diff_stats(text, separator) abort
-  let l:offset_and_lines = split(split(a:text, a:separator)[0], ',')
-  let l:offset = str2nr(l:offset_and_lines[0])
-  let l:lines = len(l:offset_and_lines) ># 1 ? str2nr(l:offset_and_lines[1]) : 1
-  return [l:offset, l:lines]
+  return l:has_changes
 endf
 
 fun! s:deduplicate_locations_by_paths_and_lines() abort
@@ -383,16 +311,20 @@ fun! s:is_current_location_edited() abort
   return has_key(s:locations_texts, s:location_index) && s:locations_texts[s:location_index] !=# s:read_text(s:current_location())
 endf
 
-fun! s:read_text(location) abort
-  const MAX_LEN = 255
+fun! s:read_text_by_line(path, line) abort
+  const MAX_LENGTH = 255
 
-  let l:buf = bufnr(a:location.path)
+  let l:buf = bufnr(a:path)
   let l:bufinfo = s:bufinfo_if_loaded(l:buf)
-  if l:bufinfo ==# {}
+  if empty(l:bufinfo)
     return v:null
   end
-  let l:bufline = getbufline(l:buf, a:location.line)
-  return empty(l:bufline) ? v:null : trim(l:bufline[0][:MAX_LEN])
+  let l:bufline = getbufline(l:buf, a:line)
+  return empty(l:bufline) ? v:null : trim(l:bufline[0][:MAX_LENGTH])
+endf
+
+fun! s:read_text(location) abort
+  return s:read_text_by_line(a:location.path, a:location.line)
 endf
 
 fun! s:bufinfo_if_loaded(buf) abort
@@ -427,29 +359,11 @@ fun! s:maybe_delete_dead_unix_socket(server_address) abort
   end
 endf
 
-fun! s:recreate_temp_sources_dir() abort
-  if s:temp_sources_dir !=# v:null
-    call delete(s:temp_sources_dir, 'rf')
-    call mkdir(s:temp_sources_dir, 'p', 0700)
+fun! s:maybe_create_temp_dir() abort
+  if s:temp_dir !=# v:null
+    call mkdir(s:temp_dir, 'p', 0700)
+    call setfperm(s:temp_dir, 'rwx------')
   end
-endf
-
-fun! s:temp_source_path(path) abort
-  return s:temp_sources_dir . '/' . s:escape_path(a:path)
-endf
-
-fun! s:maybe_copy_to_temp(path) abort
-  const MAX_SIZE_BYTES = 1024 * 1024
-
-  if getfsize(a:path) ># MAX_SIZE_BYTES
-    return
-  end
-
-  let l:target = s:temp_source_path(a:path)
-  let l:temp_target = l:target . '_' . rand()
-  let l:data = readblob(a:path)
-  call writefile(l:data, l:temp_target, 'b')
-  call rename(l:temp_target, l:target)
 endf
 
 fun! s:jump_to_location(location_index) abort
@@ -464,6 +378,22 @@ fun! s:jump_to_location(location_index) abort
   if l:current_position[1] !=# l:location.line || current_position[2] !=# l:location.column
     call cursor((l:location.line), (l:location.column))
   end
+endf
+
+fun! s:current_location() abort
+  return s:editor_data.locations[s:location_index]
+endf
+
+fun! s:current_file() abort
+  return resolve(expand('%:p'))
+endf
+
+fun! s:escape_path(path) abort
+  return substitute(a:path, '[/\\:]', '%', 'g')
+endf
+
+fun! s:contains_str(text, pattern) abort
+  return stridx(a:text, a:pattern) !=# -1
 endf
 
 fun! s:disable_redraw() abort
@@ -482,26 +412,6 @@ fun! s:enable_redraw() abort
   let s:allow_redraw = v:true
   let &lazyredraw = s:lazyredraw
   redraw!
-endf
-
-fun! s:current_location() abort
-  return s:editor_data.locations[s:location_index]
-endf
-
-fun! s:current_file() abort
-  return resolve(expand('%:p'))
-endf
-
-fun! s:escape_path(path) abort
-  return substitute(a:path, '[/\\:]', '%', 'g')
-endf
-
-fun! s:starts_with(text, pattern) abort
-  return stridx(a:text, a:pattern) ==# 0
-endf
-
-fun! s:contains_str(text, pattern) abort
-  return stridx(a:text, a:pattern) !=# -1
 endf
 
 fun! s:log_error(...) abort
