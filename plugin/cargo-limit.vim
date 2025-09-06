@@ -241,6 +241,9 @@ fun! s:update_locations(path) abort
   const MAX_LINES = 16 * 1024
 
   let l:has_changes = v:false
+  let l:bufinfo = s:bufinfo_if_loaded(bufnr(a:path))
+  let l:max_buf_line = empty(l:bufinfo) ? 0 : min([l:bufinfo.linecount, MAX_LINES])
+
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
     if l:location.path !=# a:path || s:locations_texts[l:index] ==# s:read_text(l:location)
@@ -248,8 +251,8 @@ fun! s:update_locations(path) abort
     end
 
     let l:found_line = v:null
-    let l:max_line = min([l:location.line - 1, MAX_LINES])
-    for l:line in range(max([1, l:max_line]), 1, -1)
+    let l:prev_line = min([l:location.line - 1, MAX_LINES])
+    for l:line in range(max([1, l:prev_line]), 1, -1)
       if s:read_text_by_line(a:path, l:line) ==# s:locations_texts[l:index]
         let l:found_line = l:line
         break
@@ -257,9 +260,7 @@ fun! s:update_locations(path) abort
     endfor
 
     if l:found_line ==# v:null
-      let l:bufinfo = s:bufinfo_if_loaded(bufnr(a:path))
-      let l:max_line = empty(l:bufinfo) ? 0 : min([l:bufinfo.linecount, MAX_LINES])
-      for l:line in range(min([l:location.line + 1, l:max_line]), l:max_line)
+      for l:line in range(min([l:location.line + 1, l:max_buf_line]), l:max_buf_line)
         if s:read_text_by_line(a:path, l:line) ==# s:locations_texts[l:index]
           let l:found_line = l:line
           break
