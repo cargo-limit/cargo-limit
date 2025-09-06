@@ -11,8 +11,8 @@ fun! s:main() abort
     end
     let s:editor_data = {'locations': []}
     let s:locations_texts = {}
-    let s:workspace_root = v:null
     let s:location_index = v:null
+    let s:workspace_root = v:null
     let s:temp_dir = v:null
     let s:deprecated_cargo_limit_open = v:null
     let s:lazyredraw = &lazyredraw
@@ -102,16 +102,14 @@ fun! s:maybe_setup_handlers() abort
     if !exists('*CargoLimitUpdate')
       fun! g:CargoLimitUpdate(editor_data) abort
         let l:current_file = s:current_file()
-        if empty(s:editor_data.locations) || (l:current_file !=# '' && !filereadable(l:current_file))
+        if empty(s:editor_data.locations) || a:editor_data.corrected_locations || (l:current_file !=# '' && !filereadable(l:current_file))
           return
         end
 
-        if !a:editor_data.corrected_locations
-          call s:deduplicate_locations_by_paths_and_lines()
-          call s:open_all_locations_in_reverse()
-          call s:read_all_locations_texts()
-          call s:increment_location_index()
-        end
+        call s:deduplicate_locations_by_paths_and_lines()
+        call s:open_all_locations_in_reverse()
+        call s:read_all_locations_texts()
+        call s:increment_location_index()
       endf
     end
 
@@ -333,6 +331,36 @@ fun! s:bufinfo_if_loaded(buf) abort
   return a:buf >=# 0 && !empty(l:bufinfo) && l:bufinfo[0].loaded ? l:bufinfo[0] : {}
 endf
 
+fun! s:jump_to_location(location_index) abort
+  let l:location = s:editor_data.locations[a:location_index]
+
+  let l:current_file = s:current_file()
+  if l:current_file !=# l:location.path
+    execute 'silent! tab drop ' . fnameescape(l:location.path)
+  end
+
+  let l:current_position = getpos('.')
+  if l:current_position[1] !=# l:location.line || current_position[2] !=# l:location.column
+    call cursor((l:location.line), (l:location.column))
+  end
+endf
+
+fun! s:current_location() abort
+  return s:editor_data.locations[s:location_index]
+endf
+
+fun! s:current_file() abort
+  return resolve(expand('%:p'))
+endf
+
+fun! s:escape_path(path) abort
+  return substitute(a:path, '[/\\:]', '%', 'g')
+endf
+
+fun! s:contains_str(text, pattern) abort
+  return stridx(a:text, a:pattern) !=# -1
+endf
+
 fun! s:maybe_delete_dead_unix_socket(server_address) abort
   const LSOF_EXECUTABLE = 'lsof'
   const LSOF_COMMAND = LSOF_EXECUTABLE . ' -U'
@@ -365,36 +393,6 @@ fun! s:maybe_create_temp_dir() abort
     call mkdir(s:temp_dir, 'p', 0700)
     call setfperm(s:temp_dir, 'rwx------')
   end
-endf
-
-fun! s:jump_to_location(location_index) abort
-  let l:location = s:editor_data.locations[a:location_index]
-
-  let l:current_file = s:current_file()
-  if l:current_file !=# l:location.path
-    execute 'silent! tab drop ' . fnameescape(l:location.path)
-  end
-
-  let l:current_position = getpos('.')
-  if l:current_position[1] !=# l:location.line || current_position[2] !=# l:location.column
-    call cursor((l:location.line), (l:location.column))
-  end
-endf
-
-fun! s:current_location() abort
-  return s:editor_data.locations[s:location_index]
-endf
-
-fun! s:current_file() abort
-  return resolve(expand('%:p'))
-endf
-
-fun! s:escape_path(path) abort
-  return substitute(a:path, '[/\\:]', '%', 'g')
-endf
-
-fun! s:contains_str(text, pattern) abort
-  return stridx(a:text, a:pattern) !=# -1
 endf
 
 fun! s:disable_redraw() abort
