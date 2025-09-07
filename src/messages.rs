@@ -132,24 +132,29 @@ impl FilteredAndOrderedMessages {
         messages
             .into_iter()
             .flat_map(|i| {
-                let key = i
+                let span = i
                     .message
                     .spans
                     .iter()
                     .filter(|span| span.is_primary)
                     .cloned()
                     .map(TransformedMessages::find_leaf_project_expansion)
-                    .map(|span| (span.file_name, span.line_start, span.column_start))
-                    .min_by_key(|k| k.clone());
-                Some((key?, i))
+                    .min_by_key(|span| {
+                        // TODO: key func?
+                        (span.file_name.clone(), span.line_start, span.column_start)
+                    });
+                Some((span?, i))
             })
-            .sorted_by_key(|(key, message)| {
-                let (file_name, _, _) = &key;
+            .sorted_by_key(|(span, message)| {
                 let is_dependency = !message.target.src_path.starts_with(workspace_root);
-                let is_relative = Path::new(&file_name).is_relative();
-                (is_dependency, is_relative, key.clone())
+                let is_relative = Path::new(&span.file_name).is_relative();
+                (
+                    is_dependency,
+                    is_relative,
+                    (span.file_name.clone(), span.line_start, span.column_start),
+                )
             })
-            .unique_by(|(key, _)| key.clone())
+            .unique_by(|(span, _)| (span.file_name.clone(), span.line_start, span.column_start))
             .map(|(_, message)| message)
             .collect_vec()
     }
