@@ -197,7 +197,6 @@ impl TransformedMessages {
 
         let limit_messages = options.limit_messages;
         let no_limit = limit_messages == 0;
-
         let (messages, locations): (Vec<_>, Vec<_>) = {
             if no_limit {
                 Either::Left(messages)
@@ -207,8 +206,16 @@ impl TransformedMessages {
         }
         .unzip();
 
-        let locations_in_consistent_order =
-            Self::extract_locations_for_external_app(locations, options);
+        let locations_in_consistent_order = locations
+            .into_iter()
+            .filter(|i| {
+                if options.open_in_external_app_on_warnings {
+                    true
+                } else {
+                    matches!(i.level, DiagnosticLevel::Error | DiagnosticLevel::Ice)
+                }
+            })
+            .collect();
 
         let messages = messages.into_iter();
         let messages = {
@@ -225,22 +232,6 @@ impl TransformedMessages {
             messages,
             locations_in_consistent_order,
         })
-    }
-
-    fn extract_locations_for_external_app(
-        locations: Vec<Location>,
-        options: &Options,
-    ) -> Vec<Location> {
-        locations
-            .into_iter()
-            .filter(|i| {
-                if options.open_in_external_app_on_warnings {
-                    true
-                } else {
-                    matches!(i.level, DiagnosticLevel::Error | DiagnosticLevel::Ice)
-                }
-            })
-            .collect()
     }
 }
 
