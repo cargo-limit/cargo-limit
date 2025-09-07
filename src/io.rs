@@ -17,7 +17,7 @@ pub struct Buffers {
 
 impl<W> FlushingWriter<W> {
     pub fn new(writer: W) -> Self {
-        FlushingWriter { writer }
+        Self { writer }
     }
 }
 
