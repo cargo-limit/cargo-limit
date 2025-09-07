@@ -140,7 +140,7 @@ impl FilteredAndOrderedMessages {
                     .cloned()
                     .map(TransformedMessages::find_leaf_project_expansion)
                     .map(|span| (span.file_name, span.line_start, span.column_start))
-                    .min_by_key(|(_, line, column)| (*line, *column));
+                    .min_by_key(|k| k.clone());
                 Some((key?, i))
             })
             .sorted_by_key(|(key, message)| {
@@ -235,9 +235,16 @@ impl TransformedMessages {
                     .filter(|span| span.is_primary)
                     .cloned()
                     .map(TransformedMessages::find_leaf_project_expansion)
-                    .map(|span| (span.line_start, span.column_start, span))
-                    .min_by_key(|(line, column, _)| (*line, *column))
-                    .map(move |(_, _, span)| (span, message))
+                    .map(|span| {
+                        (
+                            span.file_name.clone(),
+                            span.line_start,
+                            span.column_start,
+                            span,
+                        )
+                    })
+                    .min_by_key(|(file_name, line, column, _)| (file_name.clone(), *line, *column))
+                    .map(move |(_, _, _, span)| (span, message))
             })
             .map(|(span, message)| Location::new(span, &message.message, workspace_root))
             .collect()
