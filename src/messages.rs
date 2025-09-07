@@ -26,7 +26,13 @@ struct TransformedMessages {
     locations_in_consistent_order: Vec<Location>,
 }
 
-// TODO: move?
+#[derive(Clone, PartialEq, PartialOrd, Ord, Eq, Hash)]
+struct SpanKey {
+    file_name: String,
+    line: usize,
+    column: usize,
+}
+
 pub fn transform_and_process_messages(
     buffers: &mut Buffers,
     messages: Messages,
@@ -133,34 +139,30 @@ impl FilteredAndOrderedMessages {
         messages
             .into_iter()
             .flat_map(|i| {
-                let span = i
+                let (key, span) = i
                     .message
                     .spans
                     .iter()
                     .filter(|span| span.is_primary)
                     .cloned()
-                    .map(Self::find_leaf_project_expansion)
-                    .min_by_key(|span| {
-                        // TODO: key func?
-                        (span.file_name.clone(), span.line_start, span.column_start)
-                    });
-                Some((span?, i))
+                    .map(|span| {
+                        let leaf = Self::find_leaf_project_expansion(span);
+                        (SpanKey::new(&leaf), leaf)
+                    })
+                    .min_by_key(|(key, _)| key.clone())?;
+                Some((key, span, i))
             })
-            .sorted_by_key(|(span, message)| {
+            .sorted_by_key(|(key, span, message)| {
                 let is_dependency = !message.target.src_path.starts_with(workspace_root);
                 let is_relative = Path::new(&span.file_name).is_relative();
-                (
-                    is_dependency,
-                    is_relative,
-                    (span.file_name.clone(), span.line_start, span.column_start),
-                )
+                (is_dependency, is_relative, key.clone())
             })
-            .unique_by(|(span, _)| (span.file_name.clone(), span.line_start, span.column_start))
-            .map(|(span, message)| {
+            .unique_by(|(key, _, _)| key.clone())
+            .map(|(_, span, message)| {
                 let location = Location::new(span, &message.message, workspace_root);
                 (message, location)
             })
-            .collect_vec()
+            .collect()
     }
 
     fn find_leaf_project_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {
@@ -196,16 +198,16 @@ impl TransformedMessages {
 
         let limit_messages = options.limit_messages;
         let no_limit = limit_messages == 0;
-        let messages = {
+
+        let (messages, locations): (Vec<_>, Vec<_>) = {
             if no_limit {
                 Either::Left(messages)
             } else {
                 Either::Right(messages.take(limit_messages))
             }
         }
-        .collect_vec();
+        .unzip();
 
-        let (messages, locations): (Vec<_>, Vec<_>) = messages.into_iter().unzip();
         let locations_in_consistent_order =
             Self::extract_locations_for_external_app(locations, options);
 
@@ -240,5 +242,15 @@ impl TransformedMessages {
                 }
             })
             .collect()
+    }
+}
+
+impl SpanKey {
+    fn new(span: &DiagnosticSpan) -> Self {
+        Self {
+            file_name: span.file_name.clone(),
+            line: span.line_start,
+            column: span.column_start,
+        }
     }
 }
