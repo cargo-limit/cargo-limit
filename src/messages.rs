@@ -17,8 +17,8 @@ pub struct Messages {
 }
 
 struct FilteredAndOrderedMessages {
-    errors: Vec<CompilerMessage>,
-    warnings: Vec<CompilerMessage>,
+    errors: Vec<(CompilerMessage, Location)>,
+    warnings: Vec<(CompilerMessage, Location)>,
 }
 
 struct TransformedMessages {
@@ -128,7 +128,7 @@ impl FilteredAndOrderedMessages {
     fn filter_and_order_messages(
         messages: impl IntoIterator<Item = CompilerMessage>,
         workspace_root: &Path,
-    ) -> Vec<CompilerMessage> {
+    ) -> Vec<(CompilerMessage, Location)> {
         messages
             .into_iter()
             .flat_map(|i| {
@@ -155,7 +155,10 @@ impl FilteredAndOrderedMessages {
                 )
             })
             .unique_by(|(span, _)| (span.file_name.clone(), span.line_start, span.column_start))
-            .map(|(_, message)| message)
+            .map(|(span, message)| {
+                let location = Location::new(span, &message.message, workspace_root);
+                (message, location)
+            })
             .collect_vec()
     }
 }
@@ -194,8 +197,9 @@ impl TransformedMessages {
         }
         .collect_vec();
 
+        let (messages, locations): (Vec<_>, Vec<_>) = messages.into_iter().unzip();
         let locations_in_consistent_order =
-            Self::extract_locations_for_external_app(&messages, options, workspace_root);
+            Self::extract_locations_for_external_app(locations, options);
 
         let messages = messages.into_iter();
         let messages = {
@@ -215,46 +219,22 @@ impl TransformedMessages {
     }
 
     fn extract_locations_for_external_app(
-        messages: &[CompilerMessage],
+        locations: Vec<Location>,
         options: &Options,
-        workspace_root: &Path,
     ) -> Vec<Location> {
-        // TODO: do find_leaf_project_expansion once
-        messages
-            .iter()
-            .filter(|message| {
+        locations
+            .into_iter()
+            .filter(|i| {
                 if options.open_in_external_app_on_warnings {
                     true
                 } else {
-                    matches!(
-                        message.message.level,
-                        DiagnosticLevel::Error | DiagnosticLevel::Ice
-                    )
+                    matches!(i.level, DiagnosticLevel::Error | DiagnosticLevel::Ice)
                 }
             })
-            .flat_map(|message| {
-                message
-                    .message
-                    .spans
-                    .iter()
-                    .filter(|span| span.is_primary)
-                    .cloned()
-                    .map(TransformedMessages::find_leaf_project_expansion)
-                    .map(|span| {
-                        (
-                            span.file_name.clone(),
-                            span.line_start,
-                            span.column_start,
-                            span,
-                        )
-                    })
-                    .min_by_key(|(file_name, line, column, _)| (file_name.clone(), *line, *column))
-                    .map(move |(_, _, _, span)| (span, message))
-            })
-            .map(|(span, message)| Location::new(span, &message.message, workspace_root))
             .collect()
     }
 
+    // TODO: move?
     fn find_leaf_project_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {
         while let Some(expansion) = span.expansion {
             span = expansion.span;
