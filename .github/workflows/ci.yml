@@ -7,7 +7,7 @@ env:
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
   RUSTUP_MAX_RETRIES: 10
-  RUSTFLAGS: "-D warnings -W bare-trait-objects"
+  RUSTFLAGS: "--deny warnings --warn bare-trait-objects"
   NIGHTLY_VERSION: "nightly-2025-08-18"
   ZIG_VERSION: "0.14.1"
 
@@ -186,5 +186,8 @@ jobs:
         if: ${{ !matrix.no_release_build && matrix.zigbuild }}
         run: cargo zigbuild --locked --verbose --all-features --release --target=${{ matrix.target }}
       - name: Run Tests
+        if: ${{ !matrix.no_build_tests && !matrix.no_run_tests && !matrix.zigbuild && !matrix.no_release_build }}
+        run: cargo test --locked --verbose --all-features --target=${{ matrix.target }} -- --nocapture
+      - name: Restart Tests
         if: ${{ !matrix.no_build_tests && !matrix.no_run_tests && !matrix.zigbuild && !matrix.no_release_build }}
         run: cargo test --locked --verbose --all-features --target=${{ matrix.target }} -- --nocapture

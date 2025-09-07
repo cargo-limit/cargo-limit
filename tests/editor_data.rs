@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use cargo_limit::{env_vars, models::EditorData, process::CARGO_EXECUTABLE};
+use cargo_metadata::diagnostic::DiagnosticLevel;
 use std::{
     collections::HashSet,
     env, fs,
@@ -11,30 +12,72 @@ use std::{
 const JQ_EXECUTABLE: &str = "jaq";
 const JQ_VERSION: &str = "2.3.0";
 
+#[derive(Default)]
+struct Warnings {
+    force: bool,
+    external_path_dependencies: bool,
+}
+
 #[test]
 fn a() -> Result<()> {
-    check("a")
-}
-
-#[ignore]
-#[test]
-fn b() -> Result<()> {
-    check("b") // FIXME
-}
-
-#[ignore]
-#[test]
-fn c() -> Result<()> {
-    check("c") // FIXME
-}
-
-fn check(project: &str) -> Result<()> {
-    check_with("cargo-llcheck", &[], project)?;
-    check_with("cargo-lltest", &["--no-run"], project)?;
+    let data = check("a")?;
+    assert_count(&data, DiagnosticLevel::Warning, 0);
+    assert_count(&data, DiagnosticLevel::Error, 4);
     Ok(())
 }
 
-fn check_with(bin: &str, args: &[&str], project: &str) -> Result<()> {
+#[test]
+fn b() -> Result<()> {
+    let data = check("b")?;
+    assert_count(&data, DiagnosticLevel::Warning, 0);
+    assert_count(&data, DiagnosticLevel::Error, 3);
+    Ok(())
+}
+
+#[test]
+fn c() -> Result<()> {
+    let data = check("c")?;
+    assert_count(&data, DiagnosticLevel::Warning, 0);
+    assert_count(&data, DiagnosticLevel::Error, 2);
+    Ok(())
+}
+
+#[test]
+fn d() -> Result<()> {
+    check_external_path_dependencies_warnings("d/d")
+}
+
+#[test]
+fn e() -> Result<()> {
+    check_external_path_dependencies_warnings("e/e")
+}
+
+#[test]
+fn error_is_visible_when_path_dependencies_warnings_are_disabled() -> Result<()> {
+    let data = check_with("cargo-llcheck", &[], "f/f", Warnings::default())?;
+    let locations = &data.locations;
+    assert!(
+        locations
+            .iter()
+            .find(|i| i.level == DiagnosticLevel::Error && !i.path.starts_with(&data.workspace_root))
+            .is_some()
+    );
+    assert!(
+        locations
+            .iter()
+            .find(|i| i.level == DiagnosticLevel::Warning
+                && !i.path.starts_with(&data.workspace_root))
+            .is_none()
+    );
+    Ok(())
+}
+
+fn check(project: &str) -> Result<EditorData> {
+    check_with("cargo-llcheck", &[], project, Warnings::default())?;
+    check_with("cargo-lltest", &["--no-run"], project, Warnings::default())
+}
+
+fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Result<EditorData> {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let project_dir = workspace_root.join("tests/stubs").join(project);
     let _ = fs::remove_dir_all(project_dir.join("target"));
@@ -45,36 +88,108 @@ fn check_with(bin: &str, args: &[&str], project: &str) -> Result<()> {
     let bin_path = resolve_dependency(bin, &target_dir)?;
     let output = Command::new(bin_path)
         .args(args)
+        .env("RUSTFLAGS", "")
         .env(env_vars::EDITOR, resolve_jq(&target_dir)?)
         .env(env_vars::TIME_LIMIT, "0")
+        .env(env_vars::FORCE_WARN, warnings.force.to_string().as_str())
+        .env(
+            env_vars::DEPS_WARN,
+            warnings.external_path_dependencies.to_string().as_str(),
+        )
         .current_dir(&project_dir)
         .output()?;
     let data: EditorData = serde_json::from_slice(&output.stdout)?;
 
     assert_eq!(data.workspace_root, project_dir);
-    assert!(!output.status.success() || data.locations.is_empty());
-    if !output.status.success() {
-        dbg!(&data);
-    }
+    dbg!(&data);
+    eprintln!("{}", String::from_utf8(output.stderr)?);
 
-    // TODO: distinguish warnings, normal errors and ICE errors?
     let mut current_line = None;
     let mut current_path = None;
     let mut visited_paths = HashSet::<PathBuf>::default();
-    for i in data.locations {
+    let mut visited_warning = false;
+    let mut visited_error = false;
+    for i in &data.locations {
         if !visited_paths.contains(&i.path) {
             visited_paths.insert(i.path.clone());
-            current_line = Some(i.line);
-            current_path = Some(i.path.clone());
+            current_path = None;
+            current_line = None;
+            if !visited_warning {
+                visited_warning = i.level == DiagnosticLevel::Warning;
+            }
+            if !visited_error {
+                visited_error = i.level == DiagnosticLevel::Error;
+            }
         }
+
+        if i.level == DiagnosticLevel::Error {
+            assert!(!visited_warning);
+        } else if i.level == DiagnosticLevel::Warning && !warnings.external_path_dependencies {
+            assert!(i.path.starts_with(&data.workspace_root));
+        }
+
+        if visited_warning {
+            assert_eq!(i.level, DiagnosticLevel::Warning);
+            if !warnings.force {
+                assert!(!visited_error);
+            }
+        }
+
         if let Some(current_line) = current_line {
-            assert!(i.line >= current_line);
+            assert!(i.line > current_line);
         }
-        assert_eq!(current_path, Some(i.path));
         current_line = Some(i.line);
+
+        if let Some(current_path) = current_path {
+            assert_eq!(current_path, i.path);
+        }
+        current_path = Some(i.path.clone());
     }
 
+    Ok(data)
+}
+
+fn check_external_path_dependencies_warnings(project: &str) -> Result<()> {
+    assert_eq!(
+        count_path_dependencies_warnings(
+            project,
+            Warnings {
+                force: true,
+                external_path_dependencies: false,
+            }
+        )?,
+        0
+    );
+
+    assert!(
+        count_path_dependencies_warnings(
+            project,
+            Warnings {
+                force: true,
+                external_path_dependencies: true,
+            }
+        )? > 0
+    );
     Ok(())
+}
+
+fn count_path_dependencies_warnings(project: &str, warnings: Warnings) -> Result<usize> {
+    let data = check_with("cargo-llcheck", &[], project, warnings)?;
+    let result = data
+        .locations
+        .iter()
+        .filter(|i| {
+            i.level == DiagnosticLevel::Warning && !i.path.starts_with(&data.workspace_root)
+        })
+        .count();
+    Ok(result)
+}
+
+fn assert_count(data: &EditorData, level: DiagnosticLevel, count: usize) {
+    assert_eq!(
+        data.locations.iter().filter(|i| i.level == level).count(),
+        count
+    )
 }
 
 fn resolve_jq(target_dir: &Path) -> Result<PathBuf> {
