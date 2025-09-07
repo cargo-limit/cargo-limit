@@ -8,10 +8,6 @@ use itertools::{Either, Itertools};
 use process::CargoProcess;
 use std::path::Path;
 
-// TODO: write test?
-const IGNORED_ERRORS: [&str; 1] = ["aborting due to"];
-const IGNORED_WARNINGS: [&str; 2] = ["warning emitted", "warnings emitted"];
-
 #[derive(Default, Debug)]
 pub struct Messages {
     internal_compiler_errors: Vec<CompilerMessage>,
@@ -28,49 +24,6 @@ struct FilteredAndOrderedMessages {
 struct TransformedMessages {
     messages: Vec<Message>,
     locations_in_consistent_order: Vec<Location>,
-}
-
-struct IgnoredMessages {
-    good: Vec<CompilerMessage>,
-    ignored: Vec<CompilerMessage>,
-}
-
-impl IgnoredMessages {
-    fn filter_good_warnings(warnings: Vec<CompilerMessage>) -> Vec<CompilerMessage> {
-        warnings
-            .into_iter()
-            .filter(|i| {
-                !IGNORED_WARNINGS
-                    .iter()
-                    .any(|pattern| i.message.message.contains(pattern))
-            })
-            .unique_by(|i| i.message.rendered.clone())
-            .collect()
-    }
-
-    fn filter_errors(messages: &[CompilerMessage]) -> Self {
-        let mut good = Vec::new();
-        let mut ignored = Vec::new();
-        for i in messages {
-            if IGNORED_ERRORS
-                .iter()
-                .any(|pattern| i.message.message.contains(pattern))
-            {
-                ignored.push(i.clone());
-            } else {
-                good.push(i.clone());
-            }
-        }
-        let good = good
-            .into_iter()
-            .unique_by(|i| i.message.rendered.clone())
-            .collect();
-        let ignored = ignored
-            .into_iter()
-            .unique_by(|i| i.message.rendered.clone())
-            .collect();
-        Self { good, ignored }
-    }
 }
 
 pub fn transform_and_process_messages(
@@ -161,25 +114,13 @@ impl FilteredAndOrderedMessages {
         } else {
             Either::Right(non_errors.filter(|i| i.target.src_path.starts_with(workspace_root)))
         };
-        let warnings = IgnoredMessages::filter_good_warnings(Self::filter_and_order_messages(
-            warnings,
-            workspace_root,
-        ));
+        let warnings = Self::filter_and_order_messages(warnings, workspace_root);
 
-        let IgnoredMessages {
-            good: good_errors,
-            ignored: ignored_errors,
-        } = IgnoredMessages::filter_errors(&messages.errors);
         let errors = messages
             .internal_compiler_errors
             .into_iter()
-            .chain(good_errors);
+            .chain(messages.errors);
         let errors = Self::filter_and_order_messages(errors, workspace_root);
-        let errors = if errors.is_empty() {
-            ignored_errors
-        } else {
-            errors
-        };
 
         Self { errors, warnings }
     }
