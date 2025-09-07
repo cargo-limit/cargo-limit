@@ -26,6 +26,7 @@ struct TransformedMessages {
     locations_in_consistent_order: Vec<Location>,
 }
 
+// TODO: move?
 pub fn transform_and_process_messages(
     buffers: &mut Buffers,
     messages: Messages,
@@ -138,7 +139,7 @@ impl FilteredAndOrderedMessages {
                     .iter()
                     .filter(|span| span.is_primary)
                     .cloned()
-                    .map(TransformedMessages::find_leaf_project_expansion)
+                    .map(Self::find_leaf_project_expansion)
                     .min_by_key(|span| {
                         // TODO: key func?
                         (span.file_name.clone(), span.line_start, span.column_start)
@@ -160,6 +161,13 @@ impl FilteredAndOrderedMessages {
                 (message, location)
             })
             .collect_vec()
+    }
+
+    fn find_leaf_project_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {
+        while let Some(expansion) = span.expansion {
+            span = expansion.span;
+        }
+        span
     }
 }
 
@@ -232,13 +240,5 @@ impl TransformedMessages {
                 }
             })
             .collect()
-    }
-
-    // TODO: move?
-    fn find_leaf_project_expansion(mut span: DiagnosticSpan) -> DiagnosticSpan {
-        while let Some(expansion) = span.expansion {
-            span = expansion.span;
-        }
-        span
     }
 }
