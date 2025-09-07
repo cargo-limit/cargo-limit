@@ -1,0 +1,6 @@
+[package]
+name = "f"
+edition = "2024"
+
+[dependencies]
+g = { path = "../g" }
