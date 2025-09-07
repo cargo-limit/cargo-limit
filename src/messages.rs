@@ -188,12 +188,11 @@ impl TransformedMessages {
         let messages = if options.show_warnings_if_errors_exist {
             Either::Left(errors.chain(warnings))
         } else {
-            let messages = if has_errors {
+            Either::Right(if has_errors {
                 Either::Left(errors)
             } else {
                 Either::Right(warnings)
-            };
-            Either::Right(messages)
+            })
         };
 
         let limit_messages = options.limit_messages;
