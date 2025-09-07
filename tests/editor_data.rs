@@ -20,17 +20,26 @@ struct Warnings {
 
 #[test]
 fn a() -> Result<()> {
-    check("a")
+    let data = check("a")?;
+    assert_count(&data, DiagnosticLevel::Warning, 0);
+    assert_count(&data, DiagnosticLevel::Error, 4);
+    Ok(())
 }
 
 #[test]
 fn b() -> Result<()> {
-    check("b")
+    let data = check("b")?;
+    assert_count(&data, DiagnosticLevel::Warning, 0);
+    assert_count(&data, DiagnosticLevel::Error, 3);
+    Ok(())
 }
 
 #[test]
 fn c() -> Result<()> {
-    check("c")
+    let data = check("c")?;
+    assert_count(&data, DiagnosticLevel::Warning, 0);
+    assert_count(&data, DiagnosticLevel::Error, 2);
+    Ok(())
 }
 
 #[test]
@@ -63,10 +72,9 @@ fn error_is_visible_when_path_dependencies_warnings_are_disabled() -> Result<()>
     Ok(())
 }
 
-fn check(project: &str) -> Result<()> {
+fn check(project: &str) -> Result<EditorData> {
     check_with("cargo-llcheck", &[], project, Warnings::default())?;
-    check_with("cargo-lltest", &["--no-run"], project, Warnings::default())?;
-    Ok(())
+    check_with("cargo-lltest", &["--no-run"], project, Warnings::default())
 }
 
 fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Result<EditorData> {
@@ -171,15 +179,17 @@ fn count_path_dependencies_warnings(project: &str, warnings: Warnings) -> Result
         .locations
         .iter()
         .filter(|i| {
-            dbg!(
-                &i.path,
-                &data.workspace_root,
-                i.path.starts_with(&data.workspace_root)
-            );
             i.level == DiagnosticLevel::Warning && !i.path.starts_with(&data.workspace_root)
         })
         .count();
     Ok(result)
+}
+
+fn assert_count(data: &EditorData, level: DiagnosticLevel, count: usize) {
+    assert_eq!(
+        data.locations.iter().filter(|i| i.level == level).count(),
+        count
+    )
 }
 
 fn resolve_jq(target_dir: &Path) -> Result<PathBuf> {

@@ -8,6 +8,10 @@ use itertools::{Either, Itertools};
 use process::CargoProcess;
 use std::path::Path;
 
+// TODO: write test?
+const IGNORED_ERRORS: [&str; 1] = ["aborting due to"];
+const IGNORED_WARNINGS: [&str; 2] = ["warning emitted", "warnings emitted"];
+
 #[derive(Default, Debug)]
 pub struct Messages {
     internal_compiler_errors: Vec<CompilerMessage>,
@@ -24,6 +28,49 @@ struct FilteredAndOrderedMessages {
 struct TransformedMessages {
     messages: Vec<Message>,
     locations_in_consistent_order: Vec<Location>,
+}
+
+struct IgnoredMessages {
+    good: Vec<CompilerMessage>,
+    ignored: Vec<CompilerMessage>,
+}
+
+impl IgnoredMessages {
+    fn filter_good_warnings(warnings: Vec<CompilerMessage>) -> Vec<CompilerMessage> {
+        warnings
+            .into_iter()
+            .filter(|i| {
+                !IGNORED_WARNINGS
+                    .iter()
+                    .any(|pattern| i.message.message.contains(pattern))
+            })
+            .unique_by(|i| i.message.rendered.clone())
+            .collect()
+    }
+
+    fn filter_errors(messages: &[CompilerMessage]) -> Self {
+        let mut good = Vec::new();
+        let mut ignored = Vec::new();
+        for i in messages {
+            if IGNORED_ERRORS
+                .iter()
+                .any(|pattern| i.message.message.contains(pattern))
+            {
+                ignored.push(i.clone());
+            } else {
+                good.push(i.clone());
+            }
+        }
+        let good = good
+            .into_iter()
+            .unique_by(|i| i.message.rendered.clone())
+            .collect();
+        let ignored = ignored
+            .into_iter()
+            .unique_by(|i| i.message.rendered.clone())
+            .collect();
+        Self { good, ignored }
+    }
 }
 
 pub fn transform_and_process_messages(
@@ -114,59 +161,27 @@ impl FilteredAndOrderedMessages {
         } else {
             Either::Right(non_errors.filter(|i| i.target.src_path.starts_with(workspace_root)))
         };
-        let warnings = Self::filter_and_order_messages(warnings, workspace_root);
+        let warnings = IgnoredMessages::filter_good_warnings(Self::filter_and_order_messages(
+            warnings,
+            workspace_root,
+        ));
 
-        let cargo_errors = Self::filter_cargo_errors(&messages.errors);
+        let IgnoredMessages {
+            good: good_errors,
+            ignored: ignored_errors,
+        } = IgnoredMessages::filter_errors(&messages.errors);
         let errors = messages
             .internal_compiler_errors
             .into_iter()
-            .chain(messages.errors);
+            .chain(good_errors);
         let errors = Self::filter_and_order_messages(errors, workspace_root);
         let errors = if errors.is_empty() {
-            cargo_errors
+            ignored_errors
         } else {
             errors
         };
 
         Self { errors, warnings }
-    }
-
-    // TODO: rename
-    // TODO: rewrite with loop?
-    fn filter_cargo_errors(messages: &[CompilerMessage]) -> Vec<CompilerMessage> {
-        // TODO: error: could not compile `a` (lib) due to 4 previous errors
-        // TODO: warning: build failed, waiting for other jobs to finish...
-        // TODO: error: could not compile `a` (lib test) due to 4 previous errors
-        // TODO: is it just DiagnosticLevel::FailureNote?
-        // TODO: write test?
-        let (good, bad): (Vec<_>, Vec<_>) = messages
-            .iter()
-            .filter_map(|i| {
-                if i.message.spans.is_empty() && i.message.rendered.is_some() {
-                    let i = i.clone();
-                    let item = if i.message.message.contains("aborting due to previous error") {
-                        (None, Some(i))
-                    } else {
-                        (Some(i), None)
-                    };
-                    Some(item)
-                } else {
-                    None
-                }
-            })
-            .unzip();
-
-        let filter = |items: Vec<Option<CompilerMessage>>| -> Vec<CompilerMessage> {
-            items
-                .into_iter()
-                .flatten()
-                .unique_by(|i| i.message.rendered.clone())
-                .collect()
-        };
-        let good = filter(good);
-        let bad = filter(bad);
-
-        if good.is_empty() { bad } else { good }
     }
 
     fn filter_and_order_messages(
