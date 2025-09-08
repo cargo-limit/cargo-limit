@@ -1,4 +1,4 @@
-use crate::{io::Buffers, options::Options};
+use crate::{env_vars, io::Buffers, options::Options};
 use anyhow::{Context, Result};
 use atomig::{Atom, Atomic};
 use std::{
@@ -11,7 +11,6 @@ use std::{
 };
 
 pub const CARGO_EXECUTABLE: &str = "cargo";
-const CARGO_ENV_VAR: &str = "CARGO";
 
 #[doc(hidden)]
 pub const NO_EXIT_CODE: i32 = 127;
@@ -43,7 +42,7 @@ trait StateExt {
 
 impl CargoProcess {
     pub fn run(options: &Options) -> Result<Self> {
-        let cargo_path = env::var(CARGO_ENV_VAR)
+        let cargo_path = env::var(env_vars::CARGO)
             .map(PathBuf::from)
             .ok()
             .unwrap_or_else(|| PathBuf::from(CARGO_EXECUTABLE));
