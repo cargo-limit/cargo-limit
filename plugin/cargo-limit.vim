@@ -253,13 +253,10 @@ fun! s:update_locations(path) abort
 
     let l:prev_line = min([l:location.line - 1, MAX_LINES])
     let l:next_line = min([l:location.line + 1, l:max_buf_line])
-    let l:secondary_lines = range(max([1, l:prev_line]), 1, -1)
-    let l:primary_lines = range(l:next_line, l:max_buf_line)
-    if l:shift <# 0
-      let [l:secondary_lines, l:primary_lines] = [l:primary_lines, l:secondary_lines]
-    endif
+    let l:prev_lines = range(max([1, l:prev_line]), 1, -1)
+    let l:next_lines = range(l:next_line, l:max_buf_line)
 
-    for l:line in s:zip_flatten([l:location.line] + l:primary_lines, l:secondary_lines)
+    for l:line in s:zip_flatten([l:location.line] + l:prev_lines, l:next_lines)
       if has_key(l:found_lines, l:line)
         continue
       end
