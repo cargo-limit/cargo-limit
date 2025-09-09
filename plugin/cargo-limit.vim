@@ -227,9 +227,9 @@ fun! s:on_buffer_write(path) abort
   if empty(s:editor_data.locations) || a:path ==# '' || !filereadable(a:path)
     return
   end
-  let l:corrected = s:update_locations(a:path)
-  if l:corrected
-    let s:editor_data.corrected_locations = v:true
+
+  let s:editor_data.corrected_locations = s:update_locations(a:path)
+  if s:editor_data.corrected_locations
     call g:CargoLimitUpdate(s:editor_data)
   end
 endf
@@ -239,7 +239,7 @@ fun! s:update_locations(path) abort
   call s:try_update_locations(a:path)
   eval s:editor_data.locations->sort({ a, b -> a.line ==# b.line ? a.column - b.column : a.line - b.line })
   let l:corrected = l:old_locations !=# s:editor_data.locations
-  return l:corrected
+  return l:corrected ? v:true : v:false
 endf
 
 fun! s:try_update_locations(path) abort
