@@ -237,18 +237,18 @@ fun! s:on_buffer_write(path) abort
 endf
 
 fun! s:update_locations(path) abort
-  let l:found_lines = s:try_update_locations(a:path, { a, b -> a ==# b }, {})
-  let l:found_lines = s:try_update_locations(a:path, { a, b -> trim(a) ==# trim(b) }, l:found_lines)
-  let l:corrected = !empty(l:found_lines)
-  if l:corrected
-    eval s:editor_data.locations->sort({ a, b -> a.line ==# b.line ? a.column - b.column : a.line - b.line })
-  end
+  let l:old_locations = deepcopy(s:editor_data.locations, 1)
+  call s:try_update_locations(a:path)
+  eval s:editor_data.locations->sort({ a, b -> a.line ==# b.line ? a.column - b.column : a.line - b.line })
+  let l:corrected = l:old_locations !=# s:editor_data.locations
   return l:corrected
 endf
 
-fun! s:try_update_locations(path, eq, found_lines) abort
+fun! s:try_update_locations(path) abort
   const MAX_LINES = 16 * 1024
 
+  let l:found_lines = {}
+  let l:shift = 0
   let l:bufinfo = s:bufinfo_if_loaded(bufnr(a:path))
   let l:max_buf_line = empty(l:bufinfo) ? len(readfile(a:path)) : min([l:bufinfo.linecount, MAX_LINES])
 
@@ -257,23 +257,26 @@ fun! s:try_update_locations(path, eq, found_lines) abort
     if l:location.path !=# a:path || !has_key(s:locations_texts, l:index)
       continue
     end
+    let s:editor_data.locations[l:index].line += shift
+    let l:location = s:editor_data.locations[l:index]
 
     let l:next_line = min([l:location.line + 1, l:max_buf_line])
     let l:prev_line = min([l:location.line - 1, MAX_LINES])
-    for l:line in range(l:next_line, l:max_buf_line) + range(max([1, l:prev_line]), 1, -1)
-      if has_key(a:found_lines, l:line)
+
+    " TODO: lookup up, down, two items up, two items down, etc.?
+    for l:line in [l:location.line] + range(l:next_line, l:max_buf_line) + range(max([1, l:prev_line]), 1, -1)
+      if has_key(l:found_lines, l:line)
         continue
       end
       let l:text = s:read_text_by_line(a:path, l:line)
-      if l:text !=# v:null && a:eq(s:locations_texts[l:index], l:text)
+      if l:text !=# v:null && trim(s:locations_texts[l:index]) ==# trim(l:text)
+        let l:shift += s:editor_data.locations[l:index].line - l:line
         let s:editor_data.locations[l:index].line = l:line
-        let a:found_lines[l:line] = v:true
+        let l:found_lines[l:line] = v:true
         break
       end
     endfor
   endfor
-
-  return a:found_lines
 endf
 
 fun! s:deduplicate_locations_by_paths_and_lines() abort
@@ -316,6 +319,7 @@ fun! s:is_current_location_edited() abort
   return l:text !=# v:null && trim(s:locations_texts[s:location_index]) !=# trim(l:text)
 endf
 
+" TODO: trim?
 fun! s:read_text_by_line(path, line) abort
   const MAX_LENGTH = 255
 
