@@ -271,7 +271,7 @@ fun! s:try_update_locations(path) abort
         continue
       end
       let l:text = s:read_text_by_line(a:path, l:line)
-      if l:text !=# v:null && trim(s:locations_texts[l:index]) ==# trim(l:text)
+      if l:text !=# v:null && s:locations_texts[l:index] ==# l:text
         let l:shift += s:editor_data.locations[l:index].line - l:line
         let s:editor_data.locations[l:index].line = l:line
         let l:found_lines[l:line] = v:true
