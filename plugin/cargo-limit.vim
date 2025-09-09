@@ -254,14 +254,18 @@ fun! s:try_update_locations(path, eq, found_lines) abort
 
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
-    if l:location.path !=# a:path
+    if l:location.path !=# a:path || !has_key(s:locations_texts, l:index)
       continue
     end
 
     let l:next_line = min([l:location.line + 1, l:max_buf_line])
     let l:prev_line = min([l:location.line - 1, MAX_LINES])
     for l:line in range(l:next_line, l:max_buf_line) + range(max([1, l:prev_line]), 1, -1)
-      if !has_key(a:found_lines, l:line) && a:eq(s:locations_texts[l:index], s:read_text_by_line(a:path, l:line))
+      if has_key(a:found_lines, l:line)
+        continue
+      end
+      let l:text = s:read_text_by_line(a:path, l:line)
+      if l:text !=# v:null && a:eq(s:locations_texts[l:index], l:text)
         let s:editor_data.locations[l:index].line = l:line
         let a:found_lines[l:line] = v:true
         break
@@ -291,7 +295,10 @@ endfun
 fun! s:finalize_locations() abort
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
-    let s:locations_texts[l:index] = s:read_text(l:location)
+    let l:text = s:read_text(l:location)
+    if l:text !=# v:null
+      let s:locations_texts[l:index] = l:text
+    end
   endfor
   call s:increment_location_index()
 endf
@@ -302,7 +309,11 @@ fun! s:is_same_as_current_location(target) abort
 endf
 
 fun! s:is_current_location_edited() abort
-  return trim(s:locations_texts[s:location_index]) !=# trim(s:read_text(s:current_location()))
+  if !has_key(s:locations_texts, s:location_index)
+    return v:false
+  end
+  let l:text = s:read_text(s:current_location())
+  return l:text !=# v:null && trim(s:locations_texts[s:location_index]) !=# trim(l:text)
 endf
 
 fun! s:read_text_by_line(path, line) abort
@@ -310,8 +321,8 @@ fun! s:read_text_by_line(path, line) abort
 
   let l:buf = bufnr(a:path)
   let l:bufinfo = s:bufinfo_if_loaded(l:buf)
-  let l:text = empty(l:bufinfo) ? readfile(a:path, '', a:line)[-1] : getbufline(l:buf, a:line)[0]
-  return l:text[:MAX_LENGTH]
+  let l:text = empty(l:bufinfo) ? readfile(a:path, '', a:line) : getbufline(l:buf, a:line)
+  return empty(l:text) ? v:null : l:text[-1][:MAX_LENGTH]
 endf
 
 fun! s:read_text(location) abort
