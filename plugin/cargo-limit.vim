@@ -249,10 +249,28 @@ fun! s:update_locations(path) abort
       continue
     end
 
-    let l:prev_line = min([l:location.line - 1, MAX_LINES])
     let l:next_line = min([l:location.line + 1, l:max_buf_line])
-    for l:line in range(max([1, l:prev_line]), 1, -1) + range(l:next_line, l:max_buf_line)
+    let l:prev_line = min([l:location.line - 1, MAX_LINES])
+    for l:line in range(l:next_line, l:max_buf_line) + range(max([1, l:prev_line]), 1, -1)
       if !has_key(l:found_lines, l:line) && s:locations_texts[l:index] ==# s:read_text_by_line(a:path, l:line)
+        let s:editor_data.locations[l:index].line = l:line
+        let l:found_lines[l:line] = v:true
+        let l:corrected = v:true
+        break
+      end
+    endfor
+  endfor
+
+  for l:index in range(0, len(s:editor_data.locations) - 1)
+    let l:location = s:editor_data.locations[l:index]
+    if l:location.path !=# a:path || !has_key(s:locations_texts, l:index)
+      continue
+    end
+
+    let l:next_line = min([l:location.line + 1, l:max_buf_line])
+    let l:prev_line = min([l:location.line - 1, MAX_LINES])
+    for l:line in range(l:next_line, l:max_buf_line) + range(max([1, l:prev_line]), 1, -1)
+      if !has_key(l:found_lines, l:line) && trim(s:locations_texts[l:index]) ==# trim(s:read_text_by_line(a:path, l:line))
         let s:editor_data.locations[l:index].line = l:line
         let l:found_lines[l:line] = v:true
         let l:corrected = v:true
@@ -297,7 +315,7 @@ fun! s:is_same_as_current_location(target) abort
 endf
 
 fun! s:is_current_location_edited() abort
-  return has_key(s:locations_texts, s:location_index) && s:locations_texts[s:location_index] !=# s:read_text(s:current_location())
+  return has_key(s:locations_texts, s:location_index) && trim(s:locations_texts[s:location_index]) !=# trim(s:read_text(s:current_location()))
 endf
 
 fun! s:read_text_by_line(path, line) abort
@@ -309,7 +327,7 @@ fun! s:read_text_by_line(path, line) abort
     return v:null
   end
   let l:bufline = getbufline(l:buf, a:line)
-  return empty(l:bufline) ? v:null : trim(l:bufline[0][:MAX_LENGTH])
+  return empty(l:bufline) ? v:null : l:bufline[0][:MAX_LENGTH]
 endf
 
 fun! s:read_text(location) abort
