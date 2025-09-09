@@ -95,11 +95,15 @@ fun! s:maybe_setup_handlers() abort
     call s:upgrade_editor_data_format()
 
     if s:deprecated_cargo_limit_open !=# v:null
+      call s:read_all_locations_texts()
       call s:increment_location_index()
       return
     end
 
-    if !exists('*CargoLimitUpdate')
+    if exists('*CargoLimitUpdate')
+      call s:read_all_locations_texts()
+      call s:increment_location_index()
+    else
       fun! g:CargoLimitUpdate(editor_data) abort
         let l:current_file = s:current_file()
         if empty(s:editor_data.locations) || a:editor_data.corrected_locations || (l:current_file !=# '' && !filereadable(l:current_file))
@@ -249,11 +253,11 @@ fun! s:try_update_locations(path, eq, found_lines) abort
   const MAX_LINES = 16 * 1024
 
   let l:bufinfo = s:bufinfo_if_loaded(bufnr(a:path))
-  let l:max_buf_line = empty(l:bufinfo) ? 0 : min([l:bufinfo.linecount, MAX_LINES])
+  let l:max_buf_line = empty(l:bufinfo) ? len(readfile(a:path)) : min([l:bufinfo.linecount, MAX_LINES])
 
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
-    if l:location.path !=# a:path || !has_key(s:locations_texts, l:index)
+    if l:location.path !=# a:path
       continue
     end
 
@@ -290,10 +294,10 @@ endfun
 fun! s:read_all_locations_texts() abort
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
-    let l:text = s:read_text(l:location)
-    if l:text !=# v:null
-      let s:locations_texts[l:index] = l:text
+    if !filereadable(l:location.path)
+      continue
     end
+    let s:locations_texts[l:index] = s:read_text(l:location)
   endfor
 endf
 
@@ -303,7 +307,7 @@ fun! s:is_same_as_current_location(target) abort
 endf
 
 fun! s:is_current_location_edited() abort
-  return has_key(s:locations_texts, s:location_index) && trim(s:locations_texts[s:location_index]) !=# trim(s:read_text(s:current_location()))
+  return trim(s:locations_texts[s:location_index]) !=# trim(s:read_text(s:current_location()))
 endf
 
 fun! s:read_text_by_line(path, line) abort
@@ -311,11 +315,8 @@ fun! s:read_text_by_line(path, line) abort
 
   let l:buf = bufnr(a:path)
   let l:bufinfo = s:bufinfo_if_loaded(l:buf)
-  if empty(l:bufinfo)
-    return v:null
-  end
-  let l:bufline = getbufline(l:buf, a:line)
-  return empty(l:bufline) ? v:null : l:bufline[0][:MAX_LENGTH]
+  let l:text = empty(l:bufinfo) ? readfile(a:path, '', a:line)[-1] : getbufline(l:buf, a:line)[0]
+  return l:text[:MAX_LENGTH]
 endf
 
 fun! s:read_text(location) abort
