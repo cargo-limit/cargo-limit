@@ -95,12 +95,12 @@ fun! s:maybe_setup_handlers() abort
     call s:upgrade_editor_data_format()
 
     if s:deprecated_cargo_limit_open !=# v:null
-      call s:read_all_locations_texts()
+      call s:finalize_locations()
       return
     end
 
     if exists('*CargoLimitUpdate')
-      call s:read_all_locations_texts()
+      call s:finalize_locations()
     else
       fun! g:CargoLimitUpdate(editor_data) abort
         let l:current_file = s:current_file()
@@ -110,7 +110,7 @@ fun! s:maybe_setup_handlers() abort
 
         call s:deduplicate_locations_by_paths_and_lines()
         call s:open_all_locations_in_reverse()
-        call s:read_all_locations_texts()
+        call s:finalize_locations()
       endf
     end
 
@@ -288,12 +288,9 @@ fun! s:deduplicate_locations_by_paths_and_lines() abort
   let s:editor_data.locations = reverse(l:new_locations)
 endfun
 
-fun! s:read_all_locations_texts() abort
+fun! s:finalize_locations() abort
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
-    if !filereadable(l:location.path)
-      continue
-    end
     let s:locations_texts[l:index] = s:read_text(l:location)
   endfor
   call s:increment_location_index()
