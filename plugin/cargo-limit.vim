@@ -99,9 +99,7 @@ fun! s:maybe_setup_handlers() abort
       return
     end
 
-    if exists('*CargoLimitUpdate')
-      call s:finalize_locations()
-    else
+    if !exists('*CargoLimitUpdate')
       fun! g:CargoLimitUpdate(editor_data) abort
         let l:current_file = s:current_file()
         if empty(s:editor_data.locations) || a:editor_data.corrected_locations || (l:current_file !=# '' && !filereadable(l:current_file))
