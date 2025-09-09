@@ -261,6 +261,7 @@ fun! s:update_locations(path) abort
     endfor
   endfor
 
+  eval s:editor_data.locations->sort({ a, b -> a.line - b.line })
   return l:corrected
 endf
 
