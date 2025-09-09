@@ -244,32 +244,19 @@ fun! s:update_locations(path) abort
 
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
-    if l:location.path !=# a:path || (has_key(s:locations_texts, l:index) && s:locations_texts[l:index] ==# s:read_text(l:location))
+    if l:location.path !=# a:path || !has_key(s:locations_texts, l:index) || s:locations_texts[l:index] ==# s:read_text(l:location)
       continue
     end
 
-    let l:found_line = v:null
     let l:prev_line = min([l:location.line - 1, MAX_LINES])
-    for l:line in range(max([1, l:prev_line]), 1, -1)
-      if has_key(s:locations_texts, l:index) && s:read_text_by_line(a:path, l:line) ==# s:locations_texts[l:index]
-        let l:found_line = l:line
+    let l:next_line = min([l:location.line + 1, l:max_buf_line])
+    for l:line in range(max([1, l:prev_line]), 1, -1) + range(l:next_line, l:max_buf_line)
+      if s:locations_texts[l:index] ==# s:read_text_by_line(a:path, l:line)
+        let s:editor_data.locations[l:index].line = l:line
+        let l:corrected = v:true
         break
       end
     endfor
-
-    if l:found_line ==# v:null
-      for l:line in range(min([l:location.line + 1, l:max_buf_line]), l:max_buf_line)
-        if has_key(s:locations_texts, l:index) && s:read_text_by_line(a:path, l:line) ==# s:locations_texts[l:index]
-          let l:found_line = l:line
-          break
-        end
-      endfor
-    end
-
-    if l:found_line !=# v:null && l:found_line !=# l:location.line
-      let s:editor_data.locations[l:index].line = l:found_line
-      let l:corrected = v:true
-    end
   endfor
 
   return l:corrected
