@@ -260,11 +260,15 @@ fun! s:try_update_locations(path) abort
     let s:editor_data.locations[l:index].line += shift
     let l:location = s:editor_data.locations[l:index]
 
-    let l:next_line = min([l:location.line + 1, l:max_buf_line])
     let l:prev_line = min([l:location.line - 1, MAX_LINES])
+    let l:next_line = min([l:location.line + 1, l:max_buf_line])
+    let l:secondary_lines = range(max([1, l:prev_line]), 1, -1)
+    let l:primary_lines = range(l:next_line, l:max_buf_line)
+    if l:shift <# 0
+      let [l:secondary_lines, l:primary_lines] = [l:primary_lines, l:secondary_lines]
+    endif
 
-    " TODO: lookup up, down, two items up, two items down, etc.?
-    for l:line in [l:location.line] + range(l:next_line, l:max_buf_line) + range(max([1, l:prev_line]), 1, -1)
+    for l:line in s:zip_flatten([l:location.line] + l:primary_lines, l:secondary_lines)
       if has_key(l:found_lines, l:line)
         continue
       end
@@ -418,6 +422,21 @@ fun! s:enable_redraw() abort
   let s:allow_redraw = v:true
   let &lazyredraw = s:lazyredraw
   redraw!
+endf
+
+fun! s:zip_flatten(xs, ys) abort
+  let l:result = []
+  let l:i = 0
+  while l:i < max([len(a:xs), len(a:ys)])
+    if l:i < len(a:xs)
+      call add(l:result, a:xs[l:i])
+    endif
+    if l:i < len(a:ys)
+      call add(l:result, a:ys[l:i])
+    endif
+    let l:i += 1
+  endw
+  return l:result
 endf
 
 fun! s:log_error(...) abort
