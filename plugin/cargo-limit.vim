@@ -240,7 +240,7 @@ fun! s:update_locations(path) abort
   let l:found_lines = s:try_update_locations(a:path, { a, b -> trim(a) ==# trim(b) }, l:found_lines)
   let l:corrected = !empty(l:found_lines)
   if l:corrected
-    eval s:editor_data.locations->sort({ a, b -> a.line - b.line })
+    eval s:editor_data.locations->sort({ a, b -> a.line ==# b.line ? a.column - b.column : a.line - b.line })
   end
   return l:corrected
 endf
@@ -263,7 +263,6 @@ fun! s:try_update_locations(path, eq, found_lines) abort
       if !has_key(a:found_lines, l:line) && a:eq(s:locations_texts[l:index], s:read_text_by_line(a:path, l:line))
         let s:editor_data.locations[l:index].line = l:line
         let a:found_lines[l:line] = v:true
-        let l:corrected = v:true
         break
       end
     endfor
