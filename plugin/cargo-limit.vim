@@ -235,16 +235,9 @@ fun! s:on_buffer_write(path) abort
 endf
 
 fun! s:update_locations(path) abort
-  let l:old_locations = deepcopy(s:editor_data.locations, 1)
-  call s:try_update_locations(a:path)
-  eval s:editor_data.locations->sort({ a, b -> a.line ==# b.line ? a.column - b.column : a.line - b.line })
-  let l:corrected = l:old_locations !=# s:editor_data.locations
-  return l:corrected ? v:true : v:false
-endf
-
-fun! s:try_update_locations(path) abort
   const MAX_LINES = 16 * 1024
 
+  let l:old_locations = deepcopy(s:editor_data.locations, 1)
   let l:found_lines = {}
   let l:shift = 0
   let l:bufinfo = s:bufinfo_if_loaded(bufnr(a:path))
@@ -279,6 +272,10 @@ fun! s:try_update_locations(path) abort
       end
     endfor
   endfor
+
+  eval s:editor_data.locations->sort({ a, b -> a.line ==# b.line ? a.column - b.column : a.line - b.line })
+  let l:corrected = l:old_locations !=# s:editor_data.locations
+  return l:corrected ? v:true : v:false
 endf
 
 fun! s:deduplicate_locations_by_paths_and_lines() abort
@@ -321,7 +318,6 @@ fun! s:is_current_location_edited() abort
   return l:text !=# v:null && trim(s:locations_texts[s:location_index]) !=# trim(l:text)
 endf
 
-" TODO: trim?
 fun! s:read_text_by_line(path, line) abort
   const MAX_LENGTH = 255
 
