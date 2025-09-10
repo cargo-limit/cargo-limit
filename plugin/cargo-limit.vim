@@ -111,7 +111,6 @@ fun! s:maybe_setup_handlers() abort
       endf
     end
 
-    let s:editor_data.corrected_locations = v:false
     call g:CargoLimitUpdate(s:editor_data)
     call s:finalize_locations()
   endf
@@ -271,8 +270,7 @@ fun! s:update_locations(path) abort
   endfor
 
   eval s:editor_data.locations->sort({ a, b -> a.line ==# b.line ? a.column - b.column : a.line - b.line })
-  let l:corrected = l:old_locations !=# s:editor_data.locations
-  return l:corrected ? v:true : v:false
+  return l:old_locations ==# s:editor_data.locations ? v:false : v:true
 endf
 
 fun! s:deduplicate_locations_by_paths_and_lines() abort
