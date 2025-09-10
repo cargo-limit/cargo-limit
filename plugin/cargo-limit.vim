@@ -228,7 +228,7 @@ fun! s:on_buffer_write(path) abort
   end
 
   let s:editor_data.corrected_locations = s:update_locations(a:path)
-  if s:editor_data.corrected_locations
+  if s:editor_data.corrected_locations && exists('*CargoLimitUpdate')
     call g:CargoLimitUpdate(s:editor_data)
   end
 endf
