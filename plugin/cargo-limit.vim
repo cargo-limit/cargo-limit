@@ -262,9 +262,6 @@ fun! s:deduplicate_locations_by_paths_and_lines() abort
 endfun
 
 fun! s:finalize_locations() abort
-  if !empty(s:locations_texts)
-    return
-  end
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
     let l:text = s:read_text(l:location)
@@ -272,7 +269,7 @@ fun! s:finalize_locations() abort
       let s:locations_texts[l:index] = l:text
     end
   endfor
-  call s:increment_location_index()
+  let s:location_index = len(s:editor_data.locations) - 1
 endf
 
 fun! s:switch_location(change_location_index) abort
