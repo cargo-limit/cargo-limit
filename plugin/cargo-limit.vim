@@ -108,12 +108,12 @@ fun! s:maybe_setup_handlers() abort
 
         call s:deduplicate_locations_by_paths_and_lines()
         call s:open_all_locations_in_reverse()
-        call s:finalize_locations()
       endf
     end
 
     let s:editor_data.corrected_locations = v:false
     call g:CargoLimitUpdate(s:editor_data)
+    call s:finalize_locations()
   endf
 
   fun! g:CargoLimitOpenNextLocation() abort
@@ -248,7 +248,7 @@ fun! s:update_locations(path) abort
     if l:location.path !=# a:path || !has_key(s:locations_texts, l:index)
       continue
     end
-    let s:editor_data.locations[l:index].line += shift
+    let s:editor_data.locations[l:index].line += l:shift
     let l:location = s:editor_data.locations[l:index]
 
     let l:prev_line = min([l:location.line - 1, MAX_LINES])
@@ -292,6 +292,9 @@ fun! s:deduplicate_locations_by_paths_and_lines() abort
 endfun
 
 fun! s:finalize_locations() abort
+  if !empty(s:locations_texts)
+    return
+  end
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
     let l:text = s:read_text(l:location)
