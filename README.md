@@ -267,12 +267,12 @@ Add **custom update handlers** to your `init.vim` if you want other Neovim behav
 ```viml
 fun! g:CargoLimitUpdate(editor_data) abort
   let l:current_file = resolve(expand('%:p'))
-  if l:current_file != '' && !filereadable(l:current_file)
+  if l:current_file !=# '' && !filereadable(l:current_file)
     return
   end
   for l:location in reverse(a:editor_data.locations)
     let l:path = fnameescape(l:location.path)
-    if mode() == 'n' && &l:modified == 0
+    if mode() ==# 'n' && &l:modified ==# 0
       execute 'edit ' . l:path
       call cursor((l:location.line), (l:location.column))
     else
@@ -288,7 +288,7 @@ set errorformat =%f:%l:%c:%m
 
 fun! g:CargoLimitUpdate(editor_data) abort
   let l:winnr = winnr()
-  let l:quickfix_is_visible = len(filter(getwininfo(), 'v:val.quickfix')) > 0
+  let l:quickfix_is_visible = len(filter(getwininfo(), 'v:val.quickfix')) ># 0
 
   cgetexpr []
   for l:location in a:editor_data.locations
