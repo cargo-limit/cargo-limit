@@ -1,7 +1,7 @@
 use crate::{
     env_vars,
     io::Buffers,
-    options::{COLOR_ALWAYS, Options},
+    options::{COLOR_ALWAYS, COLOR_NEVER, Options},
 };
 use anyhow::{Context, Result};
 use atomig::{Atom, Atomic};
@@ -52,13 +52,22 @@ impl CargoProcess {
             .unwrap_or_else(|| PathBuf::from(CARGO_EXECUTABLE));
 
         let error_text = failed_to_execute_error_text(&cargo_path);
-        let child = Command::new(cargo_path)
-            .env(
+        let envs = if options.color == COLOR_NEVER {
+            env::var(env_vars::TERM_COLOR)
+                .ok()
+                .map(|value| (env_vars::TERM_COLOR, value))
+                .into_iter()
+                .collect()
+        } else {
+            vec![(
                 env_vars::TERM_COLOR,
                 env::var(env_vars::TERM_COLOR)
                     .ok()
                     .unwrap_or(COLOR_ALWAYS.to_string()),
-            )
+            )]
+        };
+        let child = Command::new(cargo_path)
+            .envs(envs)
             .args(options.all_args())
             .stdout(Stdio::piped())
             .spawn()

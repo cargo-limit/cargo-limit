@@ -30,7 +30,7 @@ const VALID_MESSAGE_FORMATS: &[&str] = &[
 const COLOR: &str = "--color=";
 const COLOR_AUTO: &str = "auto";
 pub const COLOR_ALWAYS: &str = "always";
-const COLOR_NEVER: &str = "never";
+pub const COLOR_NEVER: &str = "never";
 const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 
 #[derive(Debug, PartialEq)]
@@ -39,6 +39,7 @@ pub struct Options {
     args_after_app_args_delimiter: Vec<String>,
     terminal_supports_colors: bool,
 
+    pub color: String,
     pub limit_messages: usize,
     pub time_limit_after_error: Option<Duration>,
     pub ascending_messages_order: bool,
@@ -66,6 +67,7 @@ impl Default for Options {
             cargo_args: Vec::new(),
             args_after_app_args_delimiter: Vec::new(),
             terminal_supports_colors: true,
+            color: COLOR_AUTO.to_string(),
             limit_messages: 0,
             time_limit_after_error: Some(Duration::from_secs(1)),
             ascending_messages_order: false,
@@ -150,17 +152,15 @@ impl Options {
         let mut args = remaining_args.into_iter();
         self.cargo_args.push(subcommand.clone());
 
-        let mut color = COLOR_AUTO.to_owned();
         let mut app_args_started = false;
         let mut args_before_app_args_delimiter = Vec::new();
 
         self.parse_options(
             &mut args,
-            &mut color,
             &mut args_before_app_args_delimiter,
             &mut app_args_started,
         )?;
-        self.cargo_args.push(self.message_format(color).to_owned());
+        self.cargo_args.push(self.message_format().to_owned());
         self.cargo_args.extend(args_before_app_args_delimiter);
 
         let mut app_color_is_set = false;
@@ -176,7 +176,6 @@ impl Options {
     fn parse_options(
         &mut self,
         passed_args: &mut impl Iterator<Item = String>,
-        color: &mut String,
         args_before_app_args_delimiter: &mut Vec<String>,
         app_args_started: &mut bool,
     ) -> Result<()> {
@@ -202,13 +201,13 @@ impl Options {
                 self.time_limit_after_error = None;
                 args_before_app_args_delimiter.push(arg);
             } else if arg == COLOR[..COLOR.len() - 1] {
-                *color = passed_args.next().context(
+                self.color = passed_args.next().context(
                     "the argument '--color <WHEN>' requires a value but none was supplied",
                 )?;
-                Self::validate_color(color)?;
+                self.validate_color()?;
             } else if let Some(color_value) = arg.strip_prefix(COLOR) {
-                *color = color_value.to_owned();
-                Self::validate_color(color)?;
+                self.color = color_value.to_owned();
+                self.validate_color()?;
             } else if arg == MESSAGE_FORMAT[..MESSAGE_FORMAT.len() - 1] {
                 let format = passed_args.next().context(
                     "the argument '--message-format <FMT>' requires a value but none was supplied",
@@ -237,20 +236,20 @@ impl Options {
         Ok(())
     }
 
-    fn message_format(&self, color: String) -> &str {
+    fn message_format(&self) -> &str {
         if self.short_message_format {
             MESSAGE_FORMAT_JSON_SHORT
         } else if self.json_message_format {
             MESSAGE_FORMAT_JSON
-        } else if color == COLOR_AUTO {
+        } else if self.color == COLOR_AUTO {
             if self.terminal_supports_colors {
                 MESSAGE_FORMAT_JSON_WITH_COLORS
             } else {
                 MESSAGE_FORMAT_JSON
             }
-        } else if color == COLOR_ALWAYS {
+        } else if self.color == COLOR_ALWAYS {
             MESSAGE_FORMAT_JSON_WITH_COLORS
-        } else if color == COLOR_NEVER {
+        } else if self.color == COLOR_NEVER {
             MESSAGE_FORMAT_JSON
         } else {
             unreachable!()
@@ -314,12 +313,13 @@ impl Options {
         Ok(())
     }
 
-    fn validate_color(color: &str) -> Result<()> {
-        if !VALID_COLORS.contains(&color) {
+    fn validate_color(&self) -> Result<()> {
+        if !VALID_COLORS.contains(&self.color.as_str()) {
             return Err(format_err!(
-                "argument for {} must be {} (was {color})",
+                "argument for {} must be {} (was {})",
                 &COLOR[..COLOR.len() - 1],
                 VALID_COLORS.join(", "),
+                self.color
             ));
         }
         Ok(())
