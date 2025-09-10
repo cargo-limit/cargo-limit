@@ -103,6 +103,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
     };
 
     if options.help {
+        buffers.writeln_to_stdout("")?;
         buffers.write_to_stdout(ADDITIONAL_ENVIRONMENT_VARIABLES)?;
     }
 

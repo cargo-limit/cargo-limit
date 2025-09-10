@@ -1,5 +1,5 @@
 use anyhow::{Error, Result};
-use cargo_limit::{NO_EXIT_CODE, models::EditorData};
+use cargo_limit::{NO_EXIT_CODE, env_vars, models::EditorData};
 use std::{
     env, io,
     io::{Read, Write},
@@ -69,15 +69,15 @@ fn nvim_listen_address(escaped_workspace_root: String) -> Result<String> {
     const PREFIX: &str = "nvim-cargo-limit-";
 
     let result = {
+        let user = env::var(env_vars::USER)?;
+
         #[cfg(unix)]
         {
-            let user = env::var("USER")?;
             format!("/tmp/{PREFIX}{user}/{escaped_workspace_root}")
         }
 
         #[cfg(windows)]
         {
-            let user = env::var("USERNAME")?;
             format!(r"\\.\pipe\{PREFIX}{user}-{escaped_workspace_root}")
         }
 

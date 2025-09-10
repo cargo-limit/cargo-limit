@@ -1,4 +1,8 @@
-use crate::{env_vars, io::Buffers, options::Options};
+use crate::{
+    env_vars,
+    io::Buffers,
+    options::{COLOR_ALWAYS, Options},
+};
 use anyhow::{Context, Result};
 use atomig::{Atom, Atomic};
 use std::{
@@ -49,6 +53,12 @@ impl CargoProcess {
 
         let error_text = failed_to_execute_error_text(&cargo_path);
         let child = Command::new(cargo_path)
+            .env(
+                env_vars::TERM_COLOR,
+                env::var(env_vars::TERM_COLOR)
+                    .ok()
+                    .unwrap_or(COLOR_ALWAYS.to_string()),
+            )
             .args(options.all_args())
             .stdout(Stdio::piped())
             .spawn()
