@@ -116,39 +116,11 @@ fun! s:maybe_setup_handlers() abort
   endf
 
   fun! g:CargoLimitOpenNextLocation() abort
-    echomsg ''
-    let l:current_file = s:current_file()
-    if &l:modified !=# 0 || empty(s:editor_data.locations) || (l:current_file !=# '' && !filereadable(l:current_file))
-      return
-    end
-
-    let l:initial_location_index = s:location_index
-    call s:increment_location_index()
-    if s:is_current_location_edited()
-      let s:location_index = l:initial_location_index
-    else
-      call s:disable_redraw()
-      call s:jump_to_location(s:location_index)
-      call s:enable_redraw()
-    end
+    call s:switch_location(function('s:increment_location_index'))
   endf
 
   fun! g:CargoLimitOpenPrevLocation() abort
-    echomsg ''
-    let l:current_file = s:current_file()
-    if &l:modified !=# 0 || empty(s:editor_data.locations) || (l:current_file !=# '' && !filereadable(l:current_file))
-      return
-    end
-
-    let l:initial_location_index = s:location_index
-    call s:decrement_location_index()
-    if s:is_current_location_edited()
-      let s:location_index = l:initial_location_index
-    else
-      call s:disable_redraw()
-      call s:jump_to_location(s:location_index)
-      call s:enable_redraw()
-    end
+    call s:switch_location(function('s:decrement_location_index'))
   endf
 endf
 
@@ -303,6 +275,38 @@ fun! s:finalize_locations() abort
   call s:increment_location_index()
 endf
 
+fun! s:switch_location(change_location_index) abort
+  echomsg ''
+  let l:current_file = s:current_file()
+  if &l:modified !=# 0 || empty(s:editor_data.locations) || (l:current_file !=# '' && !filereadable(l:current_file))
+    return
+  end
+
+  let l:initial_location_index = s:location_index
+  call a:change_location_index()
+  if s:is_current_location_edited()
+    let s:location_index = l:initial_location_index
+  else
+    call s:disable_redraw()
+    call s:jump_to_location(s:location_index)
+    call s:enable_redraw()
+  end
+endf
+
+fun! s:jump_to_location(location_index) abort
+  let l:location = s:editor_data.locations[a:location_index]
+
+  let l:current_file = s:current_file()
+  if l:current_file !=# l:location.path
+    execute 'silent! tab drop ' . fnameescape(l:location.path)
+  end
+
+  let l:current_position = getpos('.')
+  if l:current_position[1] !=# l:location.line || current_position[2] !=# l:location.column
+    call cursor((l:location.line), (l:location.column))
+  end
+endf
+
 fun! s:is_same_as_current_location(target) abort
   let l:location = s:current_location()
   return l:location.path ==# a:target.path && l:location.line ==# a:target.line
@@ -332,20 +336,6 @@ endf
 fun! s:bufinfo_if_loaded(buf) abort
   let l:bufinfo = getbufinfo(a:buf)
   return a:buf >=# 0 && !empty(l:bufinfo) && l:bufinfo[0].loaded ? l:bufinfo[0] : {}
-endf
-
-fun! s:jump_to_location(location_index) abort
-  let l:location = s:editor_data.locations[a:location_index]
-
-  let l:current_file = s:current_file()
-  if l:current_file !=# l:location.path
-    execute 'silent! tab drop ' . fnameescape(l:location.path)
-  end
-
-  let l:current_position = getpos('.')
-  if l:current_position[1] !=# l:location.line || current_position[2] !=# l:location.column
-    call cursor((l:location.line), (l:location.column))
-  end
 endf
 
 fun! s:current_location() abort
