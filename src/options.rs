@@ -29,7 +29,7 @@ const VALID_MESSAGE_FORMATS: &[&str] = &[
 
 const COLOR: &str = "--color=";
 const COLOR_AUTO: &str = "auto";
-const COLOR_ALWAYS: &str = "always";
+pub const COLOR_ALWAYS: &str = "always";
 const COLOR_NEVER: &str = "never";
 const VALID_COLORS: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER];
 
