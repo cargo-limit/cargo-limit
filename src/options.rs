@@ -694,17 +694,25 @@ mod tests {
 
     #[test]
     fn run_with_color_args() -> Result<()> {
-        assert_cargo_args(
+        assert_options(
             vec!["cargo-lrun", "--color=always"],
             vec!["run", "--message-format=json-diagnostic-rendered-ansi"],
             vec![],
+            Options {
+                color: COLOR_ALWAYS.to_string(),
+                ..Options::default()
+            },
             STUB_MINIMAL,
         )?;
 
-        assert_cargo_args(
+        assert_options(
             vec!["cargo-lrun", "--color=never"],
             vec!["run", "--message-format=json"],
             vec![],
+            Options {
+                color: COLOR_NEVER.to_string(),
+                ..Options::default()
+            },
             STUB_MINIMAL,
         )?;
 
@@ -731,10 +739,14 @@ mod tests {
 
     #[test]
     fn colored_testing_and_compiling_2() -> Result<()> {
-        assert_cargo_args(
+        assert_options(
             vec!["cargo-ltest", "--color=always"],
             vec!["test", "--message-format=json-diagnostic-rendered-ansi"],
             vec!["--color=always"],
+            Options {
+                color: COLOR_ALWAYS.to_string(),
+                ..Options::default()
+            },
             STUB_MINIMAL,
         )?;
         Ok(())
@@ -754,10 +766,14 @@ mod tests {
 
     #[test]
     fn colored_testing_and_monochrome_compiling() -> Result<()> {
-        assert_cargo_args(
+        assert_options(
             vec!["cargo-ltest", "--color=never"],
             vec!["test", "--message-format=json"],
             vec!["--color=always"],
+            Options {
+                color: COLOR_NEVER.to_string(),
+                ..Options::default()
+            },
             STUB_MINIMAL,
         )?;
         Ok(())
@@ -776,10 +792,14 @@ mod tests {
 
     #[test]
     fn monochrome() -> Result<()> {
-        assert_cargo_args(
+        assert_options(
             vec!["cargo-ltest", "--color", "never", "--", "--color=never"],
             vec!["test", "--message-format=json"],
             vec!["--color=never"],
+            Options {
+                color: COLOR_NEVER.to_string(),
+                ..Options::default()
+            },
             STUB_MINIMAL,
         )?;
         Ok(())
