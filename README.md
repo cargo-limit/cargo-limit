@@ -288,6 +288,7 @@ set errorformat =%f:%l:%c:%m
 
 fun! g:CargoLimitUpdate(editor_data) abort
   let l:winnr = winnr()
+  let l:quickfix_is_visible = len(filter(getwininfo(), 'v:val.quickfix')) > 0
 
   cgetexpr []
   for l:location in a:editor_data.locations
@@ -296,7 +297,7 @@ fun! g:CargoLimitUpdate(editor_data) abort
 
   if empty(a:editor_data.locations)
     cclose
-  elseif !a:editor_data.corrected_locations
+  elseif !a:editor_data.corrected_locations || l:quickfix_is_visible
     copen
   end
 
