@@ -85,7 +85,6 @@ fun! s:maybe_setup_handlers() abort
   fun! g:CargoLimitOpen(editor_data) abort
     let s:editor_data = a:editor_data
     let s:locations_texts = {}
-    let s:location_index = -1
 
     if s:deprecated_cargo_limit_open !=# v:null
       call s:downgrade_editor_data_format()
