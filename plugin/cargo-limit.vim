@@ -171,10 +171,7 @@ fun! s:increment_location_index() abort
   let l:initial_location = s:current_location()
   while s:location_index <# len(s:editor_data.locations) - 1
     let s:location_index += 1
-    if s:is_same_as_current_location(l:initial_location)
-      continue
-    end
-    if !s:is_current_location_edited()
+    if !s:is_same_as_current_location(l:initial_location) && !s:is_current_location_edited()
       break
     end
   endw
@@ -184,10 +181,7 @@ fun! s:decrement_location_index() abort
   let l:initial_location = s:current_location()
   while s:location_index >=# 1
     let s:location_index -= 1
-    if s:is_same_as_current_location(l:initial_location)
-      continue
-    end
-    if !s:is_current_location_edited()
+    if !s:is_same_as_current_location(l:initial_location) && !s:is_current_location_edited()
       break
     end
   endw
@@ -268,7 +262,7 @@ fun! s:finalize_locations() abort
       let s:locations_texts[l:index] = l:text
     end
   endfor
-  let s:location_index = len(s:editor_data.locations) - 1
+  let s:location_index = 0
 endf
 
 fun! s:switch_location(change_location_index) abort
