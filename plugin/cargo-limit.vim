@@ -169,22 +169,20 @@ endf
 
 fun! s:increment_location_index() abort
   let l:initial_location = s:current_location()
-  while s:location_index <# len(s:editor_data.locations) - 1
-    let s:location_index += 1
+  for s:location_index in range(s:location_index + 1, len(s:editor_data.locations) - 1)
     if !s:is_same_as_current_location(l:initial_location) && !s:is_current_location_edited()
       break
     end
-  endw
+  endfor
 endf
 
 fun! s:decrement_location_index() abort
   let l:initial_location = s:current_location()
-  while s:location_index >=# 1
-    let s:location_index -= 1
+  for s:location_index in range(s:location_index - 1, 0, -1)
     if !s:is_same_as_current_location(l:initial_location) && !s:is_current_location_edited()
       break
     end
-  endw
+  endfor
 endf
 
 fun! s:on_buffer_write(path) abort
