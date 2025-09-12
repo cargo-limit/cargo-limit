@@ -290,7 +290,7 @@ fun! s:jump_to_location(location_index) abort
   end
 
   let l:current_position = getpos('.')
-  if l:current_position[1] !=# l:location.line || current_position[2] !=# l:location.column
+  if l:current_position[1] !=# l:location.line || l:current_position[2] !=# l:location.column
     call cursor((l:location.line), (l:location.column))
   end
 endf
