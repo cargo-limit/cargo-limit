@@ -307,7 +307,7 @@ fun! s:is_current_location_edited() abort
     return v:false
   end
   let l:text = s:read_text(s:current_location())
-  return l:text !=# v:null && trim(s:locations_texts[s:location_index]) !=# trim(l:text)
+  return l:text !=# v:null && s:locations_texts[s:location_index] !=# l:text
 endf
 
 fun! s:read_text_by_line(path, line) abort
