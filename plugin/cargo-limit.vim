@@ -86,14 +86,14 @@ fun! s:maybe_setup_handlers() abort
     let s:editor_data = a:editor_data
     let s:locations_texts = {}
 
-    if s:deprecated_cargo_limit_open !=# v:null
+    if s:deprecated_cargo_limit_open isnot# v:null
       call s:downgrade_editor_data_format()
       call s:deprecated_cargo_limit_open(s:editor_data)
     end
 
     call s:upgrade_editor_data_format()
 
-    if s:deprecated_cargo_limit_open !=# v:null
+    if s:deprecated_cargo_limit_open isnot# v:null
       call s:finalize_locations()
       return
     end
@@ -223,7 +223,7 @@ fun! s:update_locations(path) abort
         continue
       end
       let l:text = s:read_text_by_line(a:path, l:line)
-      if l:text !=# v:null && s:locations_texts[l:index] ==# l:text
+      if l:text isnot# v:null && s:locations_texts[l:index] ==# l:text
         let l:shift += s:editor_data.locations[l:index].line - l:line
         let s:editor_data.locations[l:index].line = l:line
         let l:found_lines[l:line] = v:true
@@ -256,7 +256,7 @@ fun! s:finalize_locations() abort
   for l:index in range(0, len(s:editor_data.locations) - 1)
     let l:location = s:editor_data.locations[l:index]
     let l:text = s:read_text(l:location)
-    if l:text !=# v:null
+    if l:text isnot# v:null
       let s:locations_texts[l:index] = l:text
     end
   endfor
@@ -305,7 +305,7 @@ fun! s:is_current_location_edited() abort
     return v:false
   end
   let l:text = s:read_text(s:current_location())
-  return l:text !=# v:null && s:locations_texts[s:location_index] !=# l:text
+  return l:text isnot# v:null && s:locations_texts[s:location_index] !=# l:text
 endf
 
 fun! s:read_text_by_line(path, line) abort
@@ -370,7 +370,7 @@ fun! s:maybe_delete_dead_unix_socket(server_address) abort
 endf
 
 fun! s:maybe_create_temp_dir() abort
-  if s:temp_dir !=# v:null
+  if s:temp_dir isnot# v:null
     call mkdir(s:temp_dir, 'p', 0700)
     call setfperm(s:temp_dir, 'rwx------')
   end
