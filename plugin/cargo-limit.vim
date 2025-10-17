@@ -53,6 +53,7 @@ fun! s:start_server(escaped_workspace_root) abort
     let l:server_address = s:temp_dir . '/' . a:escaped_workspace_root
     call s:maybe_delete_dead_unix_socket(l:server_address)
   elseif has('win32')
+    " TODO: limit to 256 characters? bytes?
     let l:server_address_postfix = TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
     let l:server_address = '\\.\pipe\' . l:server_address_postfix
   else
@@ -270,6 +271,8 @@ fun! s:switch_location(change_location_index) abort
     return
   end
 
+  call s:close_hidden_buffers()
+
   let l:initial_location_index = s:location_index
   call a:change_location_index()
   if s:is_current_location_edited()
@@ -293,6 +296,20 @@ fun! s:jump_to_location(location_index) abort
   if l:current_position[1] !=# l:location.line || l:current_position[2] !=# l:location.column
     call cursor((l:location.line), (l:location.column))
   end
+endf
+
+fun! s:close_hidden_buffers() abort
+  let l:visible = {}
+  for l:tab in range(1, tabpagenr('$'))
+    for l:buf in tabpagebuflist(l:tab)
+      let l:visible[l:buf] = 1
+    endfor
+  endfor
+  for l:buf in range(1, bufnr('$'))
+    if buflisted(l:buf) && !has_key(l:visible, l:buf)
+      execute 'bwipeout' l:buf
+    endif
+  endfor
 endf
 
 fun! s:is_same_as_current_location(target) abort
