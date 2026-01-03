@@ -307,7 +307,7 @@ fun! s:close_hidden_buffers() abort
   endfor
   for l:buf in range(1, bufnr('$'))
     if buflisted(l:buf) && !has_key(l:visible, l:buf)
-      execute 'bwipeout' l:buf
+      execute 'silent! bwipeout' l:buf
     endif
   endfor
 endf
