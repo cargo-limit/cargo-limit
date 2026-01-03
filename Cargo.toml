@@ -14,9 +14,9 @@ documentation = "https://github.com/cargo-limit/cargo-limit#readme"
 [dependencies]
 anyhow = "1"
 atomig = { version = "0.4", features = ["derive"] }
-cargo_metadata = "0.22"
+cargo_metadata = "0.23"
 const_format = "0.2"
-ctrlc = { version = "~3.4", features = ["termination"] }
+ctrlc = { version = "3.5", features = ["termination"] }
 itertools = "0.14"
 serde = "1"
 serde_json = "1"
