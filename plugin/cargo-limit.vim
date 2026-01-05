@@ -1,217 +1,458 @@
-let s:data_chunks = []
-let s:locations = []
+fun! s:main() abort
+  const MIN_NVIM_VERSION = '0.7.0'
 
-function! s:on_cargo_metadata(_job_id, data, event)
-  if a:event == 'stdout'
-    call add(s:data_chunks, join(a:data, ''))
-  elseif a:event == 'stderr' && type(a:data) == v:t_list && a:data != ['']
-    let l:stderr = join(a:data, "\n")
-    if l:stderr !~ 'could not find `Cargo.toml`'
-      call s:log_error(l:stderr)
-    endif
-  elseif a:event == 'exit'
-    let l:stdout = join(s:data_chunks, '')
-    if len(l:stdout) > 0
+  if has('nvim')
+    if !has('nvim-' . MIN_NVIM_VERSION)
+      throw 'unsupported nvim version, expected >=' . MIN_NVIM_VERSION
+    end
+
+    if !exists('g:CargoLimitVerbosity')
+      let g:CargoLimitVerbosity = 3 " info level
+    end
+    let s:editor_data = {'locations': []}
+    let s:locations_texts = {}
+    let s:location_index = v:null
+    let s:workspace_root = v:null
+    let s:temp_dir = v:null
+    let s:deprecated_cargo_limit_open = v:null
+    let s:lazyredraw = &lazyredraw
+    let s:allow_redraw = v:true
+    call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
+      \ 'on_stdout': function('s:on_cargo_metadata'),
+      \ 'on_stderr': function('s:on_cargo_metadata'),
+      \ 'stdout_buffered': v:true,
+      \ 'stderr_buffered': v:true,
+      \ })
+  else
+    throw 'unsupported text editor'
+  end
+endf
+
+fun! s:on_cargo_metadata(_job_id, data, event) abort
+  if a:event ==# 'stdout'
+    let l:stdout = trim(join(a:data, ''))
+    if !empty(l:stdout)
       let l:metadata = json_decode(l:stdout)
-      let l:workspace_root = get(l:metadata, 'workspace_root')
-      let l:escaped_workspace_root = substitute(workspace_root, '[/\\:]', '%', 'g')
-      let l:server_address = s:create_server_address(l:escaped_workspace_root)
-      if !filereadable(l:server_address)
-        call serverstart(l:server_address)
-        call s:log_info('cargo-limit is ready')
-      endif
-    endif
-  endif
-endfunction
+      let s:workspace_root = l:metadata.workspace_root
+      let l:escaped_workspace_root = s:escape_path(s:workspace_root)
+      call s:start_server(l:escaped_workspace_root)
+    end
+  elseif a:event ==# 'stderr'
+    let l:stderr = trim(join(a:data, "\n"))
+    if !empty(l:stderr) && !s:contains_str(l:stderr, 'could not find `Cargo.toml`')
+      call s:log_error('cargo metadata', l:stderr)
+    end
+  end
+endf
 
-function! s:create_server_address(escaped_workspace_root)
-  let l:prefix = 'nvim-cargo-limit-'
-  if has('win32')
-    return '\\.\pipe\' . l:prefix . $USERNAME . '-' . a:escaped_workspace_root
-  elseif has('unix')
-    let l:server_address_dir =  '/tmp/' . l:prefix . $USER
-    call mkdir(l:server_address_dir, 'p', 0700)
-    let l:server_address = l:server_address_dir . '/' . a:escaped_workspace_root
+fun! s:start_server(escaped_workspace_root) abort
+  const TEMP_DIR_PREFIX = 'nvim-cargo-limit-'
+
+  if has('unix')
+    let s:temp_dir = '/tmp/' . TEMP_DIR_PREFIX . $USER
+    let l:server_address = s:temp_dir . '/' . a:escaped_workspace_root
     call s:maybe_delete_dead_unix_socket(l:server_address)
-    return l:server_address
+  elseif has('win32')
+    " TODO: limit to 256 characters? bytes?
+    let l:server_address_postfix = TEMP_DIR_PREFIX . $USERNAME . '-' . a:escaped_workspace_root
+    let l:server_address = '\\.\pipe\' . l:server_address_postfix
   else
     throw 'unsupported OS'
-  endif
-endfunction
+  end
 
-function! s:on_buffer_changed()
-  let l:current_file = s:current_file()
-  if l:current_file != '' && filereadable(l:current_file)
-    let changed_line_numbers = s:compute_changed_line_numbers()
-    call s:ignore_changed_lines_of_current_file(changed_line_numbers, l:current_file)
-  endif
-endfunction
+  if !filereadable(l:server_address)
+    call s:maybe_create_temp_dir()
+    call s:maybe_setup_handlers()
+    call serverstart(l:server_address)
+    call s:log_info('ready')
+  end
+endf
 
-function! s:open_all_locations_in_new_or_existing_tabs(locations)
-  let l:current_file = s:current_file()
-  if l:current_file == '' || filereadable(l:current_file)
-    let s:locations = reverse(a:locations)
-    call s:deduplicate_locations_by_paths_and_lines()
-    for location in s:locations
-      let l:path = fnameescape(location.path)
-      if mode() == 'n' && &l:modified == 0
-        execute 'tab drop ' . l:path
-        call cursor((location.line), (location.column))
-      else
-        break
-      endif
-    endfor
-    let s:locations = reverse(s:locations)[1:]
-  endif
-endfunction
+fun! s:maybe_setup_handlers() abort
+  augroup CargoLimitAutocommands
+    autocmd!
+    autocmd VimLeavePre * call s:maybe_create_temp_dir()
+    autocmd BufWritePost *.rs call s:on_buffer_write(expand('<afile>:p'))
+  augroup END
 
-function! s:open_next_location_in_new_or_existing_tab()
-  let l:current_file = s:current_file()
-  if l:current_file == '' || filereadable(l:current_file) && !empty(s:locations)
-    let l:location = s:locations[0]
-    let l:path = fnameescape(l:location.path)
-    if &l:modified == 0
-      execute 'tab drop ' . l:path
-      call cursor((l:location.line), (l:location.column))
-      let s:locations = s:locations[1:]
-    endif
-  endif
-endfunction
+  if exists('*CargoLimitOpen')
+    let s:deprecated_cargo_limit_open = funcref('g:CargoLimitOpen')
+    call s:log_warn(
+      \ 'g:CargoLimitOpen is deprecated, please migrate to g:CargoLimitUpdate:',
+      \ 'https://github.com/cargo-limit/cargo-limit#text-editoride-integrations'
+      \ )
+  end
 
-function! s:ignore_changed_lines_of_current_file(changed_line_numbers, current_file)
-  let l:new_locations = []
-  for i in s:locations
-    let l:is_changed_line = get(a:changed_line_numbers, i.line) && i.path == a:current_file
-    if !l:is_changed_line
-      call add(l:new_locations, i)
-    endif
+  fun! g:CargoLimitOpen(editor_data) abort
+    let s:editor_data = a:editor_data
+    let s:locations_texts = {}
+
+    if s:deprecated_cargo_limit_open isnot# v:null
+      call s:downgrade_editor_data_format()
+      call s:deprecated_cargo_limit_open(s:editor_data)
+    end
+
+    call s:upgrade_editor_data_format()
+
+    if s:deprecated_cargo_limit_open isnot# v:null
+      call s:finalize_locations()
+      return
+    end
+
+    if !exists('*CargoLimitUpdate')
+      fun! g:CargoLimitUpdate(editor_data) abort
+        let l:current_file = s:current_file()
+        if empty(s:editor_data.locations) || a:editor_data.corrected_locations || (l:current_file !=# '' && !filereadable(l:current_file))
+          return
+        end
+
+        call s:deduplicate_locations_by_paths_and_lines()
+        call s:open_all_locations_in_reverse()
+      endf
+    end
+
+    call g:CargoLimitUpdate(s:editor_data)
+    call s:finalize_locations()
+  endf
+
+  fun! g:CargoLimitOpenNextLocation() abort
+    call s:switch_location(function('s:increment_location_index'))
+  endf
+
+  fun! g:CargoLimitOpenPrevLocation() abort
+    call s:switch_location(function('s:decrement_location_index'))
+  endf
+endf
+
+fun! s:downgrade_editor_data_format() abort
+  if exists('s:editor_data.locations')
+    let s:editor_data.files = s:editor_data.locations
+    call remove(s:editor_data, 'locations')
+    call remove(s:editor_data, 'corrected_locations')
+  end
+  if !exists('s:editor_data.files')
+    let s:editor_data.files = []
+  end
+endf
+
+fun! s:upgrade_editor_data_format() abort
+  if exists('s:editor_data.files')
+    let s:editor_data.locations = s:editor_data.files
+    call remove(s:editor_data, 'files')
+  end
+  if !exists('s:editor_data.locations')
+    let s:editor_data.locations = []
+  end
+  let s:editor_data.corrected_locations = exists('s:editor_data.corrected_locations') && s:editor_data.corrected_locations ? v:true : v:false
+endf
+
+fun! s:open_all_locations_in_reverse() abort
+  let l:path_to_location_index = {}
+  for l:index in range(len(s:editor_data.locations) - 1, 0, -1)
+    let l:path_to_location_index[s:editor_data.locations[l:index].path] = l:index
   endfor
-  let s:locations = l:new_locations
-endfunction
 
-function! s:deduplicate_locations_by_paths_and_lines()
+  call s:disable_redraw()
+  for l:index in range(len(s:editor_data.locations) - 1, 0, -1)
+    let l:path = s:editor_data.locations[l:index].path
+    if !has_key(l:path_to_location_index, l:path)
+      continue
+    elseif mode() ==# 'n' && &l:modified ==# 0
+      let l:location_index = l:path_to_location_index[l:path]
+      call remove(l:path_to_location_index, l:path)
+      call s:jump_to_location(l:location_index)
+    else
+      break
+    end
+  endfor
+  call s:enable_redraw()
+endf
+
+fun! s:increment_location_index() abort
+  let l:initial_location = s:current_location()
+  for s:location_index in range(s:location_index + 1, len(s:editor_data.locations) - 1)
+    if !s:is_same_as_current_location(l:initial_location) && !s:is_current_location_edited()
+      break
+    end
+  endfor
+endf
+
+fun! s:decrement_location_index() abort
+  let l:initial_location = s:current_location()
+  for s:location_index in range(s:location_index - 1, 0, -1)
+    if !s:is_same_as_current_location(l:initial_location) && !s:is_current_location_edited()
+      break
+    end
+  endfor
+endf
+
+fun! s:on_buffer_write(path) abort
+  if empty(s:editor_data.locations) || a:path ==# '' || !filereadable(a:path)
+    return
+  end
+
+  let s:editor_data.corrected_locations = s:update_locations(a:path)
+  if s:editor_data.corrected_locations && exists('*CargoLimitUpdate')
+    call g:CargoLimitUpdate(s:editor_data)
+  end
+endf
+
+fun! s:update_locations(path) abort
+  const MAX_LINES = 16 * 1024
+
+  let l:old_locations = deepcopy(s:editor_data.locations, 1)
+  let l:found_lines = {}
+  let l:shift = 0
+  let l:bufinfo = s:bufinfo_if_loaded(bufnr(a:path))
+  let l:max_buf_line = empty(l:bufinfo) ? len(readfile(a:path)) : min([l:bufinfo.linecount, MAX_LINES])
+
+  for l:index in range(0, len(s:editor_data.locations) - 1)
+    let l:location = s:editor_data.locations[l:index]
+    if l:location.path !=# a:path || !has_key(s:locations_texts, l:index)
+      continue
+    end
+    let s:editor_data.locations[l:index].line += l:shift
+    let l:location = s:editor_data.locations[l:index]
+
+    let l:prev_line = min([l:location.line - 1, MAX_LINES])
+    let l:next_line = min([l:location.line + 1, l:max_buf_line])
+    let l:prev_lines = range(max([1, l:prev_line]), 1, -1)
+    let l:next_lines = range(l:next_line, l:max_buf_line)
+
+    for l:line in s:zip_flatten([l:location.line] + l:prev_lines, l:next_lines)
+      if has_key(l:found_lines, l:line)
+        continue
+      end
+      let l:text = s:read_text_by_line(a:path, l:line)
+      if l:text isnot# v:null && s:locations_texts[l:index] ==# l:text
+        let l:shift += s:editor_data.locations[l:index].line - l:line
+        let s:editor_data.locations[l:index].line = l:line
+        let l:found_lines[l:line] = v:true
+        break
+      end
+    endfor
+  endfor
+
+  eval s:editor_data.locations->sort({ a, b -> a.line ==# b.line ? a.column - b.column : a.line - b.line })
+  return l:old_locations ==# s:editor_data.locations ? v:false : v:true
+endf
+
+fun! s:deduplicate_locations_by_paths_and_lines() abort
   let l:new_locations = []
   let l:added_lines = {}
 
-  for i in s:locations
-    let l:added_line_key = string([i.path, i.line])
+  for l:i in reverse(s:editor_data.locations)
+    let l:added_line_key = string([l:i.path, l:i.line])
     let l:is_added_line = get(l:added_lines, l:added_line_key)
     if !l:is_added_line
-      call add(l:new_locations, i)
-      let l:added_lines[l:added_line_key] = 1
-    endif
+      call add(l:new_locations, l:i)
+      let l:added_lines[l:added_line_key] = v:true
+    end
   endfor
 
-  let s:locations = l:new_locations
-endfunction
+  let s:editor_data.locations = reverse(l:new_locations)
+endfun
 
-function! s:compute_changed_line_numbers()
-  const diff_new_changes_command =
-    \ 'w !git diff --unified=0 --ignore-all-space --no-index --no-color --no-ext-diff % -'
-  const diff_change_pattern = '@@ '
+fun! s:finalize_locations() abort
+  for l:index in range(0, len(s:editor_data.locations) - 1)
+    let l:location = s:editor_data.locations[l:index]
+    let l:text = s:read_text(l:location)
+    if l:text isnot# v:null
+      let s:locations_texts[l:index] = l:text
+    end
+  endfor
+  let s:location_index = 0
+endf
 
-  function! s:parse_line_number(text)
-    return split(a:text, ',')[0][1:]
-  endfunction
+fun! s:switch_location(change_location_index) abort
+  echomsg ''
+  let l:current_file = s:current_file()
+  if &l:modified !=# 0 || empty(s:editor_data.locations) || (l:current_file !=# '' && !filereadable(l:current_file))
+    return
+  end
 
-  let l:changed_line_numbers = {}
-  let l:diff_stdout_lines = split(execute(diff_new_changes_command), "\n")
-  let l:diff_stdout_line_number = 0
-  while l:diff_stdout_line_number < len(l:diff_stdout_lines) - 1
-    let l:diff_line = l:diff_stdout_lines[l:diff_stdout_line_number]
-    if s:starts_with(l:diff_line, diff_change_pattern)
-      let l:changed_line_numbers_with_offsets = trim(split(l:diff_line, diff_change_pattern)[0])
-      let l:removed_line = s:parse_line_number(split(l:changed_line_numbers_with_offsets, ' ')[0])
-      let l:next_diff_line = l:diff_stdout_lines[l:diff_stdout_line_number + 1]
-      let l:removed_text = l:next_diff_line[1:]
-      let l:removed_new_line = empty(l:removed_text)
-      if !l:removed_new_line
-        let l:changed_line_numbers[l:removed_line] = 1
-      endif
-      let l:diff_stdout_line_number += 1
+  call s:close_hidden_buffers()
+
+  let l:initial_location_index = s:location_index
+  call a:change_location_index()
+  if s:is_current_location_edited()
+    let s:location_index = l:initial_location_index
+  else
+    call s:disable_redraw()
+    call s:jump_to_location(s:location_index)
+    call s:enable_redraw()
+  end
+endf
+
+fun! s:jump_to_location(location_index) abort
+  let l:location = s:editor_data.locations[a:location_index]
+
+  let l:current_file = s:current_file()
+  if l:current_file !=# l:location.path
+    execute 'silent! tab drop ' . fnameescape(l:location.path)
+  end
+
+  let l:current_position = getpos('.')
+  if l:current_position[1] !=# l:location.line || l:current_position[2] !=# l:location.column
+    call cursor((l:location.line), (l:location.column))
+  end
+endf
+
+fun! s:close_hidden_buffers() abort
+  let l:visible = {}
+  for l:tab in range(1, tabpagenr('$'))
+    for l:buf in tabpagebuflist(l:tab)
+      let l:visible[l:buf] = 1
+    endfor
+  endfor
+  for l:buf in range(1, bufnr('$'))
+    if buflisted(l:buf) && !has_key(l:visible, l:buf)
+      execute 'silent! bwipeout' l:buf
     endif
-    let l:diff_stdout_line_number += 1
-  endwhile
+  endfor
+endf
 
-  return l:changed_line_numbers
-endfunction
+fun! s:is_same_as_current_location(target) abort
+  let l:location = s:current_location()
+  return l:location.path ==# a:target.path && l:location.line ==# a:target.line
+endf
 
-function! s:maybe_delete_dead_unix_socket(server_address)
-  const lsof_executable = 'lsof'
-  const lsof_command = lsof_executable . ' -U'
-  if filereadable(a:server_address)
-    call system('which ' . lsof_executable)
-    let l:lsof_is_installed = v:shell_error == 0
-    if l:lsof_is_installed
-      let l:lsof_stdout = system(lsof_command)
-      let l:lsof_succeed = v:shell_error == 0
-      if l:lsof_succeed
-        let l:socket_is_dead = stridx(l:lsof_stdout, a:server_address) == -1
-        if l:socket_is_dead
-          let l:ignore = luaeval('os.remove(_A)', a:server_address)
-          call s:log_info('removed dead socket ' . a:server_address)
-        endif
-      else
-        call s:log_error('failed to execute "' . lsof_command . '"')
-      endif
-    endif
-  endif
-endfunction
+fun! s:is_current_location_edited() abort
+  if !has_key(s:locations_texts, s:location_index)
+    return v:false
+  end
+  let l:text = s:read_text(s:current_location())
+  return l:text isnot# v:null && s:locations_texts[s:location_index] !=# l:text
+endf
 
-function! s:current_file()
+fun! s:read_text_by_line(path, line) abort
+  const MAX_LENGTH = 255
+
+  let l:buf = bufnr(a:path)
+  let l:bufinfo = s:bufinfo_if_loaded(l:buf)
+  let l:text = empty(l:bufinfo) ? readfile(a:path, '', a:line) : getbufline(l:buf, a:line)
+  return empty(l:text) ? v:null : l:text[-1][:MAX_LENGTH]
+endf
+
+fun! s:read_text(location) abort
+  return s:read_text_by_line(a:location.path, a:location.line)
+endf
+
+fun! s:bufinfo_if_loaded(buf) abort
+  let l:bufinfo = getbufinfo(a:buf)
+  return a:buf >=# 0 && !empty(l:bufinfo) && l:bufinfo[0].loaded ? l:bufinfo[0] : {}
+endf
+
+fun! s:current_location() abort
+  return s:editor_data.locations[s:location_index]
+endf
+
+fun! s:current_file() abort
   return resolve(expand('%:p'))
-endfunction
+endf
 
-function! s:starts_with(longer, shorter)
-  return a:longer[0 : len(a:shorter) - 1] ==# a:shorter
-endfunction
+fun! s:escape_path(path) abort
+  return substitute(a:path, '[/\\:]', '%', 'g')
+endf
 
-function! s:log_error(message)
+fun! s:contains_str(text, pattern) abort
+  return stridx(a:text, a:pattern) !=# -1
+endf
+
+fun! s:maybe_delete_dead_unix_socket(server_address) abort
+  const LSOF_EXECUTABLE = 'lsof'
+  const LSOF_COMMAND = LSOF_EXECUTABLE . ' -U'
+
+  if !filereadable(a:server_address)
+    return
+  end
+
+  call system('which ' . LSOF_EXECUTABLE)
+  let l:lsof_is_installed = v:shell_error ==# 0
+  if !l:lsof_is_installed
+    return
+  end
+
+  let l:lsof_stdout = system(LSOF_COMMAND)
+  let l:lsof_succeed = v:shell_error ==# 0
+  if l:lsof_succeed
+    let l:socket_is_dead = !s:contains_str(l:lsof_stdout, a:server_address)
+    if l:socket_is_dead
+      let l:ignore = luaeval('os.remove(_A)', a:server_address)
+      call s:log_info('removed dead socket', a:server_address)
+    end
+  else
+    call s:log_error('failed to execute', LSOF_COMMAND)
+  end
+endf
+
+fun! s:maybe_create_temp_dir() abort
+  if s:temp_dir isnot# v:null
+    call mkdir(s:temp_dir, 'p', 0700)
+    call setfperm(s:temp_dir, 'rwx------')
+  end
+endf
+
+fun! s:disable_redraw() abort
+  if !s:allow_redraw
+    return
+  end
+  let s:allow_redraw = v:false
+  let s:lazyredraw = &lazyredraw
+  set lazyredraw
+endf
+
+fun! s:enable_redraw() abort
+  if s:allow_redraw
+    return
+  end
+  let s:allow_redraw = v:true
+  let &lazyredraw = s:lazyredraw
+  redraw!
+endf
+
+fun! s:zip_flatten(xs, ys) abort
+  let l:result = []
+  let l:i = 0
+  while l:i < max([len(a:xs), len(a:ys)])
+    if l:i < len(a:xs)
+      call add(l:result, a:xs[l:i])
+    endif
+    if l:i < len(a:ys)
+      call add(l:result, a:ys[l:i])
+    endif
+    let l:i += 1
+  endw
+  return l:result
+endf
+
+fun! s:log_error(...) abort
   if g:CargoLimitVerbosity >=# 1
     echohl Error
-    echon a:message
+    redraw
+    echon s:log_str(a:000)
     echohl None
-endif
-endfunction
+  end
+endf
 
-function! s:log_info(message)
+fun! s:log_warn(...) abort
+  if g:CargoLimitVerbosity >=# 2
+    echohl WarningMsg
+    echon s:log_str(a:000) . "\n"
+  end
+endf
+
+fun! s:log_info(...) abort
   if g:CargoLimitVerbosity >=# 3
     echohl None
-    echomsg a:message
-  endif
-endfunction
+    echon s:log_str(a:000)
+  end
+endf
 
-if !exists('g:CargoLimitVerbosity')
-  let g:CargoLimitVerbosity = 3 " info level
-endif
+fun! s:log_str(args) abort
+  return '[cargo-limit] ' . join(a:args, ' ')
+endf
 
-if !exists('*CargoLimitOpen')
-  function! g:CargoLimitOpen(editor_data)
-    let l:locations = a:editor_data.files
-    call s:open_all_locations_in_new_or_existing_tabs(l:locations)
-  endfunction
-
-  function! g:CargoLimitOpenNextLocation()
-    call s:open_next_location_in_new_or_existing_tab()
-  endfunction
-
-  augroup CargoLimitAutocommands
-    autocmd!
-    autocmd TextChanged,InsertLeave,FilterReadPost *.rs call s:on_buffer_changed()
-  augroup END
-endif
-
-if has('nvim')
-  if !has('nvim-0.7.0')
-    throw 'unsupported nvim version, expected >=0.7.0'
-  endif
-  call jobstart(['cargo', 'metadata', '--quiet', '--format-version=1'], {
-  \ 'on_stdout': function('s:on_cargo_metadata'),
-  \ 'on_stderr': function('s:on_cargo_metadata'),
-  \ 'on_exit': function('s:on_cargo_metadata'),
-  \ })
-else
-  throw 'unsupported text editor'
-endif
+call s:main()
 
 " vim:shiftwidth=2 softtabstop=2 tabstop=2
