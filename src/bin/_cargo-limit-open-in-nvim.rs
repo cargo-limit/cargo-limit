@@ -1,5 +1,5 @@
 use anyhow::{Error, Result};
-use cargo_limit::{NO_EXIT_CODE, env_vars, models::EditorData};
+use cargo_limit::{NO_EXIT_CODE, NVIM, env_vars, models::EditorData};
 use std::{
     env, io,
     io::{Read, Write},
@@ -36,7 +36,7 @@ impl NeovimCommand {
             &self.command,
         ];
 
-        match Command::new("nvim").args(remote_send_args).output() {
+        match Command::new(NVIM).args(remote_send_args).output() {
             Ok(Output {
                 status,
                 stdout,

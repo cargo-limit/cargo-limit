@@ -27,6 +27,8 @@ use std::{
     process::{Command, Stdio},
 };
 
+pub const NVIM: &str = "nvim";
+
 const ADDITIONAL_ENVIRONMENT_VARIABLES: &str =
     include_str!("../additional_environment_variables.txt");
 

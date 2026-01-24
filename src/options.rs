@@ -1,8 +1,9 @@
-use crate::{cargo_toml::CargoToml, env_vars, process::CARGO_EXECUTABLE};
+use crate::{NVIM, cargo_toml::CargoToml, env_vars, process::CARGO_EXECUTABLE};
 use anyhow::{Context, Result, format_err};
 use const_format::concatcp;
 use itertools::Either;
 use std::{env, io, io::IsTerminal, iter, path::Path, str::FromStr, time::Duration};
+use which::which;
 
 const EXECUTABLE_PREFIX: &str = concatcp!(CARGO_EXECUTABLE, "-l");
 
@@ -73,7 +74,11 @@ impl Default for Options {
             ascending_messages_order: false,
             show_warnings_if_errors_exist: false,
             show_dependencies_warnings: false,
-            open_in_external_app: "_cargo-limit-open-in-nvim".to_owned(),
+            open_in_external_app: which(NVIM)
+                .ok()
+                .map(|_| "_cargo-limit-open-in-nvim")
+                .unwrap_or_default()
+                .to_owned(),
             open_in_external_app_on_warnings: false,
             help: false,
             version: false,
