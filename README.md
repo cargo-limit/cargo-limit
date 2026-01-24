@@ -91,9 +91,9 @@ This tool is especially useful in combination with [cargo-watch](https://crates.
 
 ### CARGO_EDITOR
 - opens affected files in external app
-    - see [neovim integration](#text-editoride-integrations)
+    - see [possible integrations](#text-editoride-integrations)
 - empty (`""`) means don't run external app
-- `"_cargo-limit-open-in-nvim"` is default
+- when Neovim is installed `"_cargo-limit-open-in-nvim"` is default, otherwise `""` is default
 
 </p>
 </details>
