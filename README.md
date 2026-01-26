@@ -44,6 +44,8 @@ cargo install --locked cargo-limit
 cargo install --locked --force --git https://github.com/cargo-limit/cargo-limit
 ```
 
+Windows users might need to [install](https://rust-lang.github.io/rustup/installation/windows-msvc.html#manual-install) MSVC build tools and run `rustup default stable-x86_64-pc-windows-msvc` first.
+
 ## Usage
 Run any of these in your project directory:
 ```
