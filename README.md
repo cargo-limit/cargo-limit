@@ -2,13 +2,7 @@
   <img src="logo.svg" width="25%" height="25%" alt=""/>
 </div>
 
-# cargo-limit [![Crates.io](https://img.shields.io/crates/v/cargo-limit)](https://crates.io/crates/cargo-limit) [![Crates.io](https://img.shields.io/crates/d/cargo-limit)](https://crates.io/crates/cargo-limit) [![Awesome](https://gist.githubusercontent.com/alopatindev/56009d77564991c5474197f3aba85670/raw/cc4370f645d7ad40defcf8d1d14025dfa8726fd2/awesome.svg)](https://github.com/rust-unofficial/awesome-rust#build-system)
-
-[![Liberapay](https://img.shields.io/badge/donate-Liberapay-F6C915)](https://liberapay.com/cargo-limit/donate)
-[![Ko-fi](https://img.shields.io/badge/donate-ko--fi-29abe0.svg?logo=ko-fi)](https://ko-fi.com/summary/8c07db6b-1b19-4af7-bc6d-c321db86ade0)
-[![Patreon](https://img.shields.io/badge/donate-patreon-F87668.svg?logo=patreon)](https://www.patreon.com/checkout/alopatindev/9785189)
-[![Open Collective](https://img.shields.io/badge/donate-Open_Collective-3385FF)](https://opencollective.com/cargo-limit)
-[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23db61a2.svg?&logo=github&logoColor=white&labelColor=181717&style=flat-square)](#Support)
+# cargo-limit [![Crates.io](https://img.shields.io/crates/v/cargo-limit)](https://crates.io/crates/cargo-limit) [![Crates.io](https://img.shields.io/crates/d/cargo-limit)](https://crates.io/crates/cargo-limit) [![Awesome](https://gist.githubusercontent.com/alopatindev/56009d77564991c5474197f3aba85670/raw/cc4370f645d7ad40defcf8d1d14025dfa8726fd2/awesome.svg)](https://github.com/rust-unofficial/awesome-rust#build-system) [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23db61a2.svg?&logo=github&logoColor=white&labelColor=181717&style=flat-square)](#Support)
 
 ## Description
 
