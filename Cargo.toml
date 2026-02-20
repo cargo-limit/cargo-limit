@@ -1,15 +1,15 @@
 [package]
-name = "cargo-limit"
-version = "0.0.12"
 authors = ["Alexander Lopatin <github.com/alopatindev>"]
-edition = "2024"
-license = "MIT OR Apache-2.0"
-description = "Cargo with less noise: warnings are skipped until errors are fixed, Neovim integration, etc."
-repository = "https://github.com/cargo-limit/cargo-limit"
-keywords = ["cargo", "neovim", "filter", "wrapper", "dedup"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins"]
-readme = "README.md"
+description = "Cargo with less noise: warnings are skipped until errors are fixed, Neovim integration, etc."
 documentation = "https://github.com/cargo-limit/cargo-limit#readme"
+edition = "2024"
+keywords = ["cargo", "neovim", "filter", "wrapper", "dedup"]
+license = "MIT OR Apache-2.0"
+name = "cargo-limit"
+readme = "README.md"
+repository = "https://github.com/cargo-limit/cargo-limit"
+version = "0.0.12"
 
 [dependencies]
 anyhow = "1"

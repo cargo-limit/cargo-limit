@@ -9,11 +9,12 @@ env:
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: "--deny warnings --warn bare-trait-objects"
   NIGHTLY_VERSION: "nightly-2025-08-18"
+  PYTHON_VERSION: "3.14"
   ZIG_VERSION: "0.14.1"
 
 jobs:
   all:
-    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (audit=${{ matrix.audit || 'false' }}, rustfmt=${{ matrix.rustfmt || 'false' }}, no_build_tests=${{ matrix.no_build_tests || 'false' }}, no_run_tests=${{ matrix.no_run_tests || 'false' }}, no_release_build=${{ matrix.no_release_build || 'false' }}, zigbuild=${{ matrix.zigbuild || 'false' }})
+    name: Build on ${{ matrix.os }}, ${{ matrix.target }} (audit=${{ matrix.audit || 'false' }}, rustfmt=${{ matrix.rustfmt || 'false' }}, tomlfmt=${{ matrix.tomlfmt || 'false' }}, udeps=${{ matrix.udeps || 'false' }}, no_build_tests=${{ matrix.no_build_tests || 'false' }}, no_run_tests=${{ matrix.no_run_tests || 'false' }}, no_release_build=${{ matrix.no_release_build || 'false' }}, zigbuild=${{ matrix.zigbuild || 'false' }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -24,6 +25,8 @@ jobs:
             target: x86_64-unknown-linux-gnu
             audit: true
             rustfmt: true
+            tomlfmt: true
+            udeps: true
             vint: true
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
@@ -123,24 +126,24 @@ jobs:
           #   target: riscv64gc-unknown-openbsd # NOTE: toolchain ... does not support target 'riscv64gc-unknown-openbsd'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Install Rust toolchain
         run: |
+          grep musl <<< "${{ matrix.target }}" && [ "${{ runner.os }}" == "Linux" ] && sudo apt install -y musl-dev musl-tools
           rustup update --no-self-update
           rustup target add ${{ matrix.target }}
           rustup install --force-non-host $(cat rust-toolchain)-${{ matrix.target }}
           rustup default --force-non-host $(cat rust-toolchain)-${{ matrix.target }}
           rustup component add clippy rust-src
-      - name: Install Nightly and Rustfmt
-        if: ${{ matrix.rustfmt }}
-        run: |
-          rustup install "${NIGHTLY_VERSION}"
-          rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
+        shell: bash
+      - name: Install Nightly
+        if: ${{ matrix.rustfmt || matrix.udeps }}
+        run: rustup install "${NIGHTLY_VERSION}"
       - name: Install Zig
         if: ${{ matrix.zigbuild }}
         uses: mlugg/setup-zig@v2
         with:
-          zig-version: ${{ env.ZIG_VERSION }}
+          version: ${{ env.ZIG_VERSION }}
       - run: zig version
         if: ${{ matrix.zigbuild }}
       - name: Install Zigbuild
@@ -148,9 +151,9 @@ jobs:
         run: cargo install --locked cargo-zigbuild
       - name: Install Vint
         if: ${{ matrix.vint }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: ${{ env.PYTHON_VERSION }}
       - if: ${{ matrix.vint }}
         run: |
           pip install --user git+https://github.com/Vimjas/vint.git@94d2cb3fd9526a89911b7c1e083a1fd78bace729
@@ -158,17 +161,27 @@ jobs:
       - name: Run Vint
         if: ${{ matrix.vint }}
         run: vint --style-problem --enable-neovim plugin/cargo-limit.vim
-      - name: Install cargo-audit
-        if: ${{ matrix.audit }}
-        run: cargo install --locked cargo-audit
+      - name: Check unused dependencies
+        if: ${{ matrix.udeps }}
+        run: |
+          cargo install --locked cargo-udeps
+          cargo "+${NIGHTLY_VERSION}" udeps --all-targets --all-features
       - name: Check vulnerabilities with existing patches
         if: ${{ matrix.audit }}
         run: |
+          cargo install --locked cargo-audit
           ISSUES_WITHOUT_PATCHES=($(cargo audit --json | jq --raw-output '.vulnerabilities.list[] | select(.versions.patched | length == 0) | .advisory.id' | sed 's!^! --ignore !' | tr -d '\n'))
           cargo audit ${ISSUES_WITHOUT_PATCHES[@]}
-      - name: Run Rustfmt
+      - name: Rustfmt
         if: ${{ matrix.rustfmt }}
-        run: cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
+        run: |
+          rustup component add --toolchain "${NIGHTLY_VERSION}" rustfmt
+          cargo "+${NIGHTLY_VERSION}" fmt --all -- --check
+      - name: Tomlfmt
+        if: ${{ matrix.tomlfmt }}
+        run: |
+          cargo install --locked cargo-tomlfmt
+          cargo tomlfmt || ( diff -u Cargo.toml{,.new} && exit 1 )
       - name: Check
         run: cargo check --locked --verbose --all-features --target=${{ matrix.target }}
       - name: Clippy
