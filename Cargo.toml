@@ -20,7 +20,7 @@ ctrlc = { version = "3", features = ["termination"] }
 itertools = "0.14"
 serde = "1"
 serde_json = "1"
-toml = "0.9"
+toml = "1"
 which = "8"
 
 [target.'cfg(unix)'.dependencies]
