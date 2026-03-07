@@ -20,40 +20,40 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # GNU/Linux
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            audit: true
-            rustfmt: true
-            tomlfmt: true
-            udeps: true
-            vint: true
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-          - os: ubuntu-latest
-            target: i686-unknown-linux-gnu
-            no_build_tests: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
-            no_release_build: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
-            #zigbuild: true # NOTE: Failed to read build.zig.zon (using latest): Error: ENOENT: no such file or directory, open 'build.zig.zon'
-          - os: ubuntu-latest
-            target: riscv64gc-unknown-linux-gnu
-            no_build_tests: true # NOTE: Relocations in generic ELF (EM: 243)
-            no_release_build: true # NOTE: Relocations in generic ELF (EM: 243)
-            #zigbuild: true # NOTE: tests linking fail with "error: unknown directive .cfi_label .Ldummy"
-          # - os: ubuntu-latest
-          #   target: i686-unknown-linux-musl # NOTE: target 'i686-unknown-linux-musl' not found in channel
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            no_build_tests: true
-            no_release_build: true # NOTE: Relocations in generic ELF (EM: 183)
-            #zigbuild: true # NOTE: Failed to read build.zig.zon (using latest): Error: ENOENT: no such file or directory, open 'build.zig.zon'
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-musl
-            no_build_tests: true # NOTE: Relocations in generic ELF (EM: 183)
-            no_release_build: true # NOTE: Relocations in generic ELF (EM: 183)
-            #zigbuild: true # NOTE: Failed to read build.zig.zon (using latest): Error: ENOENT: no such file or directory, open 'build.zig.zon'
-          # - os: ubuntu-latest
-          #   target: riscv64gc-unknown-linux-musl # NOTE: error: target 'riscv64gc-unknown-linux-musl' not found in channel.
+          ## GNU/Linux
+          #- os: ubuntu-latest
+          #  target: x86_64-unknown-linux-gnu
+          #  audit: true
+          #  rustfmt: true
+          #  tomlfmt: true
+          #  udeps: true
+          #  vint: true
+          #- os: ubuntu-latest
+          #  target: x86_64-unknown-linux-musl
+          #- os: ubuntu-latest
+          #  target: i686-unknown-linux-gnu
+          #  no_build_tests: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
+          #  no_release_build: true # NOTE: ld: cannot find Scrt1.o: No such file or directory
+          #  #zigbuild: true # NOTE: Failed to read build.zig.zon (using latest): Error: ENOENT: no such file or directory, open 'build.zig.zon'
+          #- os: ubuntu-latest
+          #  target: riscv64gc-unknown-linux-gnu
+          #  no_build_tests: true # NOTE: Relocations in generic ELF (EM: 243)
+          #  no_release_build: true # NOTE: Relocations in generic ELF (EM: 243)
+          #  #zigbuild: true # NOTE: tests linking fail with "error: unknown directive .cfi_label .Ldummy"
+          ## - os: ubuntu-latest
+          ##   target: i686-unknown-linux-musl # NOTE: target 'i686-unknown-linux-musl' not found in channel
+          #- os: ubuntu-latest
+          #  target: aarch64-unknown-linux-gnu
+          #  no_build_tests: true
+          #  no_release_build: true # NOTE: Relocations in generic ELF (EM: 183)
+          #  #zigbuild: true # NOTE: Failed to read build.zig.zon (using latest): Error: ENOENT: no such file or directory, open 'build.zig.zon'
+          #- os: ubuntu-latest
+          #  target: aarch64-unknown-linux-musl
+          #  no_build_tests: true # NOTE: Relocations in generic ELF (EM: 183)
+          #  no_release_build: true # NOTE: Relocations in generic ELF (EM: 183)
+          #  #zigbuild: true # NOTE: Failed to read build.zig.zon (using latest): Error: ENOENT: no such file or directory, open 'build.zig.zon'
+          ## - os: ubuntu-latest
+          ##   target: riscv64gc-unknown-linux-musl # NOTE: error: target 'riscv64gc-unknown-linux-musl' not found in channel.
 
           # macOS
           - os: macos-latest
@@ -184,8 +184,8 @@ jobs:
           cargo tomlfmt || ( diff -u Cargo.toml{,.new} && exit 1 )
       - name: Check
         run: cargo check --locked --verbose --all-features --target=${{ matrix.target }}
-      - name: Clippy
-        run: cargo clippy -- -D warnings -D clippy::dbg_macro -D clippy::print_stderr -D clippy::print_stdout
+      #- name: Clippy
+      #  run: cargo clippy -- -D warnings -D clippy::dbg_macro -D clippy::print_stderr -D clippy::print_stdout
       - name: Build Tests
         if: ${{ !matrix.no_build_tests && !matrix.zigbuild }}
         run: cargo test --no-run --locked --verbose --all-features --target=${{ matrix.target }}

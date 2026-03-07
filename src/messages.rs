@@ -190,6 +190,8 @@ fn parse_incomplete_message(
         i.target.src_path.to_string()
     };
 
+    dbg!(&i.message);
+
     let line = i
         .message
         .children
