@@ -60,7 +60,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
                 Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
                 _ => None,
             }) {
-                buffers.write_to_stderr(message.trim_end())?;
+                buffers.write_to_stderr(message.replace("\n          \n\n", "\n\n"))?;
             }
         }
         open_affected_files_in_external_app(
