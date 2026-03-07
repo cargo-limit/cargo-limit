@@ -205,6 +205,7 @@ fn parse_incomplete_message(
         .byte_end(0u32)
         .line_end(0usize)
         .column_end(0usize)
+        .is_primary(true)
         .label(None)
         .suggested_replacement(None)
         .suggestion_applicability(None)
@@ -217,7 +218,6 @@ fn parse_incomplete_message(
         .file_name(path)
         .column_start(1usize)
         .line_start(line)
-        .is_primary(true)
         .text(vec![ignored_line_values.text(&i.message.message).build()?])
         .build()?;
 
