@@ -1,0 +1,3 @@
+[package]
+name = "linker_error"
+edition = "2024"

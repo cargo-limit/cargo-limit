@@ -2,7 +2,9 @@ use crate::{io::Buffers, models::Location, options::Options, process};
 use anyhow::Result;
 use cargo_metadata::{
     CompilerMessage, Message,
-    diagnostic::{DiagnosticLevel, DiagnosticSpan},
+    diagnostic::{
+        DiagnosticLevel, DiagnosticSpan, DiagnosticSpanBuilder, DiagnosticSpanLineBuilder,
+    },
 };
 use itertools::{Either, Itertools};
 use process::CargoProcess;
@@ -139,17 +141,21 @@ impl FilteredAndOrderedMessages {
         messages
             .into_iter()
             .flat_map(|i| {
-                let (key, span) = i
-                    .message
-                    .spans
-                    .iter()
-                    .filter(|span| span.is_primary)
-                    .cloned()
-                    .map(|span| {
-                        let leaf = Self::find_leaf_project_expansion(span);
-                        (SpanKey::new(&leaf), leaf)
-                    })
-                    .min_by_key(|(key, _)| key.clone())?;
+                let (key, span) =
+                    if i.message.level == DiagnosticLevel::Error && i.message.spans.is_empty() {
+                        parse_incomplete_message(&i, workspace_root).ok()?
+                    } else {
+                        i.message
+                            .spans
+                            .iter()
+                            .filter(|span| span.is_primary)
+                            .cloned()
+                            .map(|span| {
+                                let leaf = Self::find_leaf_project_expansion(span);
+                                (SpanKey::new(&leaf), leaf)
+                            })
+                            .min_by_key(|(key, _)| key.clone())?
+                    };
                 Some((key, span, i))
             })
             .sorted_by_key(|(key, span, message)| {
@@ -171,6 +177,51 @@ impl FilteredAndOrderedMessages {
         }
         span
     }
+}
+
+fn parse_incomplete_message(
+    i: &CompilerMessage,
+    workspace_root: &Path,
+) -> Result<(SpanKey, DiagnosticSpan)> {
+    let is_project_file = i.target.src_path.starts_with(workspace_root);
+    let path = if is_project_file {
+        i.target.src_path.strip_prefix(workspace_root)?.to_string()
+    } else {
+        i.target.src_path.to_string()
+    };
+
+    let line = i
+        .message
+        .children
+        .iter()
+        .find(|child| child.message.starts_with("rust-lld: error:"))
+        .and_then(|child| child.message.rsplit_once(&format!("({path}:")))
+        .and_then(|(_, end)| end.split_once(")\n"))
+        .and_then(|(line, _)| line.parse().ok())
+        .unwrap_or(1usize);
+
+    let ignored_span_values = DiagnosticSpanBuilder::default()
+        .byte_start(0u32)
+        .byte_end(0u32)
+        .line_end(0usize)
+        .column_end(0usize)
+        .label(None)
+        .suggested_replacement(None)
+        .suggestion_applicability(None)
+        .expansion(None);
+    let ignored_line_values = DiagnosticSpanLineBuilder::default()
+        .highlight_start(0usize)
+        .highlight_end(0usize);
+
+    let span = ignored_span_values
+        .file_name(path)
+        .column_start(1usize)
+        .line_start(line)
+        .is_primary(true)
+        .text(vec![ignored_line_values.text(&i.message.message).build()?])
+        .build()?;
+
+    Ok((SpanKey::new(&span), span))
 }
 
 impl TransformedMessages {
