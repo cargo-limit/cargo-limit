@@ -392,14 +392,6 @@ Your donations will help me allocate more time to resolve [issues](https://githu
 
 - **Monero** (XMR): `46pRHmFpqzUBA8SLrdjW73H6ainCqRGpe8shjqQJ4UoBFAbegkAwqvjTSCBvBL71NZXYhriSuKPBkGxc1FjCeiut2EvFvxk`
 
-- **[Liberapay](https://liberapay.com/cargo-limit)**
-
-- **[Patreon](https://www.patreon.com/checkout/alopatindev/9785189)**
-
-- **[Ko-fi](https://ko-fi.com/summary/8c07db6b-1b19-4af7-bc6d-c321db86ade0)**
-
-- **[Open Collective](https://opencollective.com/cargo-limit)**
-
 For **general donations** dedicated to all my projects please check out ⚡ [here](https://codonaft.com/sponsor).
 
 Thank you for your support! 🙏🏼
