@@ -92,10 +92,7 @@ fn check(project: &str) -> Result<EditorData> {
 fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Result<EditorData> {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let project_dir = workspace_root.join("tests/stubs").join(project);
-    let _ = Command::new(CARGO_EXECUTABLE)
-        .args(["clean"])
-        .current_dir(&project_dir)
-        .output()?;
+    cleanup(&project_dir)?;
 
     let target_dir = env::current_exe()?
         .parent()
@@ -163,6 +160,7 @@ fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Re
         current_path = Some(i.path.clone());
     }
 
+    cleanup(&project_dir)?;
     Ok(data)
 }
 
@@ -200,6 +198,14 @@ fn count_path_dependencies_warnings(project: &str, warnings: Warnings) -> Result
         })
         .count();
     Ok(result)
+}
+
+fn cleanup(project_dir: &Path) -> Result<()> {
+    let _ = Command::new(CARGO_EXECUTABLE)
+        .args(["clean"])
+        .current_dir(&project_dir)
+        .output()?;
+    Ok(())
 }
 
 fn assert_count(data: &EditorData, level: DiagnosticLevel, count: usize) {
