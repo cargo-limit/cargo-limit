@@ -8,5 +8,4 @@ pub fn trigger() {
 
 fn main() {
     trigger();
-    println!("Hello, world!");
 }
