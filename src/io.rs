@@ -61,7 +61,7 @@ impl Buffers {
         std::writeln!(&mut self.stdout_writer, "{}", text)
     }
 
-    pub fn write_to_stderr(&mut self, text: String) -> io::Result<()> {
+    pub fn write_to_stderr(&mut self, text: &str) -> io::Result<()> {
         std::write!(&mut self.stderr_writer, "{}", text)
     }
 
