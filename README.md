@@ -53,6 +53,7 @@ cargo lrun
 cargo lrustc
 cargo lrustdoc
 cargo ltest
+cargo lzigbuild
 ```
 
 Also `llcheck`, `llrun`, etc. to **auto-open text editor for warnings** as well, not just for errors.
