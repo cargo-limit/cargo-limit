@@ -2,7 +2,9 @@ use crate::{io::Buffers, models::Location, options::Options, process};
 use anyhow::Result;
 use cargo_metadata::{
     CompilerMessage, Message,
-    diagnostic::{DiagnosticLevel, DiagnosticSpan},
+    diagnostic::{
+        DiagnosticLevel, DiagnosticSpan, DiagnosticSpanBuilder, DiagnosticSpanLineBuilder,
+    },
 };
 use itertools::{Either, Itertools};
 use process::CargoProcess;
@@ -139,17 +141,55 @@ impl FilteredAndOrderedMessages {
         messages
             .into_iter()
             .flat_map(|i| {
-                let (key, span) = i
-                    .message
-                    .spans
-                    .iter()
-                    .filter(|span| span.is_primary)
-                    .cloned()
-                    .map(|span| {
-                        let leaf = Self::find_leaf_project_expansion(span);
-                        (SpanKey::new(&leaf), leaf)
-                    })
-                    .min_by_key(|(key, _)| key.clone())?;
+                let maybe_linker_error =
+                    i.message.level == DiagnosticLevel::Error && i.message.spans.is_empty();
+                let (key, span) = if maybe_linker_error {
+                    let is_project_file = i.target.src_path.starts_with(workspace_root);
+                    let path = if is_project_file {
+                        i.target
+                            .src_path
+                            .strip_prefix(workspace_root)
+                            .ok()?
+                            .to_string()
+                    } else {
+                        i.target.src_path.to_string()
+                    };
+                    let span = DiagnosticSpanBuilder::default()
+                        .file_name(path)
+                        .byte_start(0u32)
+                        .byte_end(0u32)
+                        .line_start(1usize) // TODO
+                        .line_end(0usize)
+                        .column_start(1usize) // TODO
+                        .column_end(0usize)
+                        .is_primary(true)
+                        .text(vec![
+                            DiagnosticSpanLineBuilder::default()
+                                .text(&i.message.message)
+                                .highlight_start(0usize)
+                                .highlight_end(0usize)
+                                .build()
+                                .ok()?,
+                        ])
+                        .label(None)
+                        .suggested_replacement(None)
+                        .suggestion_applicability(None)
+                        .expansion(None)
+                        .build()
+                        .ok()?;
+                    (SpanKey::new(&span), span)
+                } else {
+                    i.message
+                        .spans
+                        .iter()
+                        .filter(|span| span.is_primary)
+                        .cloned()
+                        .map(|span| {
+                            let leaf = Self::find_leaf_project_expansion(span);
+                            (SpanKey::new(&leaf), leaf)
+                        })
+                        .min_by_key(|(key, _)| key.clone())?
+                };
                 Some((key, span, i))
             })
             .sorted_by_key(|(key, span, message)| {
