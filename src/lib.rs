@@ -62,9 +62,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
             }) {
                 // linker messages produce unnecessary new line
                 let message = match message.rsplit_once("\n          \n\n") {
-                    Some((message, right)) if right.is_empty() => {
-                        format!("{message}\n\n")
-                    },
+                    Some((message, "")) => format!("{message}\n\n"),
                     _ => message,
                 };
                 buffers.write_to_stderr(message)?;
