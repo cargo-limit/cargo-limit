@@ -92,12 +92,17 @@ fn check(project: &str) -> Result<EditorData> {
 fn check_with(bin: &str, args: &[&str], project: &str, warnings: Warnings) -> Result<EditorData> {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let project_dir = workspace_root.join("tests/stubs").join(project);
-    let _ = fs::remove_dir_all(project_dir.join("target"));
+    let _ = Command::new(CARGO_EXECUTABLE)
+        .args(["clean"])
+        .current_dir(&project_dir)
+        .output()?;
+
     let target_dir = env::current_exe()?
         .parent()
         .context("parent")?
         .join("../../release");
     let bin_path = resolve_dependency(bin, &target_dir)?;
+
     let output = Command::new(bin_path)
         .args(args)
         .env(env_vars::RUSTFLAGS, "")
