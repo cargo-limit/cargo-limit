@@ -53,6 +53,13 @@ fn e() -> Result<()> {
 }
 
 #[test]
+fn linker_error() -> Result<()> {
+    let data = check("linker_error")?;
+    assert_count(&data, DiagnosticLevel::Error, 1);
+    Ok(())
+}
+
+#[test]
 fn error_is_visible_when_path_dependencies_warnings_are_disabled() -> Result<()> {
     let data = check_with("cargo-llcheck", &[], "f/f", Warnings::default())?;
     let locations = &data.locations;
