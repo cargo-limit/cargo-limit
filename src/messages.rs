@@ -189,13 +189,24 @@ fn parse_incomplete_message(
     } else {
         i.target.src_path.to_string()
     };
+
+    let line = i
+        .message
+        .children
+        .iter()
+        .find(|child| child.message.starts_with("rust-lld: error:"))
+        .and_then(|child| child.message.rsplit_once(&format!("({path}:")))
+        .and_then(|(_, end)| end.split_once(")\n"))
+        .and_then(|(line, _)| line.parse().ok())
+        .unwrap_or(1usize);
+
     let span = DiagnosticSpanBuilder::default()
         .file_name(path)
         .byte_start(0u32)
         .byte_end(0u32)
-        .line_start(1usize) // TODO
+        .line_start(line)
         .line_end(0usize)
-        .column_start(1usize) // TODO
+        .column_start(1usize)
         .column_end(0usize)
         .is_primary(true)
         .text(vec![
