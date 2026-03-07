@@ -54,7 +54,7 @@ fn e() -> Result<()> {
 
 #[test]
 fn linker_error() -> Result<()> {
-    let data = check("linker_error")?;
+    let data = check_with("cargo-llbuild", &[], "linker_error", Warnings::default())?;
     assert_count(&data, DiagnosticLevel::Error, 1);
     Ok(())
 }
