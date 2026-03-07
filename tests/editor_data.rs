@@ -75,9 +75,8 @@ fn error_is_visible_when_path_dependencies_warnings_are_disabled() -> Result<()>
 #[test]
 fn linker_error() -> Result<()> {
     let data = check_with("cargo-llbuild", &[], "linker_error", Warnings::default())?;
-    let locations = &data.locations;
     assert!(
-        locations
+        data.locations
             .iter()
             .find(|i| i.level == DiagnosticLevel::Error && [1, 6].contains(&i.line))
             .is_some()
