@@ -60,7 +60,7 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
                 Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
                 _ => None,
             }) {
-                // linker messages produce unnecessary new line
+                // linker messages may produce unnecessary new line
                 let message = match message.rsplit_once("\n          \n\n") {
                     Some((message, "")) => format!("{message}\n\n"),
                     _ => message,
