@@ -1,3 +1,5 @@
+scriptencoding utf-8
+
 fun! s:main() abort
   const MIN_NVIM_VERSION = '0.7.0'
 
