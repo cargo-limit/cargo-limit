@@ -60,7 +60,13 @@ pub fn run_cargo_filtered(current_exe: String) -> Result<i32> {
                 Message::CompilerMessage(compiler_message) => compiler_message.message.rendered,
                 _ => None,
             }) {
-                buffers.write_to_stderr(message.replace("\n          \n\n", "\n\n"))?;
+                // linker messages produce unnecessary new line
+                let message = if let Some((message, _)) = message.rsplit_once("\n          \n\n") {
+                    format!("{message}\n\n")
+                } else {
+                    message
+                };
+                buffers.write_to_stderr(message)?;
             }
         }
         open_affected_files_in_external_app(
