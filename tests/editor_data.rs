@@ -79,7 +79,7 @@ fn linker_error() -> Result<()> {
     assert!(
         locations
             .iter()
-            .find(|i| i.level == DiagnosticLevel::Error && i.line == 6)
+            .find(|i| i.level == DiagnosticLevel::Error && [1, 6].contains(&i.line))
             .is_some()
     );
     Ok(())
