@@ -200,27 +200,27 @@ fn parse_incomplete_message(
         .and_then(|(line, _)| line.parse().ok())
         .unwrap_or(1usize);
 
-    let span = DiagnosticSpanBuilder::default()
-        .file_name(path)
+    let ignored_span_values = DiagnosticSpanBuilder::default()
         .byte_start(0u32)
         .byte_end(0u32)
-        .line_start(line)
         .line_end(0usize)
-        .column_start(1usize)
         .column_end(0usize)
-        .is_primary(true)
-        .text(vec![
-            DiagnosticSpanLineBuilder::default()
-                .text(&i.message.message)
-                .highlight_start(0usize)
-                .highlight_end(0usize)
-                .build()?,
-        ])
         .label(None)
         .suggested_replacement(None)
         .suggestion_applicability(None)
-        .expansion(None)
+        .expansion(None);
+    let ignored_line_values = DiagnosticSpanLineBuilder::default()
+        .highlight_start(0usize)
+        .highlight_end(0usize);
+
+    let span = ignored_span_values
+        .file_name(path)
+        .column_start(1usize)
+        .line_start(line)
+        .is_primary(true)
+        .text(vec![ignored_line_values.text(&i.message.message).build()?])
         .build()?;
+
     Ok((SpanKey::new(&span), span))
 }
 
