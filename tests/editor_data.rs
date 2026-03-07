@@ -53,13 +53,6 @@ fn e() -> Result<()> {
 }
 
 #[test]
-fn linker_error() -> Result<()> {
-    let data = check_with("cargo-llbuild", &[], "linker_error", Warnings::default())?;
-    assert_count(&data, DiagnosticLevel::Error, 1);
-    Ok(())
-}
-
-#[test]
 fn error_is_visible_when_path_dependencies_warnings_are_disabled() -> Result<()> {
     let data = check_with("cargo-llcheck", &[], "f/f", Warnings::default())?;
     let locations = &data.locations;
@@ -75,6 +68,19 @@ fn error_is_visible_when_path_dependencies_warnings_are_disabled() -> Result<()>
             .find(|i| i.level == DiagnosticLevel::Warning
                 && !i.path.starts_with(&data.workspace_root))
             .is_none()
+    );
+    Ok(())
+}
+
+#[test]
+fn linker_error() -> Result<()> {
+    let data = check_with("cargo-llbuild", &[], "linker_error", Warnings::default())?;
+    let locations = &data.locations;
+    assert!(
+        locations
+            .iter()
+            .find(|i| i.level == DiagnosticLevel::Error && i.line == 6)
+            .is_some()
     );
     Ok(())
 }
