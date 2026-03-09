@@ -1,5 +1,4 @@
 [package]
-authors = ["Alexander Lopatin <github.com/alopatindev>"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 description = "Cargo with less noise: warnings are skipped until errors are fixed, Neovim integration, etc."
 documentation = "https://github.com/cargo-limit/cargo-limit#readme"
@@ -9,7 +8,7 @@ license = "MIT OR Apache-2.0"
 name = "cargo-limit"
 readme = "README.md"
 repository = "https://github.com/cargo-limit/cargo-limit"
-version = "0.0.12"
+version = "0.0.13"
 
 [dependencies]
 anyhow = "1"
