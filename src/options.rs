@@ -41,7 +41,8 @@ pub struct Options {
     terminal_supports_colors: bool,
 
     pub color: String,
-    pub limit_messages: usize,
+    /// Limit of messages to show. 0 means no limit, negative means limit to 0.
+    pub limit_messages: isize,
     pub time_limit_after_error: Option<Duration>,
     pub ascending_messages_order: bool,
     pub show_warnings_if_errors_exist: bool,

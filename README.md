@@ -66,7 +66,7 @@ This tool is especially useful in combination with [cargo-watch](https://crates.
 
 ### CARGO_MSG_LIMIT
 - limit compiler messages number
-- `0` means no limit, which is default
+- `0` means no limit, which is default, negative means 0
 
 ### CARGO_TIME_LIMIT
 - `cargo` execution time limit in seconds after encountering first compiling error

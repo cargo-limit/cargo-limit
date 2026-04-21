@@ -252,7 +252,7 @@ impl TransformedMessages {
             if no_limit {
                 Either::Left(messages)
             } else {
-                Either::Right(messages.take(limit_messages))
+                Either::Right(messages.take(limit_messages.max(0) as usize))
             }
         }
         .unzip();
